@@ -20,11 +20,14 @@ export default function AccountPage() {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target)) return setMessage("Enter a valid email address.");
     setBusy(true);
     setMessage(null);
-    const { error } = await supabase.auth.signInWithOtp({ email: target, options: { shouldCreateUser: true } });
+    const { error } = await supabase.auth.signInWithOtp({
+      email: target,
+      options: { shouldCreateUser: true, emailRedirectTo: `${window.location.origin}/account` },
+    });
     setBusy(false);
     if (error) return setMessage(`Couldn't send the code: ${error.message}`);
     setPhase("code");
-    setMessage("Check your email — ONE sent you a 6-digit code.");
+    setMessage("Check your email — tap the sign-in link, or enter the 6-digit code if the email shows one.");
   }
 
   async function verifyCode() {
