@@ -20,6 +20,13 @@ Launch → Demo user (Omar) → Home with Safe to Spend → six money buckets �
 - Activity screen (`/activity`): day-grouped history, month in/out summary, delete for user-added entries
 - Home hero gains quick actions (Record spending · Worth it?)
 
+## Milestone 1.7 — Bank-message ingestion ✅
+
+- Deterministic Kuwait bank SMS/notification parser (EN + AR, confidence-labeled, never invents transactions)
+- Paste-to-import on `/add` with parsed preview and explicit confirmation
+- PWA manifest + share target: installed ONE appears in the Android share sheet — share a bank alert straight in
+- Path to full auto-read documented in `DECISIONS.md` #6 (native Android listener → same parser; iOS via future bank APIs)
+
 ## Milestone 2 — Real user data
 
 - Supabase: Postgres, Auth (email + OTP/magic link; Apple/Google later), RLS everywhere

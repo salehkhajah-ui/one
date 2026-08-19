@@ -36,7 +36,21 @@ Every number on screen comes from `lib/engine/` pure functions with unit tests. 
 
 Onboarding and accepted payday plans persist to `localStorage` behind `lib/app/storage.ts`, whose shapes mirror `DATA_MODEL.md`. Rationale: prove the personal product loop (onboard → allocate → accept → live by Safe to Spend) with real user numbers before paying the cost of auth/RLS/backend. Milestone 2 replaces the storage calls with Supabase without touching the state builder or UI. Manual mode is honest about its limits: no transaction history → no insights, plan-based score basis, medium-confidence Safe to Spend.
 
-## 6. Demo Mode is seeded and date-anchored
+## 6. Bank-notification ingestion: parser + share sheet now, native listener later
+
+**Status:** accepted
+
+Goal: numbers adjust from real bank alerts. Platform reality: web apps cannot read device notifications; iOS forbids reading other apps' notifications entirely; Android allows it only for a native app holding the user-granted Notification-access permission.
+
+Strategy in three layers, all feeding one deterministic parser (`lib/app/bankParser.ts` — Kuwait bank SMS formats, English + Arabic, unit-tested, never invents a transaction and labels its confidence):
+
+1. **Now (web):** paste a bank message into `/add` → parsed preview → user confirms → balances and Safe to Spend adjust. Message text never leaves the device.
+2. **Now (Android, 2 taps):** PWA `share_target` — install ONE to the home screen, then Share → ONE from any bank SMS/notification lands pre-parsed in `/add`.
+3. **Later (native Android companion):** a NotificationListenerService feeds the same parser automatically; iOS instead waits for real bank/API integration (Milestone 4).
+
+Auto-commit is deliberately off: parsed transactions require a confirmation tap (trust, and Play-policy hygiene for the future native app).
+
+## 7. Demo Mode is seeded and date-anchored
 
 **Status:** accepted
 

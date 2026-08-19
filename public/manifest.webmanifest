@@ -1,0 +1,26 @@
+{
+  "name": "ONE — Every dinar has a mind",
+  "short_name": "ONE",
+  "description": "ONE gives every dinar a job: safe to spend, protection, goals and long-term growth.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030608",
+  "theme_color": "#030608",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "share_target": {
+    "action": "/add",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
