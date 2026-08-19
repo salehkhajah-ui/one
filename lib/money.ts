@@ -118,7 +118,18 @@ export function formatMoney(
   const info = CURRENCIES[currency];
   const major = minor / info.minorPerMajor;
   const decimals = options?.hideDecimals ? 0 : info.decimals;
-  const formatted = new Intl.NumberFormat(locale, {
+  const display = DISPLAY_CODE[currency];
+  if (display && locale.startsWith("en")) {
+    // Latin UI convention for these currencies: amount first, short code after ("30.000 KD").
+    const number = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      notation: options?.compact ? "compact" : "standard",
+      signDisplay: options?.signed ? "exceptZero" : "auto",
+    }).format(major);
+    return `${number} ${display}`;
+  }
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: decimals,
@@ -126,8 +137,6 @@ export function formatMoney(
     notation: options?.compact ? "compact" : "standard",
     signDisplay: options?.signed ? "exceptZero" : "auto",
   }).format(major);
-  const display = DISPLAY_CODE[currency];
-  return display && locale.startsWith("en") ? formatted.replace(currency, display).trim() : formatted;
 }
 
 /** Bare number without currency symbol, e.g. "12.750" — for hero displays that place the unit separately. */

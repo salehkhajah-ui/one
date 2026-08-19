@@ -4,6 +4,15 @@
 
 Launch → Demo user (Omar) → Home with Safe to Spend → six money buckets → allocation recommendation with adjustable amounts and visible consequences → Goals with progress/ETA → Grow projections (hypothetical, labeled) → Worth It? simulator → ONE Score → Ask ONE with mock provider answering from real engine functions. Realistic seeded Kuwaiti data (salary 1,200 KD, payday 25th, 4 months of transactions). No external dependencies.
 
+## Milestone 1.5 — Personal & complete loop ✅
+
+- First-run choice: **Try the demo** or **Build my ONE plan**
+- Full onboarding (income → payday → essentials → bills → protection → goals → growth → generate → plan) writing a real local profile
+- **Manual mode**: the whole app runs on the user's own numbers, honest about missing history (no fabricated insights; plan-based score basis; medium-confidence Safe to Spend)
+- **Payday experience**: income lands → dinars get to work → every dinar has a job → Accept/Adjust
+- Accepted plans persist per pay cycle (virtual allocations, local storage) and drive Safe to Spend/buckets until payday
+- Local persistence layer (`lib/app/storage.ts`) mirroring the Supabase data model for a clean Milestone 2 swap
+
 ## Milestone 2 — Real user data
 
 - Supabase: Postgres, Auth (email + OTP/magic link; Apple/Google later), RLS everywhere

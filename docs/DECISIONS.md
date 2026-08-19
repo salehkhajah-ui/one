@@ -30,7 +30,13 @@ All amounts are integers (1.000 KD = 1000 fils). Floating point is never used fo
 
 Every number on screen comes from `lib/engine/` pure functions with unit tests. The chat ("Ask ONE") uses `MockAIProvider` — intent matching that calls the same engine functions and formats results. A real LLM provider will implement the same `AIProvider` interface behind env config; it will receive engine outputs and produce language, never numbers.
 
-## 5. Demo Mode is seeded and date-anchored
+## 5. Local persistence before backend (Milestone 1.5)
+
+**Status:** accepted
+
+Onboarding and accepted payday plans persist to `localStorage` behind `lib/app/storage.ts`, whose shapes mirror `DATA_MODEL.md`. Rationale: prove the personal product loop (onboard → allocate → accept → live by Safe to Spend) with real user numbers before paying the cost of auth/RLS/backend. Milestone 2 replaces the storage calls with Supabase without touching the state builder or UI. Manual mode is honest about its limits: no transaction history → no insights, plan-based score basis, medium-confidence Safe to Spend.
+
+## 6. Demo Mode is seeded and date-anchored
 
 **Status:** accepted
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAppMaybe } from "./AppProvider";
 
 const ICONS = {
   home: (
@@ -49,6 +50,8 @@ const TABS: Array<{ href: string; label: string; icon: keyof typeof ICONS }> = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const state = useAppMaybe();
+  if (!state || pathname.startsWith("/onboarding") || pathname.startsWith("/payday")) return null;
   return (
     <nav className="bottom-nav" aria-label="Main">
       <div className="bottom-nav-inner">

@@ -7,24 +7,27 @@ import { calculateCompoundProjection, SCENARIOS } from "../../lib/engine/project
 import type { BucketKey } from "../../lib/engine/types";
 import { money } from "../../lib/i18n";
 import { fromMajor } from "../../lib/money";
-import { useDemo } from "../components/DemoProvider";
+import Link from "next/link";
+import { useApp, useAppControls } from "../components/AppProvider";
 import { BUCKET_LABELS, BucketDot, Disclaimer, Money, SectionHeader, StackBar, Why } from "../components/ui";
 
 const FLEX_BUCKETS: BucketKey[] = ["protect", "goals", "grow"];
 const BASE = SCENARIOS.find((s) => s.key === "base")!;
 
 export default function PlanPage() {
-  const state = useDemo();
+  const state = useApp();
+  const { acceptPlan } = useAppControls();
   const rec = state.allocationBuckets;
   const total = state.allocation.totalMinor;
   const flexTotal = Math.max(0, total - rec.life - rec.bills);
 
+  // Start from the plan in force: the accepted plan when one exists, else the recommendation.
   const [flex, setFlex] = useState<Record<"protect" | "goals" | "grow", number>>({
-    protect: rec.protect,
-    goals: rec.goals,
-    grow: rec.grow,
+    protect: state.planBuckets.protect,
+    goals: state.planBuckets.goals,
+    grow: state.planBuckets.grow,
   });
-  const [accepted, setAccepted] = useState(false);
+  const [accepted, setAccepted] = useState(state.planIsAccepted);
 
   const enjoy = Math.max(0, flexTotal - flex.protect - flex.goals - flex.grow);
   const current: Record<BucketKey, number> = {
@@ -195,17 +198,20 @@ export default function PlanPage() {
         className="btn btn-primary mt-6 w-full"
         disabled={accepted}
         onClick={() => {
+          acceptPlan({ protectMinor: flex.protect, goalsMinor: flex.goals, growMinor: flex.grow });
           setAccepted(true);
-          track("allocation_accepted", { adjusted: isAdjusted });
         }}
       >
         {accepted ? "Plan accepted ✓" : isAdjusted ? "Accept your plan" : "Accept ONE's plan"}
       </button>
       {accepted && (
         <p className="subtle mt-3 text-center" style={{ color: "var(--positive)" }}>
-          Your dinars have their jobs for this cycle.
+          Your dinars have their jobs until payday ({state.nextPaydayISO}).
         </p>
       )}
+      <Link href="/payday" className="micro mt-4 block text-center font-semibold" style={{ color: "var(--accent)" }}>
+        See the payday experience →
+      </Link>
       <Disclaimer>
         Accepting updates ONE&apos;s virtual allocation only — it does not move money between real accounts. Grow amounts
         are educational recommendations; ONE does not execute investments.

@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { track } from "../../lib/analytics";
 import { formatDateShort, money } from "../../lib/i18n";
-import { useDemo } from "../components/DemoProvider";
+import { useApp } from "../components/AppProvider";
 import { BUCKET_COLORS, Disclaimer, Money, ProgressBar, SectionHeader, Why } from "../components/ui";
 
 export default function GoalsPage() {
-  const state = useDemo();
+  const state = useApp();
   const [open, setOpen] = useState<string | null>(state.goals[0]?.id ?? null);
   const [paused, setPaused] = useState<Record<string, boolean>>({});
 

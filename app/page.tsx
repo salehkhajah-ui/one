@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { track } from "../lib/analytics";
 import { formatDateShort, money } from "../lib/i18n";
 import type { Transaction } from "../lib/engine/types";
-import { useDemo } from "./components/DemoProvider";
+import { useApp, useAppControls } from "./components/AppProvider";
 import { BUCKET_COLORS, BucketDot, Disclaimer, HeroMoney, Money, ProgressBar, SectionHeader, StackBar, Why } from "./components/ui";
 
 function greeting(): string {
@@ -28,7 +28,8 @@ const CATEGORY_ICONS: Partial<Record<Transaction["category"], string>> = {
 };
 
 export default function HomePage() {
-  const state = useDemo();
+  const state = useApp();
+  const { resetAll } = useAppControls();
   const [insightDone, setInsightDone] = useState(false);
 
   useEffect(() => {
@@ -52,10 +53,35 @@ export default function HomePage() {
             {greeting()}, {state.profile.displayName}
           </h1>
         </div>
-        <span className="chip cursor-default" title="Sample data — no bank connected. ONE never claims a live connection that doesn't exist.">
-          Demo
-        </span>
+        {state.mode === "demo" && (
+          <span
+            className="chip cursor-default"
+            title="Sample data — no bank connected. ONE never claims a live connection that doesn't exist."
+          >
+            Demo
+          </span>
+        )}
       </header>
+
+      {/* Payday banner */}
+      {state.isPaydayToday && !state.planIsAccepted && (
+        <Link
+          href="/payday"
+          className="card mt-4 flex items-center gap-3"
+          style={{ borderColor: "color-mix(in oklab, var(--positive) 45%, transparent)" }}
+        >
+          <span className="text-xl" aria-hidden>
+            🎉
+          </span>
+          <div className="flex-1">
+            <div className="text-[15px] font-bold">It&apos;s payday</div>
+            <div className="micro">Your dinars are ready to get to work — see your plan.</div>
+          </div>
+          <span className="text-[18px]" style={{ color: "var(--text-3)" }} aria-hidden>
+            ›
+          </span>
+        </Link>
+      )}
 
       {/* Hero: Safe to Spend */}
       <section className="card-elevated mt-5">
@@ -238,6 +264,12 @@ export default function HomePage() {
 
       {/* Recent activity */}
       <SectionHeader title="Recent activity" />
+      {recent.length === 0 ? (
+        <section className="card">
+          <p className="subtle">No transactions yet — nothing needs your attention.</p>
+          <p className="micro mt-1">Account connections and imports arrive in the next milestone.</p>
+        </section>
+      ) : (
       <section className="card" style={{ padding: "6px 18px" }}>
         <ul>
           {recent.map((t, i) => (
@@ -266,9 +298,21 @@ export default function HomePage() {
           ))}
         </ul>
       </section>
+      )}
       <Disclaimer>
-        Demo Mode shows generated sample data. ONE provides educational guidance and does not move real money.
+        {state.mode === "demo"
+          ? "Demo Mode shows generated sample data. ONE provides educational guidance and does not move real money."
+          : "Your numbers stay on this device. ONE provides educational guidance and does not move real money."}
       </Disclaimer>
+      <button
+        className="micro mt-3 w-full text-center font-semibold"
+        style={{ color: "var(--text-3)" }}
+        onClick={() => {
+          if (window.confirm("Start over? This clears your ONE setup on this device.")) resetAll();
+        }}
+      >
+        Start over{state.mode === "demo" ? " / set up my own numbers" : ""}
+      </button>
     </main>
   );
 }

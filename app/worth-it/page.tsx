@@ -5,11 +5,11 @@ import { track } from "../../lib/analytics";
 import type { WorthItResult } from "../../lib/engine/worthIt";
 import { currencyUnitLabel, formatDateShort, money } from "../../lib/i18n";
 import { fromMajor } from "../../lib/money";
-import { useDemo } from "../components/DemoProvider";
+import { useApp } from "../components/AppProvider";
 import { Disclaimer, Money, SectionHeader } from "../components/ui";
 
 export default function WorthItPage() {
-  const state = useDemo();
+  const state = useApp();
   const [item, setItem] = useState("");
   const [price, setPrice] = useState("");
   const [result, setResult] = useState<WorthItResult | null>(null);

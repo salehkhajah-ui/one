@@ -5,7 +5,7 @@ import { mockAIProvider } from "../../lib/ai/mock";
 import { SUGGESTED_PROMPTS, type ChatAnswer } from "../../lib/ai/provider";
 import { track } from "../../lib/analytics";
 import { formatDateShort, money } from "../../lib/i18n";
-import { useDemo } from "../components/DemoProvider";
+import { useApp } from "../components/AppProvider";
 import { BUCKET_COLORS, Money, ProgressBar } from "../components/ui";
 
 interface ChatItem {
@@ -16,7 +16,7 @@ interface ChatItem {
 }
 
 export default function AskOnePage() {
-  const state = useDemo();
+  const state = useApp();
   const [items, setItems] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
@@ -106,7 +106,7 @@ export default function AskOnePage() {
 }
 
 function AnswerCard({ card }: { card: NonNullable<ChatAnswer["card"]> }) {
-  const state = useDemo();
+  const state = useApp();
 
   if (card.kind === "safeToSpend") {
     return (

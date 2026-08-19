@@ -27,4 +27,4 @@ Consumer fintech app: every dinar gets a job. See `docs/PRODUCT.md` for full pro
 
 ## Current state
 
-Milestone 1: demo-mode vertical slice as a mobile-first **web app** (deploys to Vercel). React Native migration is a future milestone; see `docs/DECISIONS.md` #1.
+Milestone 1.5: mobile-first **web app** (deploys to Vercel) with the demo vertical slice PLUS onboarding, manual mode (user's own numbers, localStorage persistence via `lib/app/storage.ts`), and the Payday experience. State builds in `lib/app/state.ts` from a `DataBundle` (demo or manual). React Native and Supabase are future milestones; see `docs/DECISIONS.md`.

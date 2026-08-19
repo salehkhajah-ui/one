@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { DemoProvider } from "./components/DemoProvider";
+import { AppProvider } from "./components/AppProvider";
 import { BottomNav } from "./components/BottomNav";
 
 export const metadata: Metadata = {
@@ -25,10 +25,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <DemoProvider>
+        <AppProvider>
           <div className="shell">{children}</div>
           <BottomNav />
-        </DemoProvider>
+        </AppProvider>
       </body>
     </html>
   );

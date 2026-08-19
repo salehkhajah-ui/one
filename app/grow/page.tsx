@@ -5,7 +5,7 @@ import { track } from "../../lib/analytics";
 import { calculateCompoundProjection, SCENARIOS } from "../../lib/engine/projection";
 import { amount, moneyCompact, money } from "../../lib/i18n";
 import { fromMajor } from "../../lib/money";
-import { useDemo } from "../components/DemoProvider";
+import { useApp } from "../components/AppProvider";
 import { Disclaimer, Money, SectionHeader, Why } from "../components/ui";
 
 const SCENARIO_COLORS: Record<string, string> = {
@@ -15,7 +15,7 @@ const SCENARIO_COLORS: Record<string, string> = {
 };
 
 export default function GrowPage() {
-  const state = useDemo();
+  const state = useApp();
   const [monthly, setMonthly] = useState(state.growMonthlyMinor);
 
   useEffect(() => {
