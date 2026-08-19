@@ -53,14 +53,22 @@ export default function HomePage() {
             {greeting()}, {state.profile.displayName}
           </h1>
         </div>
-        {state.mode === "demo" && (
-          <span
-            className="chip cursor-default"
-            title="Sample data — no bank connected. ONE never claims a live connection that doesn't exist."
-          >
-            Demo
-          </span>
-        )}
+        <span className="flex items-center gap-2">
+          {state.mode === "demo" && (
+            <span
+              className="chip cursor-default"
+              title="Sample data — no bank connected. ONE never claims a live connection that doesn't exist."
+            >
+              Demo
+            </span>
+          )}
+          <Link href="/account" className="chip" aria-label="Account & cloud sync">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+              <circle cx="12" cy="8.5" r="3.5" />
+              <path d="M4.5 19.5c1.6-3.2 4.3-4.5 7.5-4.5s5.9 1.3 7.5 4.5" />
+            </svg>
+          </Link>
+        </span>
       </header>
 
       {/* Payday banner */}

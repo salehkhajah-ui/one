@@ -50,7 +50,13 @@ Strategy in three layers, all feeding one deterministic parser (`lib/app/bankPar
 
 Auto-commit is deliberately off: parsed transactions require a confirmation tap (trust, and Play-policy hygiene for the future native app).
 
-## 7. Demo Mode is seeded and date-anchored
+## 7. Cloud sync v1: whole-setup backup, publishable keys in-repo
+
+**Status:** accepted (dormant until the Supabase project exists)
+
+Milestone 2 v1 syncs the entire `UserSetup` as one RLS-guarded `user_setups` row per user (newest-wins by `updatedAtISO`), with passwordless email-OTP sign-in and a "delete my cloud data" control. Normalized tables (DATA_MODEL.md) arrive when server-side computation does. The Supabase URL + *publishable* key are inlined behind an env override because Vercel env vars aren't manageable with current access — these are client-shipped values by design and grant nothing without a session; the service-role key never appears anywhere in this repo. `getSupabase()` returns null when unconfigured, so the whole layer is inert until provisioned.
+
+## 8. Demo Mode is seeded and date-anchored
 
 **Status:** accepted
 

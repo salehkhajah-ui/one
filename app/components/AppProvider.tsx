@@ -7,6 +7,10 @@ import { toISODate } from "../../lib/engine/dates";
 import { demoBundle, manualBundle } from "../../lib/app/bundle";
 import { buildAppState, type AppState } from "../../lib/app/state";
 import { clearSetup, loadSetup, saveSetup, type StoredTransaction, type UserSetup } from "../../lib/app/storage";
+import { deleteCloudData, pickNewer, pullSetup, pushSetup } from "../../lib/app/sync";
+import { cloudSyncConfigured, getSupabase } from "../../lib/supabase/client";
+
+export type CloudStatus = "off" | "signedOut" | "syncing" | "synced" | "error";
 
 interface AppControls {
   hasSetup: boolean;
@@ -16,6 +20,10 @@ interface AppControls {
   addTransaction: (tx: Omit<StoredTransaction, "id">) => void;
   deleteTransaction: (id: string) => void;
   resetAll: () => void;
+  cloud: { configured: boolean; status: CloudStatus; email: string | null };
+  signOutCloud: () => Promise<void>;
+  deleteCloud: () => Promise<boolean>;
+  refreshCloud: () => void;
 }
 
 const StateContext = createContext<AppState | null>(null);
@@ -27,9 +35,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [cloudStatus, setCloudStatus] = useState<CloudStatus>(cloudSyncConfigured() ? "signedOut" : "off");
+  const [cloudEmail, setCloudEmail] = useState<string | null>(null);
+
   useEffect(() => {
     setSetup(loadSetup());
   }, []);
+
+  // Cloud sync: reconcile on sign-in (newest wins), then keep pushing changes.
+  const reconcile = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+    if (!session) {
+      setCloudStatus("signedOut");
+      setCloudEmail(null);
+      return;
+    }
+    setCloudEmail(session.user.email ?? null);
+    setCloudStatus("syncing");
+    try {
+      const local = loadSetup();
+      const remote = await pullSetup(supabase);
+      const winner = pickNewer(local, remote);
+      if (winner === "remote" && remote) {
+        saveSetup(remote.setup);
+        setSetup(remote.setup);
+      } else if (winner === "local" && local) {
+        await pushSetup(supabase, local);
+      }
+      setCloudStatus("synced");
+    } catch {
+      setCloudStatus("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    void reconcile();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") void reconcile();
+      if (event === "SIGNED_OUT") {
+        setCloudStatus("signedOut");
+        setCloudEmail(null);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [reconcile]);
+
+  // Push local changes to the cloud (debounced) while signed in.
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase || !setup || cloudStatus === "off" || cloudStatus === "signedOut") return;
+    const t = setTimeout(() => {
+      void pushSetup(supabase, setup).then((ok) => setCloudStatus(ok ? "synced" : "error"));
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setup]);
 
   const state = useMemo<AppState | null>(() => {
     if (!setup) return null;
@@ -108,9 +173,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     router.push("/");
   }, [router]);
 
+  const signOutCloud = useCallback(async () => {
+    const supabase = getSupabase();
+    if (supabase) await supabase.auth.signOut();
+  }, []);
+
+  const deleteCloud = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase) return false;
+    return deleteCloudData(supabase);
+  }, []);
+
   const controls = useMemo<AppControls>(
-    () => ({ hasSetup: !!setup, startDemo, completeOnboarding, acceptPlan, addTransaction, deleteTransaction, resetAll }),
-    [setup, startDemo, completeOnboarding, acceptPlan, addTransaction, deleteTransaction, resetAll],
+    () => ({
+      hasSetup: !!setup,
+      startDemo,
+      completeOnboarding,
+      acceptPlan,
+      addTransaction,
+      deleteTransaction,
+      resetAll,
+      cloud: { configured: cloudSyncConfigured(), status: cloudStatus, email: cloudEmail },
+      signOutCloud,
+      deleteCloud,
+      refreshCloud: () => void reconcile(),
+    }),
+    [setup, startDemo, completeOnboarding, acceptPlan, addTransaction, deleteTransaction, resetAll, cloudStatus, cloudEmail, signOutCloud, deleteCloud, reconcile],
   );
 
   if (setup === undefined) {

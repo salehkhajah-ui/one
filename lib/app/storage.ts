@@ -47,6 +47,8 @@ export interface UserSetup {
   version: 1;
   mode: "demo" | "manual";
   createdAtISO: string;
+  /** stamped on every save; drives newest-wins cloud sync */
+  updatedAtISO?: string;
   /** manual mode only */
   manual?: {
     displayName: string;
@@ -84,6 +86,7 @@ export function loadSetup(): UserSetup | null {
 export function saveSetup(setup: UserSetup): void {
   if (typeof window === "undefined") return;
   try {
+    setup.updatedAtISO = new Date().toISOString();
     window.localStorage.setItem(KEY, JSON.stringify(setup));
   } catch {
     // Storage may be unavailable (private mode) — the app still works, it just won't persist.
