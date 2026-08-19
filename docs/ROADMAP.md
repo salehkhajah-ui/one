@@ -33,7 +33,7 @@ Launch → Demo user (Omar) → Home with Safe to Spend → six money buckets �
 - Onboarding flow (10 screens per PRODUCT spec) writing a real `financial_profiles` row
 - Manual accounts + manual transactions; CSV import
 - Persistent goals, allocations, contributions
-- Cash-flow forecast (30-day projected balance, low-cash warnings)
+- ~~Cash-flow forecast (30-day projected balance, low-cash warnings)~~ ✅ shipped early (Home "Next 30 days" card)
 - ONE Score history
 - Data export + account deletion
 

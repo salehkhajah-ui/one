@@ -22,6 +22,7 @@ import {
   type GoalContributionPlan,
   type GoalProjection,
 } from "../engine/goals";
+import { calculateCashFlowForecast, type CashFlowForecast } from "../engine/forecast";
 import { calculateSafeToSpend } from "../engine/safeToSpend";
 import { calculateOneScore } from "../engine/score";
 import { evaluateWorthIt, type WorthItInput, type WorthItResult } from "../engine/worthIt";
@@ -94,6 +95,9 @@ export interface AppState {
   secondaryInsight: MoneyInsight | null;
   score: OneScore;
   monthSpendByCategory: Array<{ category: Category; amountMinor: number }>;
+  forecast: CashFlowForecast;
+  /** how the forecast's daily spending estimate was derived (explainability) */
+  forecastBasis: string;
   evaluatePurchase: (itemName: string, priceMinor: number) => WorthItResult;
 }
 
@@ -281,6 +285,31 @@ export function buildAppState(
     .map(([category, amountMinor]) => ({ category, amountMinor }))
     .sort((a, b) => b.amountMinor - a.amountMinor);
 
+  // 30-day cash-flow forecast — daily run-rate from real history when it exists,
+  // otherwise from the plan (essentials + enjoy pace).
+  const thirtyDaysAgo = addDays(todayISO, -30);
+  const nonRecurringSpend30 = sumMinor(
+    transactions
+      .filter((t) => t.direction === "debit" && !t.isRecurring && t.transactionDate >= thirtyDaysAgo)
+      .map((t) => t.amountMinor),
+  );
+  const dailySpendMinor = hasHistory
+    ? divideMinor(nonRecurringSpend30, 30, "round")
+    : divideMinor(profile.essentialMonthlyEstimateMinor + enjoyMonthlyMinor, 30, "round");
+  const forecastBasis = hasHistory
+    ? "your average daily spending over the last 30 days (bills counted separately)"
+    : "your plan's essentials + Enjoy pace (no spending history yet)";
+  const forecast = calculateCashFlowForecast({
+    todayISO,
+    startBalanceMinor: checking?.balanceMinor ?? 0,
+    bufferMinor: profile.minimumCashBufferMinor,
+    horizonDays: 30,
+    salaryMinor: profile.monthlyIncomeMinor ?? 0,
+    paydayDayOfMonth: profile.paydayDayOfMonth,
+    scheduled: recurring.filter((r) => r.type === "bill" || r.type === "subscription"),
+    dailySpendMinor,
+  });
+
   const enjoyAvailableMinor = clampNonNegative(
     Math.min(prorate(enjoyMonthlyMinor, daysToPayday), safeToSpend.discretionaryMinor),
   );
@@ -338,6 +367,8 @@ export function buildAppState(
     secondaryInsight,
     score,
     monthSpendByCategory,
+    forecast,
+    forecastBasis,
     evaluatePurchase,
   };
 }

@@ -57,6 +57,10 @@ FV = P·(1+r)^n + C·((1+r)^n − 1)/r      (r = annual/12, n = months)
 
 Floating point is permitted **only** here (hypothetical projection, not a balance), rounded once at the end. Every result returns its assumptions: hypothetical, inflation excluded, not guaranteed, investments can lose value, ONE does not execute investments. UI must display them.
 
+## Cash-flow forecast (`forecast.ts`)
+
+Day-by-day balance projection over 30 days (max 90): salary lands on payday, each active recurring bill on its expected day-of-month, and a daily spending run-rate subtracts every day. Run-rate: with history, the average daily **non-recurring** debit over the last 30 days (bills counted separately to avoid double-counting); without history, (essentials + Enjoy pace) ÷ 30. Reports the minimum point and the **first day below the user's cash buffer** (`firstBelowBufferISO`), which powers the low-cash warning. Balances may go negative and are reported honestly. A projection, not a promise — the basis string is surfaced in the UI.
+
 ## ONE Score (`score.ts`)
 
 0–100 resilience (NOT a credit score). Weights: Emergency 30 · Cash Flow 25 · Growth 20 · Goals 25.

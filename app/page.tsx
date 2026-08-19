@@ -6,6 +6,7 @@ import { track } from "../lib/analytics";
 import { formatDateShort, money } from "../lib/i18n";
 import type { Transaction } from "../lib/engine/types";
 import { useApp, useAppControls } from "./components/AppProvider";
+import { ForecastCard } from "./components/ForecastCard";
 import { BUCKET_COLORS, BucketDot, Disclaimer, HeroMoney, Money, ProgressBar, SectionHeader, StackBar, Why } from "./components/ui";
 
 function greeting(): string {
@@ -155,6 +156,10 @@ export default function HomePage() {
         </ul>
         <p className="micro mt-4">Every dinar has a job.</p>
       </section>
+
+      {/* 30-day forecast */}
+      <SectionHeader title="Next 30 days" />
+      <ForecastCard forecast={state.forecast} basis={state.forecastBasis} currency="KWD" />
 
       {/* ONE recommends */}
       {insight && (
