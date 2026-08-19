@@ -106,6 +106,14 @@ export default function HomePage() {
           buffer, {money(sts.breakdown.goalCommitmentsMinor)} goal pace and {money(sts.breakdown.plannedGrowthMinor)} for
           Grow. What remains is spread across {sts.daysRemaining} days.
         </Why>
+        <div className="mt-4 flex gap-2">
+          <Link href="/add" className="btn btn-quiet flex-1">
+            Record spending
+          </Link>
+          <Link href="/worth-it" className="btn btn-quiet flex-1">
+            Worth it?
+          </Link>
+        </div>
       </section>
 
       {/* Your money */}
@@ -221,20 +229,6 @@ export default function HomePage() {
         </Why>
       </section>
 
-      {/* Worth It shortcut */}
-      <Link href="/worth-it" className="card mt-6 flex items-center gap-3">
-        <span className="text-xl" aria-hidden>
-          🤔
-        </span>
-        <div className="flex-1">
-          <div className="text-[15px] font-bold">Worth it?</div>
-          <div className="micro">Thinking about a purchase? See its real impact first.</div>
-        </div>
-        <span className="text-[18px]" style={{ color: "var(--text-3)" }} aria-hidden>
-          ›
-        </span>
-      </Link>
-
       {/* Goals */}
       <SectionHeader
         title="Goals"
@@ -263,7 +257,19 @@ export default function HomePage() {
       </div>
 
       {/* Recent activity */}
-      <SectionHeader title="Recent activity" />
+      <SectionHeader
+        title="Recent activity"
+        action={
+          <span className="flex items-center gap-4">
+            <Link href="/add" className="micro font-semibold" style={{ color: "var(--accent)" }}>
+              + Add
+            </Link>
+            <Link href="/activity" className="micro font-semibold" style={{ color: "var(--accent)" }}>
+              All →
+            </Link>
+          </span>
+        }
+      />
       {recent.length === 0 ? (
         <section className="card">
           <p className="subtle">No transactions yet — nothing needs your attention.</p>

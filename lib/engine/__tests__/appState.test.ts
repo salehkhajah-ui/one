@@ -56,6 +56,44 @@ describe("manual mode (no transaction history)", () => {
   });
 });
 
+describe("user-entered transactions", () => {
+  it("spending moves the checking balance and Safe to Spend down", () => {
+    const before = buildAppState(manualBundle(manual, "2026-08-19"), "manual", NOW);
+    const after = buildAppState(
+      manualBundle(manual, "2026-08-19", [
+        { id: "user-tx-1", amountMinor: fromMajor(50), direction: "debit", merchant: "Coffee", category: "Dining", dateISO: "2026-08-19" },
+      ]),
+      "manual",
+      NOW,
+    );
+    expect(after.safeToSpendInput.availableCashMinor).toBe(before.safeToSpendInput.availableCashMinor - fromMajor(50));
+    expect(after.safeToSpend.discretionaryMinor).toBe(before.safeToSpend.discretionaryMinor - fromMajor(50));
+    expect(after.transactions).toHaveLength(1);
+    expect(after.monthSpendByCategory.find((c) => c.category === "Dining")?.amountMinor).toBe(fromMajor(50));
+  });
+
+  it("income raises the balance; unknown categories fall back to Other; balance never goes negative", () => {
+    const state = buildAppState(
+      manualBundle(manual, "2026-08-19", [
+        { id: "user-tx-1", amountMinor: fromMajor(100), direction: "credit", merchant: "Bonus", category: "Income", dateISO: "2026-08-18" },
+        { id: "user-tx-2", amountMinor: fromMajor(10), direction: "debit", merchant: "??", category: "Nonsense", dateISO: "2026-08-19" },
+      ]),
+      "manual",
+      NOW,
+    );
+    expect(state.safeToSpendInput.availableCashMinor).toBe(fromMajor(600 + 100 - 10));
+    expect(state.transactions.find((t) => t.id === "user-tx-2")?.category).toBe("Other");
+    const drained = buildAppState(
+      manualBundle(manual, "2026-08-19", [
+        { id: "user-tx-3", amountMinor: fromMajor(9999), direction: "debit", merchant: "Big", category: "Shopping", dateISO: "2026-08-19" },
+      ]),
+      "manual",
+      NOW,
+    );
+    expect(drained.safeToSpendInput.availableCashMinor).toBe(0);
+  });
+});
+
 describe("accepted plan override", () => {
   const bundle = manualBundle(manual, "2026-08-19");
   const rec = buildAppState(bundle, "manual", NOW);

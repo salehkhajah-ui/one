@@ -6,13 +6,15 @@ import { track } from "../../lib/analytics";
 import { toISODate } from "../../lib/engine/dates";
 import { demoBundle, manualBundle } from "../../lib/app/bundle";
 import { buildAppState, type AppState } from "../../lib/app/state";
-import { clearSetup, loadSetup, saveSetup, type UserSetup } from "../../lib/app/storage";
+import { clearSetup, loadSetup, saveSetup, type StoredTransaction, type UserSetup } from "../../lib/app/storage";
 
 interface AppControls {
   hasSetup: boolean;
   startDemo: () => void;
   completeOnboarding: (manual: NonNullable<UserSetup["manual"]>) => void;
   acceptPlan: (flex: { protectMinor: number; goalsMinor: number; growMinor: number }) => void;
+  addTransaction: (tx: Omit<StoredTransaction, "id">) => void;
+  deleteTransaction: (id: string) => void;
   resetAll: () => void;
 }
 
@@ -33,10 +35,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!setup) return null;
     const now = new Date();
     const todayISO = toISODate(now);
+    const userTx = setup.transactions ?? [];
     if (setup.mode === "manual" && setup.manual) {
-      return buildAppState(manualBundle(setup.manual, todayISO), "manual", now, setup.acceptedPlan);
+      return buildAppState(manualBundle(setup.manual, todayISO, userTx), "manual", now, setup.acceptedPlan);
     }
-    return buildAppState(demoBundle(todayISO), "demo", now, setup.acceptedPlan);
+    return buildAppState(demoBundle(todayISO, userTx), "demo", now, setup.acceptedPlan);
   }, [setup]);
 
   const startDemo = useCallback(() => {
@@ -79,6 +82,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [state],
   );
 
+  const addTransaction = useCallback<AppControls["addTransaction"]>((tx) => {
+    setSetup((prev) => {
+      if (!prev) return prev;
+      const stored: StoredTransaction = { ...tx, id: `user-tx-${Date.now()}-${Math.floor(Math.random() * 1e6)}` };
+      const next: UserSetup = { ...prev, transactions: [stored, ...(prev.transactions ?? [])] };
+      saveSetup(next);
+      return next;
+    });
+    track("transaction_added");
+  }, []);
+
+  const deleteTransaction = useCallback((id: string) => {
+    setSetup((prev) => {
+      if (!prev) return prev;
+      const next: UserSetup = { ...prev, transactions: (prev.transactions ?? []).filter((t) => t.id !== id) };
+      saveSetup(next);
+      return next;
+    });
+  }, []);
+
   const resetAll = useCallback(() => {
     clearSetup();
     setSetup(null);
@@ -86,8 +109,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const controls = useMemo<AppControls>(
-    () => ({ hasSetup: !!setup, startDemo, completeOnboarding, acceptPlan, resetAll }),
-    [setup, startDemo, completeOnboarding, acceptPlan, resetAll],
+    () => ({ hasSetup: !!setup, startDemo, completeOnboarding, acceptPlan, addTransaction, deleteTransaction, resetAll }),
+    [setup, startDemo, completeOnboarding, acceptPlan, addTransaction, deleteTransaction, resetAll],
   );
 
   if (setup === undefined) {

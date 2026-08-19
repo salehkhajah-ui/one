@@ -24,6 +24,17 @@ export interface StoredGoal {
   priority: Goal["priority"];
 }
 
+export interface StoredTransaction {
+  id: string;
+  amountMinor: number;
+  direction: "credit" | "debit";
+  merchant: string;
+  category: string;
+  /** ISO date */
+  dateISO: string;
+  note?: string;
+}
+
 export interface AcceptedPlan {
   /** plan applies until this payday (ISO); stale plans are ignored */
   appliedUntilISO: string;
@@ -51,6 +62,8 @@ export interface UserSetup {
     goals: StoredGoal[];
   };
   acceptedPlan?: AcceptedPlan;
+  /** user-entered transactions (both modes); merged into the data bundle */
+  transactions?: StoredTransaction[];
 }
 
 const KEY = "one.setup.v1";

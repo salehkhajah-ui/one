@@ -2,25 +2,80 @@
  * Data bundle sources: demo (seeded sample data) or manual (the user's own
  * numbers from onboarding). Both feed the same buildAppState.
  */
-import { fromMajor } from "../money";
-import type { Account, FinancialProfile, Goal, RecurringItem } from "../engine/types";
+import { clampNonNegative, fromMajor, sumMinor } from "../money";
+import type { Account, Category, FinancialProfile, Goal, RecurringItem, Transaction } from "../engine/types";
 import { parseISODate, toISODate } from "../engine/dates";
 import { demoAccounts, demoGoals, demoProfile, demoRecurringItems, generateDemoTransactions } from "../demo/data";
 import type { DataBundle } from "./state";
-import type { UserSetup } from "./storage";
+import type { StoredTransaction, UserSetup } from "./storage";
 
-export function demoBundle(todayISO: string): DataBundle {
+const KNOWN_CATEGORIES: Category[] = [
+  "Income", "Housing", "Groceries", "Dining", "Transport", "Shopping", "Entertainment", "Subscriptions",
+  "Utilities", "Health", "Education", "Travel", "Debt", "Transfers", "Investments", "Savings", "Fees", "Cash", "Other",
+];
+
+function toEngineTransaction(t: StoredTransaction, userId: string): Transaction {
+  const category = (KNOWN_CATEGORIES as string[]).includes(t.category) ? (t.category as Category) : "Other";
+  return {
+    id: t.id,
+    userId,
+    accountId: "acc-checking",
+    amountMinor: t.amountMinor,
+    currency: "KWD",
+    direction: t.direction,
+    merchant: t.merchant,
+    merchantNormalized: t.merchant.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    description: t.note ?? t.merchant,
+    category,
+    transactionDate: t.dateISO,
+    postedDate: t.dateISO,
+    isRecurring: false,
+    source: "manual",
+    confidence: 1,
+  };
+}
+
+/** Merge user-entered transactions into a bundle: history grows and the checking balance moves. */
+function applyUserTransactions(
+  accounts: Account[],
+  transactions: Transaction[],
+  userTx: StoredTransaction[],
+  userId: string,
+): { accounts: Account[]; transactions: Transaction[] } {
+  if (userTx.length === 0) return { accounts, transactions };
+  const engineTx = userTx.map((t) => toEngineTransaction(t, userId));
+  const net =
+    sumMinor(engineTx.filter((t) => t.direction === "credit").map((t) => t.amountMinor)) -
+    sumMinor(engineTx.filter((t) => t.direction === "debit").map((t) => t.amountMinor));
+  const adjusted = accounts.map((a) =>
+    a.kind === "checking" ? { ...a, balanceMinor: clampNonNegative(a.balanceMinor + net) } : a,
+  );
+  const merged = [...engineTx, ...transactions].sort((a, b) => b.transactionDate.localeCompare(a.transactionDate));
+  return { accounts: adjusted, transactions: merged };
+}
+
+export function demoBundle(todayISO: string, userTx: StoredTransaction[] = []): DataBundle {
+  const { accounts, transactions } = applyUserTransactions(
+    demoAccounts,
+    generateDemoTransactions(todayISO),
+    userTx,
+    demoProfile.userId,
+  );
   return {
     profile: demoProfile,
-    accounts: demoAccounts,
+    accounts,
     goals: demoGoals(todayISO),
-    transactions: generateDemoTransactions(todayISO),
+    transactions,
     recurring: demoRecurringItems(todayISO),
     hasHistory: true,
   };
 }
 
-export function manualBundle(setup: NonNullable<UserSetup["manual"]>, todayISO: string): DataBundle {
+export function manualBundle(
+  setup: NonNullable<UserSetup["manual"]>,
+  todayISO: string,
+  userTx: StoredTransaction[] = [],
+): DataBundle {
   const profile: FinancialProfile = {
     userId: "local-user",
     displayName: setup.displayName || "there",
@@ -82,5 +137,13 @@ export function manualBundle(setup: NonNullable<UserSetup["manual"]>, todayISO: 
     };
   });
 
-  return { profile, accounts, goals, transactions: [], recurring, hasHistory: false };
+  const merged = applyUserTransactions(accounts, [], userTx, profile.userId);
+  return {
+    profile,
+    accounts: merged.accounts,
+    goals,
+    transactions: merged.transactions,
+    recurring,
+    hasHistory: false,
+  };
 }

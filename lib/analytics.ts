@@ -6,6 +6,7 @@ export type AnalyticsEvent =
   | "onboarding_started"
   | "onboarding_completed"
   | "payday_plan_viewed"
+  | "transaction_added"
   | "demo_started"
   | "safe_to_spend_viewed"
   | "allocation_generated"

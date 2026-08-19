@@ -13,6 +13,13 @@ Launch → Demo user (Omar) → Home with Safe to Spend → six money buckets �
 - Accepted plans persist per pay cycle (virtual allocations, local storage) and drive Safe to Spend/buckets until payday
 - Local persistence layer (`lib/app/storage.ts`) mirroring the Supabase data model for a clean Milestone 2 swap
 
+## Milestone 1.6 — Live feedback loop ✅
+
+- Record spending/income (`/add`): amount, merchant, category chips; saved locally in both modes
+- Balances and **Safe to Spend recalculate instantly** on every recorded transaction (verified end-to-end)
+- Activity screen (`/activity`): day-grouped history, month in/out summary, delete for user-added entries
+- Home hero gains quick actions (Record spending · Worth it?)
+
 ## Milestone 2 — Real user data
 
 - Supabase: Postgres, Auth (email + OTP/magic link; Apple/Google later), RLS everywhere
