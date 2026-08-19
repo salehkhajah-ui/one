@@ -1,16 +1,34 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import "./globals.css";
+import { DemoProvider } from "./components/DemoProvider";
+import { BottomNav } from "./components/BottomNav";
 
 export const metadata: Metadata = {
-  title: "One",
-  description: "Project One",
+  title: "ONE — Every dinar has a mind",
+  description: "ONE gives every dinar a job: safe to spend, protection, goals and long-term growth.",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "ONE" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f1a" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f4f8" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif" }}>
-        {children}
+      <body>
+        <DemoProvider>
+          <div className="shell">{children}</div>
+          <BottomNav />
+        </DemoProvider>
       </body>
     </html>
   );

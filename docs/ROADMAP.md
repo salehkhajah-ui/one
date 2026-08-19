@@ -1,0 +1,34 @@
+# ONE — Roadmap
+
+## Milestone 1 — Demo-mode vertical slice ✅ (current)
+
+Launch → Demo user (Omar) → Home with Safe to Spend → six money buckets → allocation recommendation with adjustable amounts and visible consequences → Goals with progress/ETA → Grow projections (hypothetical, labeled) → Worth It? simulator → ONE Score → Ask ONE with mock provider answering from real engine functions. Realistic seeded Kuwaiti data (salary 1,200 KD, payday 25th, 4 months of transactions). No external dependencies.
+
+## Milestone 2 — Real user data
+
+- Supabase: Postgres, Auth (email + OTP/magic link; Apple/Google later), RLS everywhere
+- Onboarding flow (10 screens per PRODUCT spec) writing a real `financial_profiles` row
+- Manual accounts + manual transactions; CSV import
+- Persistent goals, allocations, contributions
+- Cash-flow forecast (30-day projected balance, low-cash warnings)
+- ONE Score history
+- Data export + account deletion
+
+## Milestone 3 — Intelligence
+
+- Deterministic merchant rules → transaction categorization; user corrections become rules
+- Recurring-transaction detection (merchant/amount/interval similarity) powering forecast
+- Money Leak insights (duplicates, price increases, unused subscriptions) as `insights` rows
+- Cash-flow anomaly detection
+- Real `AIProvider` implementation behind env config: explanation layer + Ask ONE tools (structured JSON only), optional AI classification fallback with stored confidence
+
+## Milestone 4 — External integrations
+
+- `BankConnectionProvider` real adapter (verified provider only — never fake Kuwait bank connectivity)
+- Secure token architecture, sync jobs, webhooks
+- Notification architecture (payday, Safe-to-Spend change, bill approaching, goal milestone, leak found) — value-first, no spam
+- Share cards (percentages only; never salary/balance/net-worth without explicit choice)
+
+## Later / vision
+
+ONE Levels + Money Missions, streaks (no dark patterns), Arabic + RTL, multi-currency, regulated-provider investing abstraction, ONE Family/Travel/Life expansions. Money is the wedge; keep the MVP unpolluted.

@@ -1,0 +1,407 @@
+@import "tailwindcss";
+
+/* ============ ONE design tokens ============ */
+:root {
+  /* Dark-first premium fintech surface system */
+  --page: #0b0f1a;
+  --card: #151b29;
+  --card-elevated: #1b2334;
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.12);
+  --text: #eef2f9;
+  --text-2: #93a0b4;
+  --text-3: #5c6a80;
+  --accent: #7fb0ff;
+  --accent-ink: #0b0f1a;
+  --brand: #e9c766;
+  --positive: #4fc47f;
+  --caution: #e5b04e;
+
+  /* Bucket palette — validated (dataviz six checks, dark surface #151B29) */
+  --bucket-life: #4a82ea;
+  --bucket-bills: #a03bc4;
+  --bucket-protect: #12a5b0;
+  --bucket-grow: #2a7b36;
+  --bucket-goals: #c4831b;
+  --bucket-enjoy: #e25a80;
+
+  /* Grow scenario ordinal ramp (one hue, light→dark) */
+  --grow-1: #7fd08f;
+  --grow-2: #3f9e51;
+  --grow-3: #1f6b2c;
+
+  --nav-h: 64px;
+  --radius: 20px;
+  --radius-sm: 14px;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --page: #f2f4f8;
+    --card: #ffffff;
+    --card-elevated: #ffffff;
+    --hairline: rgba(16, 21, 30, 0.08);
+    --hairline-strong: rgba(16, 21, 30, 0.14);
+    --text: #10151e;
+    --text-2: #5a6678;
+    --text-3: #8b96a8;
+    --accent: #2a66d9;
+    --accent-ink: #ffffff;
+    --brand: #a67c1b;
+    --positive: #1e7c43;
+    --caution: #9a6410;
+
+    /* Bucket palette — validated (light surface #FFFFFF) */
+    --bucket-life: #2a66d9;
+    --bucket-bills: #8b2fad;
+    --bucket-protect: #0894a6;
+    --bucket-grow: #256b2e;
+    --bucket-goals: #b57200;
+    --bucket-enjoy: #c93a64;
+
+    --grow-1: #8fc79b;
+    --grow-2: #3d8a4e;
+    --grow-3: #1d5426;
+    color-scheme: light;
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background: var(--page);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* Phone-shaped column on any screen */
+.shell {
+  max-width: 430px;
+  margin-inline: auto;
+  min-height: 100dvh;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+.screen {
+  padding: 16px 18px 8px;
+  animation: screen-in 240ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
+}
+
+/* ============ Cards & type ============ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.card-elevated {
+  background: linear-gradient(180deg, var(--card-elevated), var(--card));
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.hero-number {
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.hero-unit {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+}
+
+.subtle {
+  color: var(--text-2);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.micro {
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ============ Buttons ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 650;
+  padding: 13px 20px;
+  min-height: 46px;
+  border: 1px solid transparent;
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease,
+    background 120ms ease;
+  cursor: pointer;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--text);
+  color: var(--page);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--hairline-strong);
+  color: var(--text);
+}
+
+.btn-quiet {
+  background: color-mix(in oklab, var(--text) 7%, transparent);
+  color: var(--text);
+}
+
+/* ============ Bottom navigation ============ */
+.bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.bottom-nav-inner {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 430px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: color-mix(in oklab, var(--page) 88%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--hairline);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+  min-height: 44px;
+}
+
+.nav-item[data-active="true"] {
+  color: var(--text);
+}
+
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ============ Buckets ============ */
+.bucket-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
+  flex: none;
+}
+
+.stack-bar {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.stack-seg {
+  height: 100%;
+  min-width: 3px;
+  border-radius: 2px;
+}
+
+/* ============ Progress ============ */
+.progress-track {
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--text) 9%, transparent);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 400ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* ============ Inputs ============ */
+.input {
+  width: 100%;
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 16px;
+  padding: 13px 15px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.input::placeholder {
+  color: var(--text-3);
+}
+
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--text) 12%, transparent);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--text);
+  margin-top: -8px;
+  border: none;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--text) 12%, transparent);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--text);
+  border: none;
+}
+
+/* ============ Chat ============ */
+.chat-bubble-user {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 18px 18px 4px 18px;
+  padding: 11px 15px;
+  max-width: 85%;
+  margin-inline-start: auto;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.chat-bubble-one {
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: 18px 18px 18px 4px;
+  padding: 12px 15px;
+  max-width: 92%;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ============ Misc ============ */
+.divider {
+  height: 1px;
+  background: var(--hairline);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--text-2);
+  cursor: pointer;
+  min-height: 38px;
+}
+
+.chip:active {
+  transform: scale(0.97);
+}
+
+.score-ring {
+  transform: rotate(-90deg);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
