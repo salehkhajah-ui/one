@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Titillium_Web } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
+
+const titillium = Titillium_Web({
+  weight: ["300", "400", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 import { AppProvider } from "./components/AppProvider";
 import { BottomNav } from "./components/BottomNav";
 
@@ -16,14 +24,14 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0b0f1a" },
-    { media: "(prefers-color-scheme: light)", color: "#f2f4f8" },
+    { media: "(prefers-color-scheme: dark)", color: "#030608" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f6f7" },
   ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={titillium.variable}>
       <body>
         <AppProvider>
           <div className="shell">{children}</div>
