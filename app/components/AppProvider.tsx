@@ -214,8 +214,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const onboarding = pathname.startsWith("/onboarding");
-  if (!setup && !onboarding) {
+  const gateExempt = pathname.startsWith("/onboarding") || pathname.startsWith("/privacy");
+  if (!setup && !gateExempt) {
     return (
       <ControlsContext.Provider value={controls}>
         <FirstRun />

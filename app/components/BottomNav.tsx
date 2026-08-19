@@ -51,7 +51,8 @@ const TABS: Array<{ href: string; label: string; icon: keyof typeof ICONS }> = [
 export function BottomNav() {
   const pathname = usePathname();
   const state = useAppMaybe();
-  if (!state || pathname.startsWith("/onboarding") || pathname.startsWith("/payday")) return null;
+  if (!state || pathname.startsWith("/onboarding") || pathname.startsWith("/payday") || pathname.startsWith("/privacy"))
+    return null;
   return (
     <nav className="bottom-nav" aria-label="Main">
       <div className="bottom-nav-inner">
