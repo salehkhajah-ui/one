@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import type { BucketKey } from "../../lib/engine/types";
-import { amount, currencyUnitLabel, money } from "../../lib/i18n";
+import { amount, currencyUnitLabel, money, t } from "../../lib/i18n";
+import type { StringKey } from "../../lib/i18n-strings";
 import type { CurrencyCode } from "../../lib/money";
 
 /** Bucket colors reference the validated palette tokens (see globals.css). */
@@ -15,14 +16,18 @@ export const BUCKET_COLORS: Record<BucketKey, string> = {
   enjoy: "var(--bucket-enjoy)",
 };
 
-export const BUCKET_LABELS: Record<BucketKey, string> = {
-  life: "Life",
-  bills: "Bills",
-  protect: "Protect",
-  grow: "Grow",
-  goals: "Goals",
-  enjoy: "Enjoy",
+const BUCKET_LABEL_KEYS: Record<BucketKey, StringKey> = {
+  life: "bucket.life",
+  bills: "bucket.bills",
+  protect: "bucket.protect",
+  grow: "bucket.grow",
+  goals: "bucket.goals",
+  enjoy: "bucket.enjoy",
 };
+
+export function bucketLabel(key: BucketKey): string {
+  return t(BUCKET_LABEL_KEYS[key]);
+}
 
 export function Money({
   minor,
@@ -61,7 +66,7 @@ export function StackBar({ parts }: { parts: Array<{ key: BucketKey; amountMinor
   const total = parts.reduce((a, p) => a + p.amountMinor, 0);
   if (total <= 0) return <div className="stack-bar" style={{ background: "var(--hairline)" }} aria-hidden />;
   return (
-    <div className="stack-bar" role="img" aria-label={parts.map((p) => `${BUCKET_LABELS[p.key]} ${money(p.amountMinor)}`).join(", ")}>
+    <div className="stack-bar" role="img" aria-label={parts.map((p) => `${bucketLabel(p.key)} ${money(p.amountMinor)}`).join(", ")}>
       {parts
         .filter((p) => p.amountMinor > 0)
         .map((p) => (
@@ -94,7 +99,8 @@ export function Disclaimer({ children }: { children: ReactNode }) {
 }
 
 /** Expandable "Why?" — every recommendation must be able to explain itself. */
-export function Why({ summary = "Why?", children }: { summary?: string; children: ReactNode }) {
+export function Why({ summary, children }: { summary?: string; children: ReactNode }) {
+  summary = summary ?? t("common.why");
   return (
     <details className="mt-2 group">
       <summary className="micro cursor-pointer select-none font-semibold" style={{ color: "var(--accent)" }}>

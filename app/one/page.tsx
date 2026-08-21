@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { mockAIProvider } from "../../lib/ai/mock";
-import { SUGGESTED_PROMPTS, type ChatAnswer } from "../../lib/ai/provider";
+import { SUGGESTED_PROMPT_KEYS, type ChatAnswer } from "../../lib/ai/provider";
 import { track } from "../../lib/analytics";
-import { formatDateShort, money } from "../../lib/i18n";
+import { formatDateShort, money, t } from "../../lib/i18n";
 import { useApp } from "../components/AppProvider";
 import { BUCKET_COLORS, Money, ProgressBar } from "../components/ui";
 
@@ -43,9 +43,9 @@ export default function AskOnePage() {
     <main className="screen flex min-h-[calc(100dvh-var(--nav-h))] flex-col">
       <header className="pt-2">
         <div className="eyebrow" style={{ color: "var(--brand)" }}>
-          Ask ONE
+          {t("chat.eyebrow")}
         </div>
-        <h1 className="mt-1 text-[22px] font-bold tracking-tight">Your money, answered</h1>
+        <h1 className="mt-1 text-[22px] font-bold tracking-tight">{t("chat.title")}</h1>
       </header>
 
       <div className="flex-1 pb-4">
@@ -54,20 +54,15 @@ export default function AskOnePage() {
             <span className="text-3xl" aria-hidden>
               ✦
             </span>
-            <p className="subtle max-w-[280px]">
-              Ask about your real numbers — Safe to Spend, goals, spending, or whether something is affordable.
-            </p>
+            <p className="subtle max-w-[280px]">{t("chat.emptyIntro")}</p>
             <div className="mt-2 flex flex-wrap justify-center gap-2">
-              {SUGGESTED_PROMPTS.map((p) => (
-                <button key={p} className="chip" onClick={() => ask(p)}>
-                  {p}
+              {SUGGESTED_PROMPT_KEYS.map((key) => (
+                <button key={key} className="chip" onClick={() => ask(t(key))}>
+                  {t(key)}
                 </button>
               ))}
             </div>
-            <p className="micro max-w-[300px]">
-              Demo Mode uses a mock assistant wired to ONE&apos;s calculation engine — answers come from your data, never
-              invented.
-            </p>
+            <p className="micro max-w-[300px]">{t("chat.mockNote")}</p>
           </div>
         ) : (
           <div className="mt-5 flex flex-col gap-3">
@@ -91,11 +86,11 @@ export default function AskOnePage() {
       <div className="sticky bottom-0 flex gap-2 pb-2 pt-2" style={{ background: "var(--page)" }}>
         <input
           className="input flex-1"
-          placeholder="Ask ONE anything about your money…"
+          placeholder={t("chat.placeholder")}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ask(input)}
-          aria-label="Ask ONE"
+          aria-label={t("chat.eyebrow")}
         />
         <button className="btn btn-primary" onClick={() => ask(input)} aria-label="Send">
           ↑
@@ -111,11 +106,9 @@ function AnswerCard({ card }: { card: NonNullable<ChatAnswer["card"]> }) {
   if (card.kind === "safeToSpend") {
     return (
       <section className="card" style={{ padding: 14, maxWidth: "92%" }}>
-        <div className="eyebrow">Safe to spend</div>
+        <div className="eyebrow">{t("chat.sts.card")}</div>
         <div className="mt-1 text-[24px] font-bold money">{money(card.dailyMinor)}</div>
-        <div className="micro">
-          per day · {money(card.discretionaryMinor)} total over {card.daysRemaining} days
-        </div>
+        <div className="micro">{t("chat.sts.detail", { total: money(card.discretionaryMinor), days: card.daysRemaining })}</div>
       </section>
     );
   }
@@ -124,23 +117,23 @@ function AnswerCard({ card }: { card: NonNullable<ChatAnswer["card"]> }) {
     const r = card.result;
     return (
       <section className="card" style={{ padding: 14, maxWidth: "92%" }}>
-        <div className="eyebrow">Impact</div>
+        <div className="eyebrow">{t("chat.impact")}</div>
         <div className="mt-2 flex flex-col gap-1.5 text-[13.5px]">
           <div className="flex justify-between gap-4">
-            <span className="subtle">Safe to Spend/day</span>
-            <span className="font-semibold money">
+            <span className="subtle">{t("wi.stsPerDay")}</span>
+            <span className="font-semibold money" dir="ltr">
               {money(r.dailySafeToSpendBeforeMinor)} → {money(r.dailySafeToSpendAfterMinor)}
             </span>
           </div>
           {r.goalDelayDays !== null && r.goalName && (
             <div className="flex justify-between gap-4">
               <span className="subtle">{r.goalName}</span>
-              <span className="font-semibold">~{r.goalDelayDays} days later</span>
+              <span className="font-semibold">{t("chat.daysLater", { n: r.goalDelayDays })}</span>
             </div>
           )}
           {r.suggestedDateISO && (
             <div className="flex justify-between gap-4">
-              <span className="subtle">Better timing</span>
+              <span className="subtle">{t("wi.betterTiming")}</span>
               <span className="font-semibold" style={{ color: "var(--positive)" }}>
                 {formatDateShort(r.suggestedDateISO)}
               </span>
@@ -165,7 +158,7 @@ function AnswerCard({ card }: { card: NonNullable<ChatAnswer["card"]> }) {
           <ProgressBar pct={g.progressPct} color={BUCKET_COLORS.goals} />
         </div>
         <div className="micro mt-1.5">
-          <Money minor={g.currentMinor} hideDecimals /> of <Money minor={g.targetMinor} hideDecimals />
+          <Money minor={g.currentMinor} hideDecimals /> {t("common.of")} <Money minor={g.targetMinor} hideDecimals />
         </div>
       </section>
     );
@@ -174,10 +167,15 @@ function AnswerCard({ card }: { card: NonNullable<ChatAnswer["card"]> }) {
   if (card.kind === "projection") {
     return (
       <section className="card" style={{ padding: 14, maxWidth: "92%" }}>
-        <div className="eyebrow">Hypothetical</div>
+        <div className="eyebrow">{t("chat.hypothetical")}</div>
         <div className="mt-1 text-[20px] font-bold money">{money(card.futureValueMinor)}</div>
         <div className="micro">
-          {money(card.monthlyMinor)}/month · {card.years} years · {card.scenarioLabel} {card.ratePct}% — not guaranteed
+          {t("chat.projDetail", {
+            monthly: money(card.monthlyMinor),
+            years: card.years,
+            scenario: card.scenarioLabel,
+            rate: card.ratePct,
+          })}
         </div>
       </section>
     );

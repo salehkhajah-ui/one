@@ -4,28 +4,31 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { track } from "../../lib/analytics";
 import type { FinancialProfile } from "../../lib/engine/types";
-import { currencyUnitLabel, money } from "../../lib/i18n";
+import { currencyUnitLabel, money, t } from "../../lib/i18n";
+import type { StringKey } from "../../lib/i18n-strings";
 import { fromMajor } from "../../lib/money";
 import type { StoredBill, StoredGoal, UserSetup } from "../../lib/app/storage";
 import { manualBundle } from "../../lib/app/bundle";
 import { buildAppState } from "../../lib/app/state";
 import { toISODate } from "../../lib/engine/dates";
 import { useAppControls } from "../components/AppProvider";
-import { BUCKET_LABELS, BucketDot, Money, StackBar } from "../components/ui";
+import { bucketLabel, BucketDot, Money, StackBar } from "../components/ui";
 import type { BucketKey } from "../../lib/engine/types";
 
 type Step = "income" | "payday" | "essentials" | "bills" | "protection" | "goals" | "growth" | "generate" | "plan";
 
 const STEPS: Step[] = ["income", "payday", "essentials", "bills", "protection", "goals", "growth", "generate", "plan"];
 
-const GOAL_TEMPLATES: Array<{ key: string; name: string; emoji: string; defaultTargetKD: number }> = [
-  { key: "travel", name: "Travel", emoji: "✈️", defaultTargetKD: 1500 },
-  { key: "car", name: "Car", emoji: "🚗", defaultTargetKD: 5000 },
-  { key: "home", name: "Home", emoji: "🏠", defaultTargetKD: 20000 },
-  { key: "education", name: "Education", emoji: "🎓", defaultTargetKD: 3000 },
-  { key: "wedding", name: "Wedding", emoji: "💍", defaultTargetKD: 6000 },
-  { key: "other", name: "Something else", emoji: "⭐", defaultTargetKD: 1000 },
+const GOAL_TEMPLATES: Array<{ key: string; nameKey: StringKey; emoji: string; defaultTargetKD: number }> = [
+  { key: "travel", nameKey: "onb.goal.travel", emoji: "✈️", defaultTargetKD: 1500 },
+  { key: "car", nameKey: "onb.goal.car", emoji: "🚗", defaultTargetKD: 5000 },
+  { key: "home", nameKey: "onb.goal.home", emoji: "🏠", defaultTargetKD: 20000 },
+  { key: "education", nameKey: "onb.goal.education", emoji: "🎓", defaultTargetKD: 3000 },
+  { key: "wedding", nameKey: "onb.goal.wedding", emoji: "💍", defaultTargetKD: 6000 },
+  { key: "other", nameKey: "onb.goal.other", emoji: "⭐", defaultTargetKD: 1000 },
 ];
+
+const BILL_CHIPS: Array<StringKey> = ["onb.bills.rent", "onb.bills.phone", "onb.bills.internet", "onb.bills.gym", "onb.bills.streaming"];
 
 interface Draft {
   displayName: string;
@@ -108,8 +111,8 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (step === "generate") {
-      const t = setTimeout(() => setStep("plan"), 1900);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setStep("plan"), 1900);
+      return () => clearTimeout(timer);
     }
   }, [step]);
 
@@ -137,27 +140,27 @@ export default function OnboardingPage() {
 
       {step === "income" && (
         <StepShell
-          title="Income"
-          subtitle="How much do you normally receive each month?"
+          title={t("onb.income.title")}
+          subtitle={t("onb.income.subtitle")}
           onNext={() => {
             const v = parseKD(draft.incomeKD);
-            if (v === null || v === 0) return setError("Enter your typical monthly income to continue.");
+            if (v === null || v === 0) return setError(t("onb.income.error"));
             go("payday");
           }}
           error={error}
         >
           <label className="flex flex-col gap-1.5">
-            <span className="micro font-semibold">What should ONE call you? (optional)</span>
+            <span className="micro font-semibold">{t("onb.income.name")}</span>
             <input
               className="input"
-              placeholder="Your first name"
+              placeholder={t("onb.income.namePlaceholder")}
               value={draft.displayName}
               maxLength={30}
               onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
             />
           </label>
           <label className="mt-3 flex flex-col gap-1.5">
-            <span className="micro font-semibold">Monthly income ({currencyUnitLabel("KWD")})</span>
+            <span className="micro font-semibold">{t("onb.income.monthly", { unit: currencyUnitLabel("KWD") })}</span>
             <input
               className="input money"
               placeholder="1200"
@@ -167,14 +170,14 @@ export default function OnboardingPage() {
             />
           </label>
           <div className="mt-3 flex gap-2">
-            {(["salary", "irregular"] as const).map((t) => (
+            {(["salary", "irregular"] as const).map((kind) => (
               <button
-                key={t}
+                key={kind}
                 className="chip"
-                style={draft.incomeType === t ? { borderColor: "var(--brand)", color: "var(--text)" } : undefined}
-                onClick={() => setDraft({ ...draft, incomeType: t })}
+                style={draft.incomeType === kind ? { borderColor: "var(--brand)", color: "var(--text)" } : undefined}
+                onClick={() => setDraft({ ...draft, incomeType: kind })}
               >
-                {t === "salary" ? "Regular salary" : "Irregular — this is my average"}
+                {kind === "salary" ? t("onb.income.salary") : t("onb.income.irregular")}
               </button>
             ))}
           </div>
@@ -182,7 +185,7 @@ export default function OnboardingPage() {
       )}
 
       {step === "payday" && (
-        <StepShell title="Payday" subtitle="When do you usually get paid?" onNext={() => go("essentials")} error={error}>
+        <StepShell title={t("onb.payday.title")} subtitle={t("onb.payday.subtitle")} onNext={() => go("essentials")} error={error}>
           <div className="grid grid-cols-7 gap-2">
             {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
               <button
@@ -198,23 +201,23 @@ export default function OnboardingPage() {
               </button>
             ))}
           </div>
-          <p className="micro mt-3">Day {draft.paydayDay} of each month.</p>
+          <p className="micro mt-3">{t("onb.payday.note", { day: draft.paydayDay })}</p>
         </StepShell>
       )}
 
       {step === "essentials" && (
         <StepShell
-          title="Essentials"
-          subtitle="Roughly how much do you need each month for everyday essentials — food, transport, groceries? (Bills come next.)"
+          title={t("onb.ess.title")}
+          subtitle={t("onb.ess.subtitle")}
           onNext={() => {
             const v = parseKD(draft.essentialsKD);
-            if (v === null) return setError("A rough number is fine — you can refine it later.");
+            if (v === null) return setError(t("onb.ess.error"));
             go("bills");
           }}
           error={error}
         >
           <label className="flex flex-col gap-1.5">
-            <span className="micro font-semibold">Monthly essentials ({currencyUnitLabel("KWD")})</span>
+            <span className="micro font-semibold">{t("onb.ess.label", { unit: currencyUnitLabel("KWD") })}</span>
             <input
               className="input money"
               placeholder="480"
@@ -223,16 +226,16 @@ export default function OnboardingPage() {
               onChange={(e) => setDraft({ ...draft, essentialsKD: e.target.value.replace(/[^\d.]/g, "") })}
             />
           </label>
-          <p className="micro mt-2">An estimate is fine. Later, ONE can estimate this automatically from transactions.</p>
+          <p className="micro mt-2">{t("onb.ess.note")}</p>
         </StepShell>
       )}
 
       {step === "bills" && (
         <StepShell
-          title="Bills"
-          subtitle="Add your major recurring commitments — rent, phone, internet, subscriptions."
+          title={t("onb.bills.title")}
+          subtitle={t("onb.bills.subtitle")}
           onNext={() => go("protection")}
-          nextLabel={draft.bills.length === 0 ? "No bills right now" : "Next"}
+          nextLabel={draft.bills.length === 0 ? t("onb.bills.none") : t("common.next")}
           error={error}
         >
           <div className="flex flex-col gap-3">
@@ -240,7 +243,7 @@ export default function OnboardingPage() {
               <div key={b.id} className="flex items-center gap-2">
                 <input
                   className="input flex-1"
-                  placeholder="Name"
+                  placeholder={t("onb.bills.name")}
                   value={b.name}
                   maxLength={30}
                   onChange={(e) => {
@@ -273,21 +276,21 @@ export default function OnboardingPage() {
             ))}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {["Rent", "Phone", "Internet", "Gym", "Streaming"].map((name) => (
+            {BILL_CHIPS.map((nameKey) => (
               <button
-                key={name}
+                key={nameKey}
                 className="chip"
                 onClick={() =>
                   setDraft({
                     ...draft,
                     bills: [
                       ...draft.bills,
-                      { id: `bill-${Date.now()}-${draft.bills.length}`, name, amountMinor: 0, dayOfMonth: 5 },
+                      { id: `bill-${Date.now()}-${draft.bills.length}`, name: t(nameKey), amountMinor: 0, dayOfMonth: 5 },
                     ],
                   })
                 }
               >
-                + {name}
+                + {t(nameKey)}
               </button>
             ))}
             <button
@@ -302,7 +305,7 @@ export default function OnboardingPage() {
                 })
               }
             >
-              + Other
+              {t("onb.bills.other")}
             </button>
           </div>
         </StepShell>
@@ -310,13 +313,13 @@ export default function OnboardingPage() {
 
       {step === "protection" && (
         <StepShell
-          title="Protection"
-          subtitle="Where does your money stand today?"
+          title={t("onb.prot.title")}
+          subtitle={t("onb.prot.subtitle")}
           onNext={() => go("goals")}
           error={error}
         >
           <label className="flex flex-col gap-1.5">
-            <span className="micro font-semibold">Checking balance right now ({currencyUnitLabel("KWD")})</span>
+            <span className="micro font-semibold">{t("onb.prot.checking", { unit: currencyUnitLabel("KWD") })}</span>
             <input
               className="input money"
               placeholder="700"
@@ -326,7 +329,7 @@ export default function OnboardingPage() {
             />
           </label>
           <label className="mt-3 flex flex-col gap-1.5">
-            <span className="micro font-semibold">Emergency savings today ({currencyUnitLabel("KWD")})</span>
+            <span className="micro font-semibold">{t("onb.prot.savings", { unit: currencyUnitLabel("KWD") })}</span>
             <input
               className="input money"
               placeholder="0"
@@ -335,39 +338,39 @@ export default function OnboardingPage() {
               onChange={(e) => setDraft({ ...draft, protectKD: e.target.value.replace(/[^\d.]/g, "") })}
             />
           </label>
-          <p className="micro mt-2">Zero is a completely fine answer — that&apos;s what Protect is for.</p>
+          <p className="micro mt-2">{t("onb.prot.zeroOk")}</p>
         </StepShell>
       )}
 
       {step === "goals" && (
         <StepShell
-          title="Goals"
-          subtitle="What are you building toward? Pick up to three."
+          title={t("onb.goals.title")}
+          subtitle={t("onb.goals.subtitle")}
           onNext={() => go("growth")}
-          nextLabel={draft.goals.length === 0 ? "Skip for now" : "Next"}
+          nextLabel={draft.goals.length === 0 ? t("onb.goals.skip") : t("common.next")}
           error={error}
         >
           <div className="flex flex-col gap-3">
-            {GOAL_TEMPLATES.map((t) => {
-              const existing = draft.goals.find((g) => g.id === t.key);
+            {GOAL_TEMPLATES.map((tpl) => {
+              const existing = draft.goals.find((g) => g.id === tpl.key);
               return (
-                <div key={t.key}>
+                <div key={tpl.key}>
                   <button
                     className="chip w-full justify-start"
                     style={existing ? { borderColor: "var(--brand)", color: "var(--text)" } : undefined}
                     onClick={() => {
                       if (existing) {
-                        setDraft({ ...draft, goals: draft.goals.filter((g) => g.id !== t.key) });
+                        setDraft({ ...draft, goals: draft.goals.filter((g) => g.id !== tpl.key) });
                       } else if (draft.goals.length < 3) {
                         setDraft({
                           ...draft,
                           goals: [
                             ...draft.goals,
                             {
-                              id: t.key,
-                              name: t.name,
-                              emoji: t.emoji,
-                              targetMinor: fromMajor(t.defaultTargetKD),
+                              id: tpl.key,
+                              name: t(tpl.nameKey),
+                              emoji: tpl.emoji,
+                              targetMinor: fromMajor(tpl.defaultTargetKD),
                               currentMinor: 0,
                               months: 24,
                               priority: draft.goals.length === 0 ? "high" : "medium",
@@ -377,12 +380,12 @@ export default function OnboardingPage() {
                       }
                     }}
                   >
-                    <span aria-hidden>{t.emoji}</span> {t.name}
+                    <span aria-hidden>{tpl.emoji}</span> {t(tpl.nameKey)}
                     {existing && <span className="ms-auto">✓</span>}
                   </button>
                   {existing && (
                     <div className="mt-2 flex items-center gap-2 ps-2">
-                      <span className="micro w-14">Target</span>
+                      <span className="micro w-14">{t("onb.goals.target")}</span>
                       <input
                         className="input money flex-1"
                         inputMode="decimal"
@@ -391,7 +394,7 @@ export default function OnboardingPage() {
                           const v = parseKD(e.target.value.replace(/[^\d.]/g, "")) ?? 0;
                           setDraft({
                             ...draft,
-                            goals: draft.goals.map((g) => (g.id === t.key ? { ...g, targetMinor: v } : g)),
+                            goals: draft.goals.map((g) => (g.id === tpl.key ? { ...g, targetMinor: v } : g)),
                           });
                         }}
                       />
@@ -407,10 +410,10 @@ export default function OnboardingPage() {
 
       {step === "growth" && (
         <StepShell
-          title="Growth"
-          subtitle="How familiar are you with investing? This only shapes how ONE balances Grow and Enjoy — it's educational, not advice."
+          title={t("onb.growth.title")}
+          subtitle={t("onb.growth.subtitle")}
           onNext={() => {
-            if (!manual) return setError("Something's missing — check your income and essentials steps.");
+            if (!manual) return setError(t("onb.growth.error"));
             go("generate");
           }}
           error={error}
@@ -418,22 +421,22 @@ export default function OnboardingPage() {
           <div className="flex flex-col gap-3">
             {(
               [
-                ["new", "New to investing", "ONE keeps growth gentle and prioritizes safety."],
-                ["some", "Some experience", "A balanced split between growing and enjoying."],
-                ["experienced", "Experienced", "A stronger tilt toward long-term growth."],
+                ["new", "onb.growth.new", "onb.growth.newHint"],
+                ["some", "onb.growth.some", "onb.growth.someHint"],
+                ["experienced", "onb.growth.exp", "onb.growth.expHint"],
               ] as const
-            ).map(([key, label, hint]) => (
+            ).map(([key, labelKey, hintKey]) => (
               <button
                 key={key}
-                className="card w-full text-left"
+                className="card w-full text-start"
                 style={{
                   padding: 14,
                   borderColor: draft.experience === key ? "var(--brand)" : "var(--hairline)",
                 }}
                 onClick={() => setDraft({ ...draft, experience: key })}
               >
-                <div className="text-[14.5px] font-bold">{label}</div>
-                <div className="micro mt-0.5">{hint}</div>
+                <div className="text-[14.5px] font-bold">{t(labelKey)}</div>
+                <div className="micro mt-0.5">{t(hintKey)}</div>
               </button>
             ))}
           </div>
@@ -445,16 +448,14 @@ export default function OnboardingPage() {
           <div className="hero-number" style={{ color: "var(--brand)" }}>
             ONE
           </div>
-          <p className="subtle animate-pulse">ONE is giving your dinars a job…</p>
+          <p className="subtle animate-pulse">{t("onb.generate")}</p>
         </div>
       )}
 
       {step === "plan" && preview && manual && (
         <div className="flex-1 pb-8">
-          <h1 className="mt-4 text-[22px] font-bold">Your ONE Plan</h1>
-          <p className="subtle mt-1">
-            Each month, from your {money(manual.monthlyIncomeMinor)} income:
-          </p>
+          <h1 className="mt-4 text-[22px] font-bold">{t("onb.plan.title")}</h1>
+          <p className="subtle mt-1">{t("onb.plan.subtitle", { amount: money(manual.monthlyIncomeMinor) })}</p>
           <section className="card-elevated mt-4">
             <StackBar
               parts={(Object.keys(preview.planBuckets) as BucketKey[]).map((k) => ({
@@ -466,12 +467,12 @@ export default function OnboardingPage() {
               {(Object.keys(preview.planBuckets) as BucketKey[]).map((k) => (
                 <li key={k} className="flex items-center gap-3">
                   <BucketDot bucket={k} />
-                  <span className="flex-1 text-[14.5px] font-semibold">{BUCKET_LABELS[k]}</span>
+                  <span className="flex-1 text-[14.5px] font-semibold">{bucketLabel(k)}</span>
                   <Money minor={preview.planBuckets[k]} className="text-[14.5px] font-semibold" />
                 </li>
               ))}
             </ul>
-            <p className="micro mt-4">Every dinar has a job. You can adjust any of this on the Plan tab.</p>
+            <p className="micro mt-4">{t("onb.plan.note")}</p>
           </section>
           <button
             className="btn btn-primary mt-6 w-full"
@@ -480,11 +481,9 @@ export default function OnboardingPage() {
               router.push("/");
             }}
           >
-            Start using ONE
+            {t("onb.plan.start")}
           </button>
-          <p className="micro mt-3 text-center">
-            Virtual allocations only — ONE never moves real money and does not execute investments.
-          </p>
+          <p className="micro mt-3 text-center">{t("onb.plan.disclaimer")}</p>
         </div>
       )}
     </main>
@@ -496,7 +495,7 @@ function StepShell({
   subtitle,
   children,
   onNext,
-  nextLabel = "Next",
+  nextLabel,
   error,
 }: {
   title: string;
@@ -517,7 +516,7 @@ function StepShell({
         </p>
       )}
       <button className="btn btn-primary mb-4 w-full" onClick={onNext}>
-        {nextLabel}
+        {nextLabel ?? t("common.next")}
       </button>
     </div>
   );

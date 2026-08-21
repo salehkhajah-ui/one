@@ -5,11 +5,12 @@ import { track } from "../../lib/analytics";
 import { goalDelayDays } from "../../lib/engine/goals";
 import { calculateCompoundProjection, SCENARIOS } from "../../lib/engine/projection";
 import type { BucketKey } from "../../lib/engine/types";
-import { money } from "../../lib/i18n";
+import { formatDateShort, money, t } from "../../lib/i18n";
 import { fromMajor } from "../../lib/money";
 import Link from "next/link";
 import { useApp, useAppControls } from "../components/AppProvider";
-import { BUCKET_LABELS, BucketDot, Disclaimer, Money, SectionHeader, StackBar, Why } from "../components/ui";
+import { bucketLabel, BucketDot, Disclaimer, Money, SectionHeader, StackBar, Why } from "../components/ui";
+import { allocationReason } from "../components/text";
 
 const FLEX_BUCKETS: BucketKey[] = ["protect", "goals", "grow"];
 const BASE = SCENARIOS.find((s) => s.key === "base")!;
@@ -63,13 +64,13 @@ export default function PlanPage() {
           tone: "caution",
           text:
             newDays === null
-              ? `Pausing Protect leaves your “${state.emergency.stageLabel}” milestone on hold.`
-              : `Reducing Protect by ${money(-protectDelta)} delays your “${state.emergency.stageLabel}” milestone by about ${newDays - (recDays ?? 0)} days.`,
+              ? t("plan.c.protectPause", { stage: state.emergency.stageLabel })
+              : t("plan.c.protectReduce", { amount: money(-protectDelta), stage: state.emergency.stageLabel, days: newDays - (recDays ?? 0) }),
         });
       } else {
         out.push({
           tone: "positive",
-          text: `Adding ${money(protectDelta)} to Protect reaches “${state.emergency.stageLabel}” about ${(recDays ?? 0) - (newDays ?? 0)} days sooner.`,
+          text: t("plan.c.protectAdd", { amount: money(protectDelta), stage: state.emergency.stageLabel, days: (recDays ?? 0) - (newDays ?? 0) }),
         });
       }
     }
@@ -79,10 +80,10 @@ export default function PlanPage() {
       const top = state.goals[0];
       out.push({
         tone: "caution",
-        text: `Reducing Goals by ${money(-goalsDelta)} delays ${top.name} by roughly ${goalDelayDays(rec.goals, -goalsDelta)} days.`,
+        text: t("plan.c.goalsReduce", { amount: money(-goalsDelta), name: top.name, days: goalDelayDays(rec.goals, -goalsDelta) }),
       });
     } else if (goalsDelta > 0) {
-      out.push({ tone: "positive", text: `Extra ${money(goalsDelta)} toward Goals brings your targets closer.` });
+      out.push({ tone: "positive", text: t("plan.c.goalsAdd", { amount: money(goalsDelta) }) });
     }
 
     const growDelta = flex.grow - rec.grow;
@@ -93,7 +94,7 @@ export default function PlanPage() {
         calculateCompoundProjection(0, rec.grow, years, BASE).futureValueMinor;
       out.push({
         tone: growDelta > 0 ? "positive" : "info",
-        text: `${growDelta > 0 ? "+" : "−"}${money(Math.abs(growDelta))}/month to Grow ≈ ${diff >= 0 ? "+" : "−"}${money(Math.abs(diff))} after ${years} years (hypothetical, base scenario).`,
+        text: t("plan.c.grow", { sign: growDelta > 0 ? "+" : "−", amount: money(Math.abs(growDelta)), diffSign: diff >= 0 ? "+" : "−", diff: money(Math.abs(diff)), years }),
       });
     }
 
@@ -101,7 +102,7 @@ export default function PlanPage() {
     if (enjoyDelta > fromMajor(20)) {
       out.push({
         tone: "info",
-        text: `Enjoy grows by ${money(enjoyDelta)} — a fine choice; your bills and essentials stay protected either way.`,
+        text: t("plan.c.enjoy", { amount: money(enjoyDelta) }),
       });
     }
     return out;
@@ -111,17 +112,17 @@ export default function PlanPage() {
     <main className="screen">
       <header className="pt-2">
         <div className="eyebrow" style={{ color: "var(--brand)" }}>
-          Plan
+          {t("plan.eyebrow")}
         </div>
-        <h1 className="mt-1 text-[22px] font-bold tracking-tight">Payday plan</h1>
+        <h1 className="mt-1 text-[22px] font-bold tracking-tight">{t("plan.title")}</h1>
         <p className="subtle mt-1">
-          Salary <Money minor={total} /> · every dinar gets a job on the {state.profile.paydayDayOfMonth}th
+          {t("plan.subtitle", { amount: money(total), day: state.profile.paydayDayOfMonth })}
         </p>
       </header>
 
       <section className="card-elevated mt-5">
         <div className="flex items-baseline justify-between">
-          <span className="eyebrow">{isAdjusted ? "Your plan" : "Recommended by ONE"}</span>
+          <span className="eyebrow">{isAdjusted ? t("plan.yourPlan") : t("plan.recommended")}</span>
           {isAdjusted && (
             <button
               className="micro font-semibold"
@@ -131,7 +132,7 @@ export default function PlanPage() {
                 setAccepted(false);
               }}
             >
-              Reset to ONE&apos;s plan
+              {t("plan.reset")}
             </button>
           )}
         </div>
@@ -150,7 +151,7 @@ export default function PlanPage() {
               <li key={key}>
                 <div className="flex items-center gap-3">
                   <BucketDot bucket={key} />
-                  <span className="flex-1 text-[14.5px] font-semibold">{BUCKET_LABELS[key]}</span>
+                  <span className="flex-1 text-[14.5px] font-semibold">{bucketLabel(key)}</span>
                   {value !== rec[key] && (
                     <span className="micro line-through opacity-70">
                       <Money minor={rec[key]} />
@@ -165,15 +166,13 @@ export default function PlanPage() {
                     max={flexTotal}
                     step={500}
                     value={value}
-                    aria-label={`${BUCKET_LABELS[key]} amount`}
+                    aria-label={`${bucketLabel(key)} amount`}
                     onChange={(e) => setBucket(key as keyof typeof flex, Number(e.target.value))}
                   />
                 )}
-                {key === "enjoy" && <p className="micro mt-1">Auto-balances — whatever the other buckets don&apos;t take.</p>}
-                {(key === "life" || key === "bills") && (
-                  <p className="micro mt-1">Held steady — essentials and known bills come first.</p>
-                )}
-                {item && <Why>{item.reason}</Why>}
+                {key === "enjoy" && <p className="micro mt-1">{t("plan.autoBalances")}</p>}
+                {(key === "life" || key === "bills") && <p className="micro mt-1">{t("plan.heldSteady")}</p>}
+                {item && <Why>{allocationReason(item, state)}</Why>}
               </li>
             );
           })}
@@ -182,7 +181,7 @@ export default function PlanPage() {
 
       {consequences.length > 0 && (
         <>
-          <SectionHeader title="What changes" />
+          <SectionHeader title={t("plan.whatChanges")} />
           <section className="card flex flex-col gap-3">
             {consequences.map((c, i) => (
               <p key={i} className="subtle flex gap-2">
@@ -202,19 +201,18 @@ export default function PlanPage() {
           setAccepted(true);
         }}
       >
-        {accepted ? "Plan accepted ✓" : isAdjusted ? "Accept your plan" : "Accept ONE's plan"}
+        {accepted ? t("plan.accepted") : isAdjusted ? t("plan.acceptYours") : t("plan.accept")}
       </button>
       {accepted && (
         <p className="subtle mt-3 text-center" style={{ color: "var(--positive)" }}>
-          Your dinars have their jobs until payday ({state.nextPaydayISO}).
+          {t("plan.acceptedNote", { date: formatDateShort(state.nextPaydayISO) })}
         </p>
       )}
       <Link href="/payday" className="micro mt-4 block text-center font-semibold" style={{ color: "var(--accent)" }}>
-        See the payday experience →
+        {t("plan.seePayday")}
       </Link>
       <Disclaimer>
-        Accepting updates ONE&apos;s virtual allocation only — it does not move money between real accounts. Grow amounts
-        are educational recommendations; ONE does not execute investments.
+        {t("plan.disclaimer")}
       </Disclaimer>
     </main>
   );

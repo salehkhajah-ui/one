@@ -48,6 +48,13 @@ export interface WorthItResult {
   goalName: string | null;
   /** grow contribution reduction this month if bought from current allocation */
   growReductionMinor: number;
+  /** amount beyond the Enjoy balance that would come from Goals/Grow */
+  shortfallBeyondEnjoyMinor: number;
+  /** amount that would be diverted from the top goal */
+  goalDivertedMinor: number;
+  /** save-up horizon at the Enjoy pace, when applicable */
+  monthsToSave: number | null;
+  enjoyAvailableMinor: number;
   suggestedDateISO: string | null;
   headline: string;
   alternatives: WorthItAlternative[];
@@ -153,6 +160,10 @@ export function evaluateWorthIt(input: WorthItInput): WorthItResult {
     goalDelayDays: input.topGoal && goalShare > 0 ? delay : null,
     goalName: input.topGoal?.name ?? null,
     growReductionMinor: growShare,
+    shortfallBeyondEnjoyMinor: shortfallBeyondEnjoy,
+    goalDivertedMinor: input.topGoal ? Math.min(goalShare, goalMonthly) : 0,
+    monthsToSave,
+    enjoyAvailableMinor: input.enjoyAvailableMinor,
     suggestedDateISO,
     headline,
     alternatives,

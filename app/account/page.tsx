@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "../../lib/i18n";
 import { getSupabase } from "../../lib/supabase/client";
 import { useAppControls } from "../components/AppProvider";
+import { useLocale } from "../components/LocaleProvider";
 import { Disclaimer, SectionHeader } from "../components/ui";
 
 export default function AccountPage() {
   const { cloud, signOutCloud, deleteCloud, refreshCloud } = useAppControls();
+  const { locale, setLocale } = useLocale();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [phase, setPhase] = useState<"email" | "code">("email");
@@ -17,7 +20,7 @@ export default function AccountPage() {
     const supabase = getSupabase();
     if (!supabase) return;
     const target = email.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target)) return setMessage("Enter a valid email address.");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target)) return setMessage(t("acct.invalidEmail"));
     setBusy(true);
     setMessage(null);
     const { error } = await supabase.auth.signInWithOtp({
@@ -25,9 +28,9 @@ export default function AccountPage() {
       options: { shouldCreateUser: true, emailRedirectTo: `${window.location.origin}/account` },
     });
     setBusy(false);
-    if (error) return setMessage(`Couldn't send the code: ${error.message}`);
+    if (error) return setMessage(t("acct.sendFailed", { msg: error.message }));
     setPhase("code");
-    setMessage("Check your email — tap the sign-in link, or enter the 6-digit code if the email shows one.");
+    setMessage(t("acct.checkEmail"));
   }
 
   async function verifyCode() {
@@ -37,39 +40,43 @@ export default function AccountPage() {
     setMessage(null);
     const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: "email" });
     setBusy(false);
-    if (error) return setMessage(`That code didn't work: ${error.message}`);
+    if (error) return setMessage(t("acct.codeFailed", { msg: error.message }));
     setMessage(null);
     refreshCloud();
   }
 
   const statusLabel: Record<string, string> = {
-    off: "Not configured in this build",
-    signedOut: "Signed out",
-    syncing: "Syncing…",
-    synced: "Synced",
-    error: "Sync error — will retry on next change",
+    off: t("acct.notConfigured"),
+    signedOut: t("acct.status.signedOut"),
+    syncing: t("acct.status.syncing"),
+    synced: t("acct.status.synced"),
+    error: t("acct.status.error"),
   };
 
   return (
     <main className="screen">
       <header className="pt-2">
         <div className="eyebrow" style={{ color: "var(--brand)" }}>
-          Account
+          {t("acct.eyebrow")}
         </div>
-        <h1 className="mt-1 text-[22px] font-bold tracking-tight">Cloud sync</h1>
-        <p className="subtle mt-1">Back up your ONE setup so it follows you across devices.</p>
+        <h1 className="mt-1 text-[22px] font-bold tracking-tight">{t("acct.title")}</h1>
+        <p className="subtle mt-1">{t("acct.subtitle")}</p>
       </header>
 
+      <section className="card mt-5 flex items-center justify-between" style={{ padding: 14 }}>
+        <span className="text-[14px] font-semibold">{t("acct.language")}</span>
+        <button className="chip" onClick={() => setLocale(locale === "en" ? "ar" : "en")}>
+          {t("common.language")}
+        </button>
+      </section>
+
       {!cloud.configured ? (
-        <section className="card mt-5">
-          <p className="subtle">
-            Cloud sync isn&apos;t active in this build yet — your data lives safely on this device. It switches on
-            automatically once ONE&apos;s backend is provisioned.
-          </p>
+        <section className="card mt-4">
+          <p className="subtle">{t("acct.notConfigured")}</p>
         </section>
       ) : cloud.email ? (
         <>
-          <section className="card-elevated mt-5">
+          <section className="card-elevated mt-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[15px] font-bold">{cloud.email}</div>
@@ -89,64 +96,66 @@ export default function AccountPage() {
               />
             </div>
           </section>
-          <SectionHeader title="Privacy" />
+          <SectionHeader title={t("acct.privacy")} />
           <section className="card flex flex-col gap-3">
             <button className="btn btn-ghost w-full" onClick={() => void signOutCloud()}>
-              Sign out on this device
+              {t("acct.signOut")}
             </button>
             <button
               className="btn btn-ghost w-full"
               style={{ borderColor: "var(--caution)", color: "var(--caution)" }}
               onClick={async () => {
-                if (window.confirm("Delete your cloud backup? Your data stays on this device.")) {
+                if (window.confirm(t("acct.deleteConfirm"))) {
                   const ok = await deleteCloud();
-                  setMessage(ok ? "Cloud backup deleted. This device still has your data." : "Couldn't delete right now — try again.");
+                  setMessage(ok ? t("acct.deleted") : t("acct.deleteFailed"));
                 }
               }}
             >
-              Delete my cloud data
+              {t("acct.deleteCloud")}
             </button>
           </section>
         </>
       ) : (
-        <section className="card mt-5 flex flex-col gap-4">
+        <section className="card mt-4 flex flex-col gap-4">
           {phase === "email" ? (
             <>
               <label className="flex flex-col gap-1.5">
-                <span className="micro font-semibold">Email</span>
+                <span className="micro font-semibold">{t("acct.email")}</span>
                 <input
                   className="input"
                   type="email"
                   inputMode="email"
                   placeholder="you@example.com"
+                  dir="ltr"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && void sendCode()}
                 />
               </label>
               <button className="btn btn-primary w-full" disabled={busy} onClick={() => void sendCode()}>
-                {busy ? "Sending…" : "Send sign-in code"}
+                {busy ? t("acct.sending") : t("acct.sendCode")}
               </button>
             </>
           ) : (
             <>
               <label className="flex flex-col gap-1.5">
-                <span className="micro font-semibold">6-digit code sent to {email}</span>
+                <span className="micro font-semibold">{t("acct.codeSentTo", { email })}</span>
                 <input
                   className="input money text-center text-[22px] tracking-[0.4em]"
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="••••••"
+                  dir="ltr"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                   onKeyDown={(e) => e.key === "Enter" && void verifyCode()}
                 />
               </label>
               <button className="btn btn-primary w-full" disabled={busy || code.length !== 6} onClick={() => void verifyCode()}>
-                {busy ? "Verifying…" : "Verify & sync"}
+                {busy ? t("acct.verifying") : t("acct.verify")}
               </button>
               <button className="micro font-semibold" style={{ color: "var(--accent)" }} onClick={() => setPhase("email")}>
-                Use a different email
+                {t("acct.diffEmail")}
               </button>
             </>
           )}
@@ -155,10 +164,7 @@ export default function AccountPage() {
 
       {message && <p className="subtle mt-4">{message}</p>}
 
-      <Disclaimer>
-        ONE stores only your setup and the transactions you record, encrypted in transit, isolated per account with
-        row-level security. Sign-in is passwordless. You can delete the cloud copy at any time.
-      </Disclaimer>
+      <Disclaimer>{t("acct.disclaimer")}</Disclaimer>
     </main>
   );
 }

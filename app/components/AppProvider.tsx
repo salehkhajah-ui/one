@@ -8,7 +8,9 @@ import { demoBundle, manualBundle } from "../../lib/app/bundle";
 import { buildAppState, type AppState } from "../../lib/app/state";
 import { clearSetup, loadSetup, saveSetup, type StoredTransaction, type UserSetup } from "../../lib/app/storage";
 import { deleteCloudData, pickNewer, pullSetup, pushSetup } from "../../lib/app/sync";
+import { t } from "../../lib/i18n";
 import { cloudSyncConfigured, getSupabase } from "../../lib/supabase/client";
+import { useLocale } from "./LocaleProvider";
 
 export type CloudStatus = "off" | "signedOut" | "syncing" | "synced" | "error";
 
@@ -208,7 +210,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           <div className="hero-number" style={{ color: "var(--brand)" }}>
             ONE
           </div>
-          <p className="subtle text-center">Every dinar has a mind.</p>
+          <p className="subtle text-center">{t("brand.tagline")}</p>
         </div>
       </div>
     );
@@ -232,6 +234,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
 function FirstRun() {
   const { startDemo } = useAppControls();
+  const { locale, setLocale } = useLocale();
   const router = useRouter();
   useEffect(() => {
     track("onboarding_started");
@@ -239,26 +242,29 @@ function FirstRun() {
   return (
     <div className="shell">
       <main className="screen flex min-h-[100dvh] flex-col justify-center gap-8 pb-16">
+        <button
+          className="chip absolute top-4"
+          style={{ insetInlineEnd: 18 }}
+          onClick={() => setLocale(locale === "en" ? "ar" : "en")}
+        >
+          {t("common.language")}
+        </button>
         <div className="text-center">
           <div className="hero-number" style={{ color: "var(--brand)" }}>
             ONE
           </div>
-          <h1 className="mt-4 text-[24px] font-bold tracking-tight">Every dinar has a mind.</h1>
-          <p className="subtle mx-auto mt-3 max-w-[300px]">
-            ONE understands your money and gives every dinar a job — spending, protection, goals and growth.
-          </p>
+          <h1 className="mt-4 text-[24px] font-bold tracking-tight">{t("brand.tagline")}</h1>
+          <p className="subtle mx-auto mt-3 max-w-[300px]">{t("firstrun.intro")}</p>
         </div>
         <div className="flex flex-col gap-3">
           <button className="btn btn-primary w-full" onClick={() => router.push("/onboarding")}>
-            Build my ONE plan
+            {t("firstrun.build")}
           </button>
           <button className="btn btn-ghost w-full" onClick={startDemo}>
-            Try the demo first
+            {t("firstrun.demo")}
           </button>
         </div>
-        <p className="micro text-center">
-          Your numbers stay on this device. ONE provides educational guidance and never moves real money.
-        </p>
+        <p className="micro text-center">{t("firstrun.privacy")}</p>
       </main>
     </div>
   );

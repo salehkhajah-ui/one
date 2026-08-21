@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { track } from "../lib/analytics";
-import { formatDateShort, money } from "../lib/i18n";
+import { formatDateShort, money, t } from "../lib/i18n";
 import type { Transaction } from "../lib/engine/types";
+import type { StringKey } from "../lib/i18n-strings";
 import { useApp, useAppControls } from "./components/AppProvider";
 import { ForecastCard } from "./components/ForecastCard";
-import { BUCKET_COLORS, BucketDot, Disclaimer, HeroMoney, Money, ProgressBar, SectionHeader, StackBar, Why } from "./components/ui";
+import { BUCKET_COLORS, BucketDot, Disclaimer, HeroMoney, Money, ProgressBar, SectionHeader, StackBar, Why, bucketLabel } from "./components/ui";
+import { catLabel, insightDescription, insightTitle, scoreComponentLabel, scoreFormula, scoreMove } from "./components/text";
 
 function greeting(): string {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return t("home.morning");
+  if (h < 17) return t("home.afternoon");
+  return t("home.evening");
 }
 
 const CATEGORY_ICONS: Partial<Record<Transaction["category"], string>> = {
@@ -51,7 +53,9 @@ export default function HomePage() {
             ONE
           </div>
           <h1 className="mt-1 text-[22px] font-bold tracking-tight">
-            {greeting()}, {state.profile.displayName}
+            {greeting()}
+            {t("common.comma")}
+            {state.profile.displayName}
           </h1>
         </div>
         <span className="flex items-center gap-2">
@@ -60,7 +64,7 @@ export default function HomePage() {
               className="chip cursor-default"
               title="Sample data — no bank connected. ONE never claims a live connection that doesn't exist."
             >
-              Demo
+              {t("common.demo")}
             </span>
           )}
           <Link href="/account" className="chip" aria-label="Account & cloud sync">
@@ -83,8 +87,8 @@ export default function HomePage() {
             🎉
           </span>
           <div className="flex-1">
-            <div className="text-[15px] font-bold">It&apos;s payday</div>
-            <div className="micro">Your dinars are ready to get to work — see your plan.</div>
+            <div className="text-[15px] font-bold">{t("home.paydayBanner")}</div>
+            <div className="micro">{t("home.paydayBannerHint")}</div>
           </div>
           <span className="text-[18px]" style={{ color: "var(--text-3)" }} aria-hidden>
             ›
@@ -94,49 +98,52 @@ export default function HomePage() {
 
       {/* Hero: Safe to Spend */}
       <section className="card-elevated mt-5">
-        <div className="eyebrow">Safe to spend today</div>
+        <div className="eyebrow">{t("home.safeToSpendToday")}</div>
         <div className="mt-2">
           <HeroMoney minor={sts.dailyMinor} />
         </div>
         <p className="subtle mt-2">
-          {sts.isConstrained ? (
-            <>Commitments are ahead of cash right now — your bills and essentials stay protected.</>
-          ) : (
-            <>
-              <Money minor={sts.discretionaryMinor} /> available until payday · {state.daysToPayday}{" "}
-              {state.daysToPayday === 1 ? "day" : "days"} left
-            </>
-          )}
+          {sts.isConstrained
+            ? t("home.constrained")
+            : t("home.availableUntilPayday", {
+                amount: money(sts.discretionaryMinor),
+                days: state.daysToPayday,
+                dayWord: state.daysToPayday === 1 ? t("common.day") : t("common.days"),
+              })}
         </p>
-        <Why summary="How is this calculated?">
-          From {money(sts.breakdown.availableCashMinor)} in checking, ONE sets aside{" "}
-          {money(sts.breakdown.reservedBillsMinor)} for bills due before payday,{" "}
-          {money(sts.breakdown.essentialsRemainingMinor)} for essentials, {money(sts.breakdown.safetyBufferMinor)} cash
-          buffer, {money(sts.breakdown.goalCommitmentsMinor)} goal pace and {money(sts.breakdown.plannedGrowthMinor)} for
-          Grow. What remains is spread across {sts.daysRemaining} days.
+        <Why summary={t("home.howCalculated")}>
+          {t("home.stsWhy", {
+            cash: money(sts.breakdown.availableCashMinor),
+            bills: money(sts.breakdown.reservedBillsMinor),
+            essentials: money(sts.breakdown.essentialsRemainingMinor),
+            buffer: money(sts.breakdown.safetyBufferMinor),
+            goals: money(sts.breakdown.goalCommitmentsMinor),
+            growth: money(sts.breakdown.plannedGrowthMinor),
+            days: sts.daysRemaining,
+          })}
         </Why>
         <div className="mt-4 flex gap-2">
           <Link href="/add" className="btn btn-quiet flex-1">
-            Record spending
+            {t("home.recordSpending")}
           </Link>
           <Link href="/worth-it" className="btn btn-quiet flex-1">
-            Worth it?
+            {t("home.worthIt")}
           </Link>
         </div>
       </section>
 
       {/* Your money */}
       <SectionHeader
-        title="Your money"
+        title={t("home.yourMoney")}
         action={
           <Link href="/plan" className="micro font-semibold" style={{ color: "var(--accent)" }}>
-            Plan →
+            {t("home.planLink")}
           </Link>
         }
       />
       <section className="card">
         <div className="flex items-baseline justify-between">
-          <span className="subtle">Across {state.accounts.length} accounts</span>
+          <span className="subtle">{t("home.acrossAccounts", { n: state.accounts.length })}</span>
           <Money minor={state.totalCashMinor} className="text-[17px] font-bold" />
         </div>
         <div className="mt-3">
@@ -147,35 +154,35 @@ export default function HomePage() {
             <li key={b.key} className="flex items-center gap-3">
               <BucketDot bucket={b.key} />
               <div className="flex-1 min-w-0">
-                <div className="text-[14.5px] font-semibold">{b.label}</div>
-                <div className="micro truncate">{b.hint}</div>
+                <div className="text-[14.5px] font-semibold">{bucketLabel(b.key)}</div>
+                <div className="micro truncate">{t(`bucket.${b.key}.hint` as StringKey)}</div>
               </div>
               <Money minor={b.amountMinor} className="text-[14.5px] font-semibold" />
             </li>
           ))}
         </ul>
-        <p className="micro mt-4">Every dinar has a job.</p>
+        <p className="micro mt-4">{t("brand.everyDinarJob")}</p>
       </section>
 
       {/* 30-day forecast */}
-      <SectionHeader title="Next 30 days" />
-      <ForecastCard forecast={state.forecast} basis={state.forecastBasis} currency="KWD" />
+      <SectionHeader title={t("home.next30")} />
+      <ForecastCard forecast={state.forecast} basis={t(state.hasHistory ? "forecast.basisHistory" : "forecast.basisPlan")} currency="KWD" />
 
       {/* ONE recommends */}
       {insight && (
         <>
-          <SectionHeader title="ONE recommends" />
+          <SectionHeader title={t("home.oneRecommends")} />
           <section className="card" style={{ borderColor: "color-mix(in oklab, var(--brand) 35%, transparent)" }}>
             <div className="flex items-start gap-3">
               <span className="text-xl" aria-hidden>
                 ✨
               </span>
               <div className="flex-1">
-                <div className="text-[15px] font-bold">{insight.title}</div>
-                <p className="subtle mt-1">{insight.description}</p>
+                <div className="text-[15px] font-bold">{insightTitle(insight)}</div>
+                <p className="subtle mt-1">{insightDescription(insight)}</p>
                 {showJobs && (
                   <>
-                    <p className="micro mt-3 font-semibold">Give it a job?</p>
+                    <p className="micro mt-3 font-semibold">{t("home.giveJob")}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {state.insightJobs.map((j) => (
                         <span key={j.bucket + j.label} className="chip cursor-default">
@@ -183,7 +190,7 @@ export default function HomePage() {
                             className="bucket-dot"
                             style={{ background: j.bucket === "goal" ? BUCKET_COLORS.goals : BUCKET_COLORS[j.bucket] }}
                           />
-                          {j.label} <Money minor={j.amountMinor} hideDecimals />
+                          {j.bucket === "goal" ? j.label : bucketLabel(j.bucket)} <Money minor={j.amountMinor} hideDecimals />
                         </span>
                       ))}
                     </div>
@@ -194,13 +201,13 @@ export default function HomePage() {
                         track("insight_resolved", { type: insight.type });
                       }}
                     >
-                      Put this money to work
+                      {t("home.putToWork")}
                     </button>
                   </>
                 )}
                 {state.insight && insightDone && (
                   <p className="subtle mt-3" style={{ color: "var(--positive)" }}>
-                    Done — your dinars are on the job. (Demo Mode updates virtual allocations only.)
+                    {t("home.insightDone")}
                   </p>
                 )}
               </div>
@@ -210,7 +217,7 @@ export default function HomePage() {
       )}
 
       {/* ONE Score */}
-      <SectionHeader title="ONE Score" />
+      <SectionHeader title={t("home.oneScore")} />
       <section className="card">
         <div className="flex items-center gap-5">
           <ScoreRing score={state.score.score} />
@@ -218,7 +225,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               {state.score.components.map((c) => (
                 <div key={c.key}>
-                  <div className="micro">{c.label}</div>
+                  <div className="micro">{scoreComponentLabel(c)}</div>
                   <div className="text-[15px] font-bold money">{c.value}</div>
                 </div>
               ))}
@@ -228,15 +235,15 @@ export default function HomePage() {
         <div className="divider my-4" />
         <p className="subtle">
           <span className="font-semibold" style={{ color: "var(--text)" }}>
-            Best next move:
+            {t("home.bestNextMove")}
           </span>{" "}
-          {state.score.bestNextMove.action}
+          {scoreMove(state.score.bestNextMove)}
         </p>
-        <Why summary="How is the score built?">
-          Resilience, not a credit score — weights: Emergency 30 · Cash Flow 25 · Growth 20 · Goals 25.{" "}
+        <Why summary={t("home.howScoreBuilt")}>
+          {t("home.scoreExplain")}{" "}
           {state.score.components.map((c) => (
             <span key={c.key}>
-              <strong>{c.label}:</strong> {c.formula}{" "}
+              <strong>{scoreComponentLabel(c)}:</strong> {scoreFormula(c, state.hasHistory)}{" "}
             </span>
           ))}
         </Why>
@@ -244,10 +251,10 @@ export default function HomePage() {
 
       {/* Goals */}
       <SectionHeader
-        title="Goals"
+        title={t("home.goals")}
         action={
           <Link href="/goals" className="micro font-semibold" style={{ color: "var(--accent)" }}>
-            All goals →
+            {t("home.allGoals")}
           </Link>
         }
       />
@@ -271,47 +278,47 @@ export default function HomePage() {
 
       {/* Recent activity */}
       <SectionHeader
-        title="Recent activity"
+        title={t("home.recentActivity")}
         action={
           <span className="flex items-center gap-4">
             <Link href="/add" className="micro font-semibold" style={{ color: "var(--accent)" }}>
-              + Add
+              {t("home.add")}
             </Link>
             <Link href="/activity" className="micro font-semibold" style={{ color: "var(--accent)" }}>
-              All →
+              {t("home.all")}
             </Link>
           </span>
         }
       />
       {recent.length === 0 ? (
         <section className="card">
-          <p className="subtle">No transactions yet — nothing needs your attention.</p>
-          <p className="micro mt-1">Account connections and imports arrive in the next milestone.</p>
+          <p className="subtle">{t("home.noTx")}</p>
+          <p className="micro mt-1">{t("home.noTxHint")}</p>
         </section>
       ) : (
       <section className="card" style={{ padding: "6px 18px" }}>
         <ul>
-          {recent.map((t, i) => (
+          {recent.map((tx, i) => (
             <li
-              key={t.id}
+              key={tx.id}
               className={`flex items-center gap-3 py-3 ${i > 0 ? "border-t" : ""}`}
               style={{ borderColor: "var(--hairline)" }}
             >
               <span className="text-lg w-7 text-center" aria-hidden>
-                {CATEGORY_ICONS[t.category] ?? "💳"}
+                {CATEGORY_ICONS[tx.category] ?? "💳"}
               </span>
               <div className="flex-1 min-w-0">
-                <div className="text-[14.5px] font-semibold truncate">{t.merchant}</div>
+                <div className="text-[14.5px] font-semibold truncate">{tx.merchant}</div>
                 <div className="micro">
-                  {t.category} · {formatDateShort(t.transactionDate)}
+                  {catLabel(tx.category)} · {formatDateShort(tx.transactionDate)}
                 </div>
               </div>
               <span
                 className="money text-[14.5px] font-semibold"
-                style={{ color: t.direction === "credit" ? "var(--positive)" : "var(--text)" }}
+                style={{ color: tx.direction === "credit" ? "var(--positive)" : "var(--text)" }}
               >
-                {t.direction === "credit" ? "+" : "−"}
-                {money(t.amountMinor)}
+                {tx.direction === "credit" ? "+" : "−"}
+                {money(tx.amountMinor)}
               </span>
             </li>
           ))}
@@ -319,18 +326,16 @@ export default function HomePage() {
       </section>
       )}
       <Disclaimer>
-        {state.mode === "demo"
-          ? "Demo Mode shows generated sample data. ONE provides educational guidance and does not move real money."
-          : "Your numbers stay on this device. ONE provides educational guidance and does not move real money."}
+        {state.mode === "demo" ? t("home.disclaimerDemo") : t("home.disclaimerManual")}
       </Disclaimer>
       <button
         className="micro mt-3 w-full text-center font-semibold"
         style={{ color: "var(--text-3)" }}
         onClick={() => {
-          if (window.confirm("Start over? This clears your ONE setup on this device.")) resetAll();
+          if (window.confirm(t("common.startOverConfirm"))) resetAll();
         }}
       >
-        Start over{state.mode === "demo" ? " / set up my own numbers" : ""}
+        {state.mode === "demo" ? t("common.startOverDemo") : t("common.startOver")}
       </button>
     </main>
   );

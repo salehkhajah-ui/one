@@ -2,12 +2,40 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "../../lib/analytics";
-import { buildGrowPaths, RED_FLAGS, TRUST_CRITERIA } from "../../lib/engine/growPaths";
+import { buildGrowPaths } from "../../lib/engine/growPaths";
 import { calculateCompoundProjection, SCENARIOS } from "../../lib/engine/projection";
-import { amount, moneyCompact, money } from "../../lib/i18n";
+import { amount, moneyCompact, money, t } from "../../lib/i18n";
+import type { StringKey } from "../../lib/i18n-strings";
 import { fromMajor } from "../../lib/money";
 import { useApp } from "../components/AppProvider";
 import { Disclaimer, Money, SectionHeader, Why } from "../components/ui";
+
+const PATH_KEYS: Record<
+  "protect_first" | "index_investing" | "capital_stable",
+  { title: StringKey; summary: StringKey; steps: StringKey[]; reason: StringKey; rangeKeys: StringKey[] }
+> = {
+  protect_first: {
+    title: "gp.protect_first.title",
+    summary: "gp.protect_first.summary",
+    steps: ["gp.protect_first.s1", "gp.protect_first.s2", "gp.protect_first.s3"],
+    reason: "gp.protect_first.reason",
+    rangeKeys: [],
+  },
+  index_investing: {
+    title: "gp.index.title",
+    summary: "gp.index.summary",
+    steps: ["gp.index.s1", "gp.index.s2", "gp.index.s3", "gp.index.s4"],
+    reason: "gp.index.reason",
+    rangeKeys: ["gp.range.a1", "gp.range.a2", "gp.range.a3"],
+  },
+  capital_stable: {
+    title: "gp.stable.title",
+    summary: "gp.stable.summary",
+    steps: ["gp.stable.s1", "gp.stable.s2", "gp.stable.s3"],
+    reason: "gp.stable.reason",
+    rangeKeys: ["gp.range.d1", "gp.range.d2", "gp.range.d3"],
+  },
+};
 
 const SCENARIO_COLORS: Record<string, string> = {
   conservative: "var(--grow-1)",
@@ -52,22 +80,22 @@ export default function GrowPage() {
     <main className="screen">
       <header className="pt-2">
         <div className="eyebrow" style={{ color: "var(--brand)" }}>
-          Grow
+          {t("grow.eyebrow")}
         </div>
-        <h1 className="mt-1 text-[22px] font-bold tracking-tight">Your future, simulated</h1>
-        <p className="subtle mt-1">Long-term growth, planned calmly. No tickers, no noise.</p>
+        <h1 className="mt-1 text-[22px] font-bold tracking-tight">{t("grow.title")}</h1>
+        <p className="subtle mt-1">{t("grow.subtitle")}</p>
       </header>
 
       <section className="card-elevated mt-5">
         <div className="flex items-baseline justify-between">
           <div>
-            <div className="eyebrow">Monthly to Grow</div>
+            <div className="eyebrow">{t("grow.monthlyToGrow")}</div>
             <div className="mt-1 text-[30px] font-bold money">
               <Money minor={monthly} />
             </div>
           </div>
           <div className="text-right">
-            <div className="micro">ONE recommends</div>
+            <div className="micro">{t("grow.oneRecommends")}</div>
             <Money minor={state.growMonthlyMinor} className="text-[15px] font-semibold" />
           </div>
         </div>
@@ -80,20 +108,17 @@ export default function GrowPage() {
           aria-label="Monthly Grow contribution"
           onChange={(e) => setMonthly(Number(e.target.value))}
         />
-        <p className="micro">
-          Simulated contributions begin at your next payday. ONE recommends allocations — it does not execute
-          investments.
-        </p>
+        <p className="micro">{t("grow.sliderNote")}</p>
       </section>
 
-      <SectionHeader title="Hypothetical growth" />
+      <SectionHeader title={t("grow.hypoGrowth")} />
       <section className="card">
         <ProjectionChart monthlyMinor={monthly} />
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
           {SCENARIOS.map((s) => (
             <span key={s.key} className="micro flex items-center gap-1.5">
               <span className="bucket-dot" style={{ background: SCENARIO_COLORS[s.key] }} />
-              {s.label} {s.annualReturnPct}%
+              {t(`grow.${s.key}` as StringKey)} {s.annualReturnPct}%
             </span>
           ))}
         </div>
@@ -101,10 +126,10 @@ export default function GrowPage() {
         <table className="w-full text-[13.5px]" style={{ fontVariantNumeric: "tabular-nums" }}>
           <thead>
             <tr className="micro text-left">
-              <th className="font-medium pb-2">Horizon</th>
+              <th className="font-medium pb-2">{t("grow.horizon")}</th>
               {SCENARIOS.map((s) => (
                 <th key={s.key} className="font-medium pb-2 text-right">
-                  {s.label}
+                  {t(`grow.${s.key}` as StringKey)}
                 </th>
               ))}
             </tr>
@@ -112,7 +137,7 @@ export default function GrowPage() {
           <tbody>
             {table.map((row) => (
               <tr key={row.years} style={{ borderTop: "1px solid var(--hairline)" }}>
-                <td className="py-2 subtle">{row.years} years</td>
+                <td className="py-2 subtle">{t("grow.years", { n: row.years })}</td>
                 {row.values.map((v) => (
                   <td key={v.scenario.key} className="py-2 text-right font-semibold">
                     {moneyCompact(v.futureValueMinor)}
@@ -122,30 +147,27 @@ export default function GrowPage() {
             ))}
           </tbody>
         </table>
-        <Why summary="Assumptions">
+        <Why summary={t("grow.assumptions")}>
           {futureMe.assumptions.map((a) => (
-            <span key={a}>
-              {a}{" "}
-            </span>
+            <span key={a}>{a} </span>
           ))}
         </Why>
       </section>
 
-      <SectionHeader title="Future Me" />
+      <SectionHeader title={t("grow.futureMe")} />
       <section className="card">
         <p className="subtle">
-          If you keep {money(monthly)}/month flowing to Grow, in 20 years you&apos;d have contributed{" "}
-          <Money minor={futureMe.totalContributedMinor} className="font-semibold" /> — hypothetically worth about{" "}
-          <span className="font-bold" style={{ color: "var(--positive)" }}>
-            {money(futureMe.futureValueMinor)}
-          </span>{" "}
-          in the base scenario.
+          {t("grow.futureMeBody", {
+            monthly: money(monthly),
+            contributed: money(futureMe.totalContributedMinor),
+            value: money(futureMe.futureValueMinor),
+          })}
         </p>
-        <Disclaimer>Hypothetical projection, not a guarantee. Investments can lose value.</Disclaimer>
+        <Disclaimer>{t("grow.futureMeDisclaimer")}</Disclaimer>
       </section>
 
       {/* Grow Paths — educational pathways with honest one-year ranges */}
-      <SectionHeader title="Ways to grow it" />
+      <SectionHeader title={t("grow.ways")} />
       <div className="flex flex-col gap-3">
         {paths.map((p) => (
           <section key={p.key} className="card">
@@ -153,76 +175,84 @@ export default function GrowPage() {
               <span className="text-xl" aria-hidden>
                 {p.emoji}
               </span>
-              <div className="text-[15px] font-bold">{p.title}</div>
+              <div className="text-[15px] font-bold">{t(PATH_KEYS[p.key].title)}</div>
             </div>
-            <p className="subtle mt-2">{p.summary}</p>
+            <p className="subtle mt-2">
+              {t(PATH_KEYS[p.key].summary, {
+                stage: state.emergency.stageLabel,
+                gap: money(state.emergency.stageGapMinor),
+                monthly: money(monthly),
+              })}
+            </p>
             {p.range && (
               <div className="card mt-3" style={{ padding: 12, background: "color-mix(in oklab, var(--accent) 4%, var(--card))" }}>
-                <div className="micro font-semibold uppercase tracking-widest">After one year — hypothetical</div>
+                <div className="micro font-semibold uppercase tracking-widest">{t("grow.afterOneYear")}</div>
                 <div className="mt-1.5 flex items-baseline gap-2">
                   <span className="money text-[17px] font-bold">{money(p.range.lowMinor)}</span>
-                  <span className="micro">to</span>
+                  <span className="micro">{t("common.to")}</span>
                   <span className="money text-[17px] font-bold" style={{ color: "var(--positive)" }}>
                     {money(p.range.highMinor)}
                   </span>
                 </div>
                 <div className="micro mt-1">
-                  on {money(p.range.contributedMinor)} contributed · mid case {money(p.range.midMinor)} (
-                  {p.range.lowRatePct}% to +{p.range.highRatePct}% band)
+                  {t("grow.onContributed", {
+                    amount: money(p.range.contributedMinor),
+                    mid: money(p.range.midMinor),
+                    low: p.range.lowRatePct,
+                    high: p.range.highRatePct,
+                  })}
                 </div>
-                <Why summary="Assumptions">
-                  {p.range.assumptions.map((a) => (
-                    <span key={a}>{a} </span>
+                <Why summary={t("grow.assumptions")}>
+                  {PATH_KEYS[p.key].rangeKeys.map((k) => (
+                    <span key={k}>{t(k)} </span>
                   ))}
                 </Why>
               </div>
             )}
             <ol className="mt-3 flex flex-col gap-1.5">
-              {p.steps.map((s, i) => (
-                <li key={i} className="subtle flex gap-2">
+              {PATH_KEYS[p.key].steps.map((k, i) => (
+                <li key={k} className="subtle flex gap-2">
                   <span className="micro font-bold" style={{ color: "var(--accent)", minWidth: 14 }}>
                     {i + 1}
                   </span>
-                  <span>{s}</span>
+                  <span>{t(k)}</span>
                 </li>
               ))}
             </ol>
-            <p className="micro mt-3">Why this path: {p.reason}</p>
+            <p className="micro mt-3">
+              {t("grow.whyPath")} {t(PATH_KEYS[p.key].reason)}
+            </p>
           </section>
         ))}
       </div>
 
-      <SectionHeader title="Before trusting anyone with your money" />
+      <SectionHeader title={t("grow.beforeTrusting")} />
       <section className="card">
         <div className="micro font-semibold uppercase tracking-widest" style={{ color: "var(--positive)" }}>
-          ONE&apos;s trust criteria
+          {t("grow.trustCriteria")}
         </div>
         <ul className="mt-2 flex flex-col gap-1.5">
-          {TRUST_CRITERIA.map((c) => (
-            <li key={c} className="subtle flex gap-2">
+          {(["gp.trust.1", "gp.trust.2", "gp.trust.3", "gp.trust.4"] as const).map((k) => (
+            <li key={k} className="subtle flex gap-2">
               <span aria-hidden>✓</span>
-              <span>{c}</span>
+              <span>{t(k)}</span>
             </li>
           ))}
         </ul>
         <div className="divider my-4" />
         <div className="micro font-semibold uppercase tracking-widest" style={{ color: "var(--caution)" }}>
-          Walk away from
+          {t("grow.walkAway")}
         </div>
         <ul className="mt-2 flex flex-col gap-1.5">
-          {RED_FLAGS.map((c) => (
-            <li key={c} className="subtle flex gap-2">
+          {(["gp.flag.1", "gp.flag.2", "gp.flag.3", "gp.flag.4"] as const).map((k) => (
+            <li key={k} className="subtle flex gap-2">
               <span aria-hidden>✕</span>
-              <span>{c}</span>
+              <span>{t(k)}</span>
             </li>
           ))}
         </ul>
       </section>
-      <Disclaimer>
-        ONE shows educational pathways and criteria — it does not recommend specific securities or providers, and it
-        never executes investments. A vetted, regularly-reviewed list of providers is planned; ONE will never surface
-        unverified offers from the internet.
-      </Disclaimer>
+      <Disclaimer>{t("grow.pathsDisclaimer")}</Disclaimer>
     </main>
   );
 }
@@ -270,7 +300,7 @@ function ProjectionChart({ monthlyMinor }: { monthlyMinor: number }) {
   const gridValues = [0.25, 0.5, 0.75, 1].map((f) => maxV * f);
 
   return (
-    <div className="relative">
+    <div className="relative" dir="ltr">
       <svg
         ref={ref}
         viewBox={`0 0 ${W} ${H}`}

@@ -188,6 +188,10 @@ body::before {
 
 .money {
   font-variant-numeric: tabular-nums;
+  /* Money strings ("126.232 KD", "1.2 → 0.9") always read left-to-right,
+     isolated from surrounding RTL text. */
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .subtle {

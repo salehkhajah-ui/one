@@ -67,6 +67,7 @@ export function detectFoundMoney(params: FoundMoneyParams): MoneyInsight | null 
     confidence: "medium",
     supportingTransactionIds: supporting,
     status: "new",
+    meta: { category: params.category, actualMinor: actual, expectedMinor: params.expectedMinor },
   };
 }
 
@@ -102,6 +103,7 @@ export function detectSubscriptionIncrease(
         confidence: "high",
         supportingTransactionIds: [first.id, last.id],
         status: "new",
+        meta: { merchant: last.merchant, fromMinor: first.amountMinor, toMinor: last.amountMinor },
       };
     }
   }

@@ -15,6 +15,7 @@ Consumer fintech app: every dinar gets a job. See `docs/PRODUCT.md` for full pro
 - Update `docs/` when architecture or formulas change (`FINANCIAL_ENGINE.md` for formulas, `DECISIONS.md` for architecture decisions).
 - Follow existing component patterns in `app/components/`. Prefer maintainable code over clever abstractions.
 - Currency/locale formatting goes through `lib/money.ts` / `lib/i18n.ts` — never hard-code "KD" strings in components.
+- **The UI is bilingual (en/ar).** Every user-visible string lives in `lib/i18n-strings.ts` as an `{ en, ar }` pair and renders via `t(key, params)` — never hard-code UI copy in components. Engine-derived sentences are rebuilt from `reasonCode`/`meta` in `app/components/text.ts`; the engine itself stays English (DECISIONS.md #10). Money always uses Latin digits (`.money` is LTR-isolated); use logical CSS (`ms-`/`me-`/`text-start`/`inset-inline-*`) so RTL flips for free, and wrap time-axis charts in `dir="ltr"`.
 - Tone in all user-facing copy: calm, encouraging, never judgmental, no hype, no guaranteed returns.
 
 ## Commands

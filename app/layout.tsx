@@ -11,6 +11,7 @@ const titillium = Titillium_Web({
 });
 import { AppProvider } from "./components/AppProvider";
 import { BottomNav } from "./components/BottomNav";
+import { LocaleProvider } from "./components/LocaleProvider";
 import { ServiceWorker } from "./components/ServiceWorker";
 
 export const metadata: Metadata = {
@@ -36,10 +37,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={titillium.variable}>
       <body>
         <ServiceWorker />
-        <AppProvider>
-          <div className="shell">{children}</div>
-          <BottomNav />
-        </AppProvider>
+        <LocaleProvider>
+          <AppProvider>
+            <div className="shell">{children}</div>
+            <BottomNav />
+          </AppProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

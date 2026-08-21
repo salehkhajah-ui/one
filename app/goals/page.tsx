@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { track } from "../../lib/analytics";
-import { formatDateShort, money } from "../../lib/i18n";
+import { formatDateShort, money, t } from "../../lib/i18n";
 import { useApp } from "../components/AppProvider";
 import { BUCKET_COLORS, Disclaimer, Money, ProgressBar, SectionHeader, Why } from "../components/ui";
 
@@ -22,9 +22,9 @@ export default function GoalsPage() {
     <main className="screen">
       <header className="pt-2">
         <div className="eyebrow" style={{ color: "var(--brand)" }}>
-          Goals
+          {t("goals.eyebrow")}
         </div>
-        <h1 className="mt-1 text-[22px] font-bold tracking-tight">What you&apos;re building</h1>
+        <h1 className="mt-1 text-[22px] font-bold tracking-tight">{t("goals.title")}</h1>
       </header>
 
       {/* Emergency milestone (Protect) */}
@@ -34,32 +34,29 @@ export default function GoalsPage() {
             🛡️
           </span>
           <div className="flex-1">
-            <div className="text-[15px] font-bold">Emergency protection</div>
-            <div className="micro">
-              Current milestone: {em.stageLabel} · stage {em.stage} of 4
-            </div>
+            <div className="text-[15px] font-bold">{t("goals.emergency")}</div>
+            <div className="micro">{t("goals.milestone", { stage: em.stageLabel, n: em.stage })}</div>
           </div>
         </div>
         <div className="mt-3 flex items-baseline justify-between">
           <Money minor={em.currentMinor} className="text-[17px] font-bold" />
           <span className="subtle">
-            of <Money minor={em.stageTargetMinor} />
+            {t("common.of")} <Money minor={em.stageTargetMinor} />
           </span>
         </div>
         <div className="mt-2">
           <ProgressBar pct={emPct} color={BUCKET_COLORS.protect} />
         </div>
-        <p className="subtle mt-3">
-          Covers about <strong>{em.monthsCovered.toFixed(1)} months</strong> of essential expenses.
-        </p>
-        <Why summary="Assumptions">
-          Based on your estimated essentials of {money(state.profile.essentialMonthlyEstimateMinor)}/month. Stages: 500
-          KD starter → 1 month → 3 months → your target of {state.profile.emergencyTargetMonths} months. These are
-          common milestones, not guaranteed advice — adjust the target to fit your life.
+        <p className="subtle mt-3">{t("goals.covers", { months: em.monthsCovered.toFixed(1) })}</p>
+        <Why summary={t("common.assumptions")}>
+          {t("goals.emergencyWhy", {
+            essentials: money(state.profile.essentialMonthlyEstimateMinor),
+            target: state.profile.emergencyTargetMonths,
+          })}
         </Why>
       </section>
 
-      <SectionHeader title="Your goals" />
+      <SectionHeader title={t("goals.your")} />
       <div className="flex flex-col gap-3">
         {state.goals.map((g) => {
           const isOpen = open === g.id;
@@ -67,14 +64,14 @@ export default function GoalsPage() {
           const allocated = state.allocation.items.find((i) => i.goalId === g.id)?.amountMinor ?? 0;
           return (
             <section key={g.id} className="card" style={isPaused ? { opacity: 0.65 } : undefined}>
-              <button className="flex w-full items-center gap-3 text-left" onClick={() => setOpen(isOpen ? null : g.id)}>
+              <button className="flex w-full items-center gap-3 text-start" onClick={() => setOpen(isOpen ? null : g.id)}>
                 <span className="text-2xl" aria-hidden>
                   {g.emoji}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[15px] font-bold">
                     {g.name}
-                    {isPaused && <span className="micro font-medium"> · paused</span>}
+                    {isPaused && <span className="micro font-medium"> · {t("goals.paused")}</span>}
                   </div>
                   <div className="micro">
                     <Money minor={g.currentMinor} hideDecimals /> / <Money minor={g.targetMinor} hideDecimals /> ·{" "}
@@ -92,44 +89,46 @@ export default function GoalsPage() {
               {isOpen && (
                 <div className="mt-4 flex flex-col gap-2">
                   <div className="flex justify-between">
-                    <span className="subtle">Target date</span>
+                    <span className="subtle">{t("goals.targetDate")}</span>
                     <span className="text-[14px] font-semibold">
-                      {g.targetDate ? formatDateShort(g.targetDate) : "Flexible"}
+                      {g.targetDate ? formatDateShort(g.targetDate) : t("goals.flexible")}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="subtle">Needed monthly</span>
+                    <span className="subtle">{t("goals.neededMonthly")}</span>
                     <Money minor={g.plan.requiredMonthlyMinor} className="text-[14px] font-semibold" />
                   </div>
                   <div className="flex justify-between">
-                    <span className="subtle">In your payday plan</span>
+                    <span className="subtle">{t("goals.inPlan")}</span>
                     <Money minor={allocated} className="text-[14px] font-semibold" />
                   </div>
                   <div className="flex justify-between">
-                    <span className="subtle">Projected finish</span>
+                    <span className="subtle">{t("goals.projectedFinish")}</span>
                     <span
                       className="text-[14px] font-semibold"
                       style={{ color: g.projection.onTrack === false ? "var(--caution)" : "var(--positive)" }}
                     >
-                      {g.projection.projectedDate ? formatDateShort(g.projection.projectedDate) : "Needs a pace"}
+                      {g.projection.projectedDate ? formatDateShort(g.projection.projectedDate) : t("goals.needsPace")}
                     </span>
                   </div>
                   {!g.plan.feasible && (
                     <p className="subtle" style={{ color: "var(--caution)" }}>
-                      This deadline has passed — extend the date or adjust the target to get a workable pace.
+                      {t("goals.deadlinePassed")}
                     </p>
                   )}
                   <p className="subtle mt-1">
                     {g.projection.onTrack === false
-                      ? `At the current pace this lands after your target date. Adding a little each payday closes the gap.`
-                      : `At your current pace, you're on track${g.projection.daysToComplete ? ` — about ${g.projection.daysToComplete} days to go` : ""}.`}
+                      ? t("goals.behind")
+                      : t("goals.onTrack", {
+                          days: g.projection.daysToComplete ? t("goals.daysToGo", { n: g.projection.daysToComplete }) : "",
+                        })}
                   </p>
                   <div className="mt-2 flex gap-2">
                     <button
                       className="btn btn-quiet flex-1"
                       onClick={() => setPaused((p) => ({ ...p, [g.id]: !isPaused }))}
                     >
-                      {isPaused ? "Resume goal" : "Pause goal"}
+                      {isPaused ? t("goals.resume") : t("goals.pause")}
                     </button>
                   </div>
                 </div>
@@ -139,10 +138,7 @@ export default function GoalsPage() {
         })}
       </div>
 
-      <Disclaimer>
-        Pausing a goal frees its payday allocation for other buckets (virtual, Demo Mode). Creating and editing goals
-        arrives with real accounts in the next milestone.
-      </Disclaimer>
+      <Disclaimer>{t("goals.disclaimer")}</Disclaimer>
     </main>
   );
 }

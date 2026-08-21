@@ -191,6 +191,15 @@ export interface MoneyInsight {
   confidence: Confidence;
   supportingTransactionIds: string[];
   status: InsightStatus;
+  /** structured inputs so the UI can localize title/description */
+  meta?: {
+    category?: Category;
+    actualMinor?: number;
+    expectedMinor?: number;
+    merchant?: string;
+    fromMinor?: number;
+    toMinor?: number;
+  };
 }
 
 export interface ScoreComponent {

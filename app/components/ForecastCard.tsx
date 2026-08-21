@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { CashFlowForecast } from "../../lib/engine/forecast";
-import { amount, formatDateShort, money } from "../../lib/i18n";
+import { amount, formatDateShort, money, t } from "../../lib/i18n";
 import { Why } from "./ui";
 
 /**
@@ -46,7 +46,7 @@ export function ForecastCard({ forecast, basis, currency }: { forecast: CashFlow
 
   return (
     <section className="card">
-      <div className="relative">
+      <div className="relative" dir="ltr">
         <svg
           ref={ref}
           viewBox={`0 0 ${W} ${H}`}
@@ -59,7 +59,7 @@ export function ForecastCard({ forecast, basis, currency }: { forecast: CashFlow
           {/* buffer threshold */}
           <line x1={PAD_L} x2={W - PAD_R} y1={y(bufferMinor)} y2={y(bufferMinor)} stroke="var(--caution)" strokeWidth="1" strokeDasharray="4 4" opacity="0.7" />
           <text x={W - PAD_R} y={y(bufferMinor) - 4} fontSize="8.5" fill="var(--caution)" textAnchor="end">
-            buffer {amount(bufferMinor, currency, true)}
+            {t("forecast.buffer", { amount: amount(bufferMinor, currency, true) })}
           </text>
           {/* projected balance */}
           <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
@@ -79,10 +79,10 @@ export function ForecastCard({ forecast, basis, currency }: { forecast: CashFlow
           )}
           {/* axis labels */}
           <text x={PAD_L} y={H - 6} fontSize="8.5" fill="var(--text-3)">
-            tomorrow
+            {t("forecast.tomorrow")}
           </text>
           <text x={W - PAD_R} y={H - 6} fontSize="8.5" fill="var(--text-3)" textAnchor="end">
-            +30 days
+            {t("forecast.plus30")}
           </text>
           {hover !== null && (
             <g>
@@ -105,7 +105,7 @@ export function ForecastCard({ forecast, basis, currency }: { forecast: CashFlow
             {hovered.events.map((e) => (
               <div key={e.label} className="micro">
                 {e.direction === "in" ? "+" : "−"}
-                {money(e.amountMinor, currency)} {e.label}
+                {money(e.amountMinor, currency)} {e.label === "Salary" ? t("forecast.salary") : e.label}
               </div>
             ))}
           </div>
@@ -115,21 +115,13 @@ export function ForecastCard({ forecast, basis, currency }: { forecast: CashFlow
       <p className="subtle mt-3">
         {firstBelowBufferISO ? (
           <span style={{ color: "var(--caution)" }}>
-            ⚠️ Your balance could fall below the {money(bufferMinor, currency)} buffer around{" "}
-            <strong>{formatDateShort(firstBelowBufferISO)}</strong>. Trimming a little spending before then keeps you
-            clear.
+            {t("forecast.warning", { buffer: money(bufferMinor, currency), date: formatDateShort(firstBelowBufferISO) })}
           </span>
         ) : (
-          <>
-            Staying clear of your buffer for the next 30 days — lowest point about {money(minMinor, currency)} on{" "}
-            {formatDateShort(forecast.minDateISO)}.
-          </>
+          <>{t("forecast.safe", { min: money(minMinor, currency), date: formatDateShort(forecast.minDateISO) })}</>
         )}
       </p>
-      <Why summary="How is this projected?">
-        Day-by-day: salary on payday, each recurring bill on its expected date, and {basis}. A projection, not a
-        promise — it moves as you record spending.
-      </Why>
+      <Why summary={t("forecast.how")}>{t("forecast.howBody", { basis })}</Why>
     </section>
   );
 }

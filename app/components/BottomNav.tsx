@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { t } from "../../lib/i18n";
 import { useAppMaybe } from "./AppProvider";
 
 const ICONS = {
@@ -40,12 +41,12 @@ const ICONS = {
   ),
 } as const;
 
-const TABS: Array<{ href: string; label: string; icon: keyof typeof ICONS }> = [
-  { href: "/", label: "Home", icon: "home" },
-  { href: "/plan", label: "Plan", icon: "plan" },
-  { href: "/grow", label: "Grow", icon: "grow" },
-  { href: "/goals", label: "Goals", icon: "goals" },
-  { href: "/one", label: "ONE", icon: "one" },
+const TABS: Array<{ href: string; labelKey: "nav.home" | "nav.plan" | "nav.grow" | "nav.goals" | "nav.one"; icon: keyof typeof ICONS }> = [
+  { href: "/", labelKey: "nav.home", icon: "home" },
+  { href: "/plan", labelKey: "nav.plan", icon: "plan" },
+  { href: "/grow", labelKey: "nav.grow", icon: "grow" },
+  { href: "/goals", labelKey: "nav.goals", icon: "goals" },
+  { href: "/one", labelKey: "nav.one", icon: "one" },
 ];
 
 export function BottomNav() {
@@ -61,7 +62,7 @@ export function BottomNav() {
           return (
             <Link key={tab.href} href={tab.href} className="nav-item" data-active={active} aria-current={active ? "page" : undefined}>
               {ICONS[tab.icon]}
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
             </Link>
           );
         })}

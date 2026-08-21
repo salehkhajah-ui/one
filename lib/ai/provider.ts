@@ -25,12 +25,12 @@ export interface AIProvider {
   answerFinancialQuestion(question: string, state: DemoState): ChatAnswer;
 }
 
-/** Suggested prompts surfaced in the Ask ONE UI. */
-export const SUGGESTED_PROMPTS = [
-  "What can I safely spend this weekend?",
-  "Can I afford a 300 KD phone?",
-  "When will I reach my Japan goal?",
-  "How much did I spend eating out?",
-  "Why did ONE allocate money to Protect?",
-  "What happens if I increase Grow by 50 KD?",
-];
+/** Suggested prompts surfaced in the Ask ONE UI (localized via t()). */
+export const SUGGESTED_PROMPT_KEYS = [
+  "chat.p.weekend",
+  "chat.p.phone",
+  "chat.p.japan",
+  "chat.p.eating",
+  "chat.p.protect",
+  "chat.p.grow50",
+] as const;

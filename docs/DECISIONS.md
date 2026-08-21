@@ -67,3 +67,30 @@ The product goal "suggest smart ways to grow allocated money and find trusted op
 **Status:** accepted
 
 Demo data generates from a fixed seed relative to "today" so paydays/bills fall realistically around the current date, while remaining deterministic within a day. No network, no external APIs; every major screen works offline.
+
+## 10. Bilingual UI (English/Arabic) with a localized presentation layer over an English engine
+
+**Status:** accepted
+
+The app ships fully bilingual (en/ar) with RTL layout in Arabic. Architecture:
+
+- **Engine stays English and locale-free.** `lib/engine/**` continues to emit
+  English `reason`/`title` strings plus machine-readable `reasonCode`/`meta`
+  fields. Tests and audit trails keep one canonical language.
+- **The UI renders through a localization layer.** `lib/i18n-strings.ts` holds
+  every user-visible string as `{ en, ar }` pairs; `t(key, params)` in
+  `lib/i18n.ts` interpolates in the active locale. Engine-derived sentences
+  (allocation reasons, insights, Worth It verdicts, score moves) are rebuilt
+  client-side from `reasonCode`/`meta` in `app/components/text.ts` — never by
+  string-replacing the engine's English.
+- **Money keeps Western (Latin) digits in both languages** — Kuwaiti banking
+  convention — via `ar-KW-u-nu-latn`, amount-first with a localized unit
+  ("126.232 د.ك"). The `.money` class isolates as LTR (`unicode-bidi: isolate`)
+  so amounts and before→after arrows never scramble inside RTL sentences.
+- **RTL flips via `dir="rtl"` on `<html>`** (LocaleProvider), with logical CSS
+  properties (`ms-`/`me-`/`inset-inline-*`/`text-start`); charts remain LTR
+  (`dir="ltr"` wrappers) since time axes read left→right in both languages.
+- **Ask ONE understands Arabic questions** — the mock provider matches Arabic
+  intent keywords and Arabic-Indic digits, and answers via the same string
+  table. Locale persists in `localStorage` (`one.locale.v1`); toggles live on
+  the welcome screen and in Account.

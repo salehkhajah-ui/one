@@ -27,6 +27,15 @@ Launch → Demo user (Omar) → Home with Safe to Spend → six money buckets �
 - PWA manifest + share target: installed ONE appears in the Android share sheet — share a bank alert straight in
 - Path to full auto-read documented in `DECISIONS.md` #6 (native Android listener → same parser; iOS via future bank APIs)
 
+## Milestone 1.8 — Arabic + RTL ✅
+
+- Full bilingual UI: every screen (Home, Plan, Payday, Grow, Goals, Worth It, Add, Activity, Account, Onboarding, Ask ONE, Privacy) renders in English or Arabic via `lib/i18n-strings.ts` + `t()`
+- RTL layout in Arabic (`dir="rtl"` on `<html>`, logical CSS properties); charts stay LTR
+- Money keeps Latin digits in both languages, amount-first with localized unit (د.ك); `.money` bidi-isolated
+- Engine-derived sentences localized from `reasonCode`/`meta` (`app/components/text.ts`) — engine itself stays English (DECISIONS.md #10)
+- Ask ONE answers Arabic questions (Arabic intent keywords + Arabic-Indic digit normalization)
+- Language toggle on the welcome screen and in Account; persisted in `localStorage`
+
 ## Milestone 2 — Real user data
 
 - Supabase: Postgres, Auth (email + OTP/magic link; Apple/Google later), RLS everywhere
@@ -54,4 +63,4 @@ Launch → Demo user (Omar) → Home with Safe to Spend → six money buckets �
 
 ## Later / vision
 
-ONE Levels + Money Missions, streaks (no dark patterns), Arabic + RTL, multi-currency, regulated-provider investing abstraction, ONE Family/Travel/Life expansions. Money is the wedge; keep the MVP unpolluted.
+ONE Levels + Money Missions, streaks (no dark patterns), ~~Arabic + RTL~~ ✅ (shipped early), multi-currency, regulated-provider investing abstraction, ONE Family/Travel/Life expansions. Money is the wedge; keep the MVP unpolluted.

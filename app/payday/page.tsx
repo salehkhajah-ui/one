@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { track } from "../../lib/analytics";
+import { t } from "../../lib/i18n";
 import type { BucketKey } from "../../lib/engine/types";
 import { useApp, useAppControls } from "../components/AppProvider";
-import { BUCKET_LABELS, BucketDot, HeroMoney, Money } from "../components/ui";
+import { bucketLabel, BucketDot, HeroMoney, Money } from "../components/ui";
 
 const BUCKET_ORDER: BucketKey[] = ["protect", "grow", "goals", "life", "bills", "enjoy"];
 
@@ -38,22 +39,22 @@ export default function PaydayPage() {
     <main className="screen flex min-h-[100dvh] flex-col">
       <div className="flex items-center justify-between pt-2">
         <div className="eyebrow" style={{ color: "var(--brand)" }}>
-          Payday
+          {t("payday.eyebrow")}
         </div>
         <Link href="/" className="micro font-semibold" style={{ color: "var(--text-3)" }}>
-          Close ✕
+          {t("payday.close")}
         </Link>
       </div>
 
       <div className="flex flex-1 flex-col justify-center pb-10">
         <div className="text-center">
-          <p className="subtle">{phase === "amount" ? "Received" : "Payday"}</p>
+          <p className="subtle">{phase === "amount" ? t("payday.received") : t("payday.eyebrow")}</p>
           <div className="mt-2 flex justify-center" style={{ color: "var(--positive)" }}>
             <HeroMoney minor={income} />
           </div>
           {phase !== "amount" && (
             <p className="subtle mt-3" style={{ animation: "screen-in 400ms ease" }}>
-              {phase === "working" ? "Your dinars are getting to work…" : "Every dinar has a job."}
+              {phase === "working" ? t("payday.working") : t("brand.everyDinarJob")}
             </p>
           )}
         </div>
@@ -68,7 +69,7 @@ export default function PaydayPage() {
                   style={{ animation: `screen-in 360ms cubic-bezier(0.2,0.7,0.3,1) ${i * 90}ms backwards` }}
                 >
                   <BucketDot bucket={k} />
-                  <span className="flex-1 text-[14.5px] font-semibold">{BUCKET_LABELS[k]}</span>
+                  <span className="flex-1 text-[14.5px] font-semibold">{bucketLabel(k)}</span>
                   <Money minor={rec[k]} className="text-[14.5px] font-bold" />
                 </li>
               ))}
@@ -81,7 +82,7 @@ export default function PaydayPage() {
         <div className="pb-6">
           {accepted ? (
             <p className="subtle text-center" style={{ color: "var(--positive)" }}>
-              Plan accepted — your dinars are on the job. Taking you home…
+              {t("payday.acceptedNote")}
             </p>
           ) : (
             <>
@@ -93,13 +94,13 @@ export default function PaydayPage() {
                   setTimeout(() => router.push("/"), 1100);
                 }}
               >
-                Accept plan
+                {t("payday.acceptPlan")}
               </button>
               <Link href="/plan" className="btn btn-ghost mt-3 w-full">
-                Adjust first
+                {t("payday.adjustFirst")}
               </Link>
               <p className="micro mt-3 text-center">
-                Accepting updates ONE&apos;s virtual allocation for this cycle — it does not move real bank funds.
+                {t("payday.disclaimer")}
               </p>
             </>
           )}
