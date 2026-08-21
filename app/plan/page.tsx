@@ -5,7 +5,7 @@ import { track } from "../../lib/analytics";
 import { goalDelayDays } from "../../lib/engine/goals";
 import { calculateCompoundProjection, SCENARIOS } from "../../lib/engine/projection";
 import type { BucketKey } from "../../lib/engine/types";
-import { formatDateShort, money, t } from "../../lib/i18n";
+import { emergencyStageLabel, formatDateShort, money, t } from "../../lib/i18n";
 import { fromMajor } from "../../lib/money";
 import Link from "next/link";
 import { useApp, useAppControls } from "../components/AppProvider";
@@ -64,13 +64,13 @@ export default function PlanPage() {
           tone: "caution",
           text:
             newDays === null
-              ? t("plan.c.protectPause", { stage: state.emergency.stageLabel })
-              : t("plan.c.protectReduce", { amount: money(-protectDelta), stage: state.emergency.stageLabel, days: newDays - (recDays ?? 0) }),
+              ? t("plan.c.protectPause", { stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths) })
+              : t("plan.c.protectReduce", { amount: money(-protectDelta), stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths), days: newDays - (recDays ?? 0) }),
         });
       } else {
         out.push({
           tone: "positive",
-          text: t("plan.c.protectAdd", { amount: money(protectDelta), stage: state.emergency.stageLabel, days: (recDays ?? 0) - (newDays ?? 0) }),
+          text: t("plan.c.protectAdd", { amount: money(protectDelta), stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths), days: (recDays ?? 0) - (newDays ?? 0) }),
         });
       }
     }

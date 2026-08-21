@@ -62,7 +62,7 @@ export function ForecastCard({ forecast, basis, currency }: { forecast: CashFlow
             {t("forecast.buffer", { amount: amount(bufferMinor, currency, true) })}
           </text>
           {/* projected balance */}
-          <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
+          <path d={path} pathLength={1} className="draw-line" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
           {/* event ticks (salary/bills) */}
           {points.map((p, i) =>
             p.events.length > 0 ? (

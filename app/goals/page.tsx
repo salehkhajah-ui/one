@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { track } from "../../lib/analytics";
-import { formatDateShort, money, t } from "../../lib/i18n";
+import { emergencyStageLabel, formatDateShort, money, t } from "../../lib/i18n";
 import { useApp } from "../components/AppProvider";
 import { BUCKET_COLORS, Disclaimer, Money, ProgressBar, SectionHeader, Why } from "../components/ui";
 
@@ -35,7 +35,7 @@ export default function GoalsPage() {
           </span>
           <div className="flex-1">
             <div className="text-[15px] font-bold">{t("goals.emergency")}</div>
-            <div className="micro">{t("goals.milestone", { stage: em.stageLabel, n: em.stage })}</div>
+            <div className="micro">{t("goals.milestone", { stage: emergencyStageLabel(em.stage, state.profile.emergencyTargetMonths), n: em.stage })}</div>
           </div>
         </div>
         <div className="mt-3 flex items-baseline justify-between">

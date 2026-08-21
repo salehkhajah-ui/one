@@ -8,7 +8,7 @@ import type { Transaction } from "../lib/engine/types";
 import type { StringKey } from "../lib/i18n-strings";
 import { useApp, useAppControls } from "./components/AppProvider";
 import { ForecastCard } from "./components/ForecastCard";
-import { BUCKET_COLORS, BucketDot, Disclaimer, HeroMoney, Money, ProgressBar, SectionHeader, StackBar, Why, bucketLabel } from "./components/ui";
+import { BUCKET_COLORS, BucketDot, Disclaimer, HeroMoney, Money, ProgressBar, SectionHeader, StackBar, Why, bucketLabel, useCountUp } from "./components/ui";
 import { catLabel, insightDescription, insightTitle, scoreComponentLabel, scoreFormula, scoreMove } from "./components/text";
 
 function greeting(): string {
@@ -344,7 +344,8 @@ export default function HomePage() {
 function ScoreRing({ score }: { score: number }) {
   const r = 34;
   const c = 2 * Math.PI * r;
-  const filled = (score / 100) * c;
+  const shown = useCountUp(score, 900);
+  const filled = (shown / 100) * c;
   return (
     <div className="relative grid place-items-center" style={{ width: 92, height: 92 }}>
       <svg width="92" height="92" viewBox="0 0 92 92" className="score-ring" aria-hidden>
@@ -361,7 +362,7 @@ function ScoreRing({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute text-center">
-        <div className="text-[26px] font-bold money leading-none">{score}</div>
+        <div className="text-[26px] font-bold money leading-none">{shown}</div>
         <div className="micro">/ 100</div>
       </div>
     </div>

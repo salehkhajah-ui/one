@@ -53,6 +53,12 @@ export function t(key: StringKey, params?: Record<string, string | number>): str
   return out;
 }
 
+/** Localized emergency-stage label (the engine's stageLabel stays English for audit). */
+export function emergencyStageLabel(stage: 1 | 2 | 3 | 4, targetMonths: number): string {
+  if (stage === 4) return t("stage.4", { months: targetMonths });
+  return t(`stage.${stage}` as StringKey);
+}
+
 /** BCP-47 tag for number formatting — Latin digits in both languages for money legibility. */
 export function formatLocaleTag(): string {
   return activeLocale === "ar" ? "ar-KW-u-nu-latn" : "en-KW";

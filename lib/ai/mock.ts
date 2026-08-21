@@ -8,7 +8,7 @@
 import { fromMajor } from "../money";
 import { calculateCompoundProjection, SCENARIOS } from "../engine/projection";
 import type { DemoState } from "../demo/state";
-import { formatDateShort, money, t } from "../i18n";
+import { emergencyStageLabel, formatDateShort, money, t } from "../i18n";
 import type { StringKey } from "../i18n-strings";
 import type { AIProvider, ChatAnswer } from "./provider";
 
@@ -146,13 +146,13 @@ function answerWhyProtect(state: DemoState): ChatAnswer {
       tool: "explainAllocation",
       text: t("reason.protect.gap", {
         current: money(state.emergency.currentMinor, state.currency),
-        stage: state.emergency.stageLabel,
+        stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths),
         target: money(state.emergency.stageTargetMinor, state.currency),
       }),
     };
   }
   if (item.reasonCode === "stage_complete") {
-    return { tool: "explainAllocation", text: t("reason.protect.done", { stage: state.emergency.stageLabel }) };
+    return { tool: "explainAllocation", text: t("reason.protect.done", { stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths) }) };
   }
   return { tool: "explainAllocation", text: item.reason };
 }
@@ -220,7 +220,7 @@ export const mockAIProvider: AIProvider = {
     if (hasAny(q, ["afford", "worth it", "buy", "أقدر أشتري", "اقدر اشتري", "اشتري", "أشتري", "آخذ", "اخذ", "يستاهل", "يسوى", "على قدي", "شراء"]))
       return answerAfford(question, state);
     if (why && hasAny(q, ["lower", "safe to spend", "أقل", "اقل", "انخفض", "المتاح"])) return answerWhyLower(state);
-    if (why && hasAny(q, ["protect", "حماية", "للحماية"])) return answerWhyProtect(state);
+    if (why && hasAny(q, ["protect", "طوارئ", "الطوارئ", "حماية", "للحماية"])) return answerWhyProtect(state);
     if (hasAny(q, ["increase", "زود", "زدت", "زيادة", "أزيد", "ازيد", "ماذا لو"]) && hasAny(q, ["grow", "نمو", "النمو"]))
       return answerIncreaseGrow(question, state);
     if (hasAny(q, ["save", "وفر", "أوفر", "اوفر", "ادخر", "أدخر", "ادّخر"]) && extractAmountMinor(question))

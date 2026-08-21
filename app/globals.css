@@ -107,13 +107,80 @@ body::before {
 
 .screen {
   padding: 16px 18px 8px;
-  animation: screen-in 240ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-@keyframes screen-in {
+/* ============ Motion — staggered entrances, sweeps, draws ============
+   All decorative motion lives inside this media query so reduced-motion
+   users get an instant, static UI. */
+@media (prefers-reduced-motion: no-preference) {
+  .screen > * {
+    animation: rise 460ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  }
+  .screen > *:nth-child(1) { animation-delay: 0ms; }
+  .screen > *:nth-child(2) { animation-delay: 50ms; }
+  .screen > *:nth-child(3) { animation-delay: 100ms; }
+  .screen > *:nth-child(4) { animation-delay: 150ms; }
+  .screen > *:nth-child(5) { animation-delay: 200ms; }
+  .screen > *:nth-child(6) { animation-delay: 250ms; }
+  .screen > *:nth-child(7) { animation-delay: 300ms; }
+  .screen > *:nth-child(8) { animation-delay: 350ms; }
+  .screen > *:nth-child(n + 9) { animation-delay: 400ms; }
+
+  /* One-time light sweep across elevated (hero) cards */
+  .card-elevated::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 32%,
+      color-mix(in oklab, var(--accent) 10%, transparent) 50%,
+      transparent 68%
+    );
+    background-size: 250% 100%;
+    animation: sheen 1300ms cubic-bezier(0.3, 0.5, 0.3, 1) 350ms forwards;
+    opacity: 0;
+  }
+
+  /* Bars grow in from their reading edge */
+  .progress-fill {
+    animation: bar-in 750ms cubic-bezier(0.2, 0.7, 0.3, 1) 150ms backwards;
+    transform-origin: 0% 50%;
+  }
+  [dir="rtl"] .progress-fill {
+    transform-origin: 100% 50%;
+  }
+  .stack-seg {
+    animation: bar-in 650ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+    transform-origin: 0% 50%;
+  }
+  [dir="rtl"] .stack-seg {
+    transform-origin: 100% 50%;
+  }
+
+  /* SVG lines draw themselves (requires pathLength={1} on the path) */
+  .draw-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw-line 1100ms cubic-bezier(0.4, 0, 0.2, 1) 200ms forwards;
+  }
+
+  .chat-bubble-user,
+  .chat-bubble-one {
+    animation: pop 280ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  }
+
+  .nav-item[data-active="true"]::before {
+    animation: bar-in 260ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+}
+
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -121,9 +188,40 @@ body::before {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .screen {
-    animation: none;
+@keyframes sheen {
+  0% {
+    opacity: 1;
+    background-position: 130% 0;
+  }
+  100% {
+    opacity: 0;
+    background-position: -60% 0;
+  }
+}
+
+@keyframes bar-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes draw-line {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -445,6 +543,27 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-2);
   cursor: pointer;
   min-height: 38px;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 120ms ease;
+}
+
+/* Tappable cards give tactile feedback */
+a.card,
+button.card {
+  transition:
+    transform 140ms ease,
+    border-color 200ms ease;
+}
+
+a.card:active,
+button.card:active {
+  transform: scale(0.98);
+}
+
+.nav-item {
+  transition: color 180ms ease;
 }
 
 .chip:active {

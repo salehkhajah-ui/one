@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { BucketKey } from "../../lib/engine/types";
 import { amount, currencyUnitLabel, money, t } from "../../lib/i18n";
 import type { StringKey } from "../../lib/i18n-strings";
@@ -29,6 +29,42 @@ export function bucketLabel(key: BucketKey): string {
   return t(BUCKET_LABEL_KEYS[key]);
 }
 
+/**
+ * Animate a number from its previous value to `target` (ease-out cubic).
+ * Respects prefers-reduced-motion (snaps instantly). First mount counts up
+ * from zero so hero figures feel alive.
+ */
+export function useCountUp(target: number, duration = 800): number {
+  const [display, setDisplay] = useState(0);
+  const prevRef = useRef(0);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      prevRef.current = target;
+      setDisplay(target);
+      return;
+    }
+    const from = prevRef.current;
+    prevRef.current = target;
+    if (from === target) {
+      setDisplay(target);
+      return;
+    }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(from + (target - from) * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return display;
+}
+
 export function Money({
   minor,
   currency = "KWD",
@@ -47,11 +83,12 @@ export function Money({
   );
 }
 
-/** Hero display: big number, smaller unit. */
+/** Hero display: big number counting up, smaller unit. */
 export function HeroMoney({ minor, currency = "KWD" }: { minor: number; currency?: CurrencyCode }) {
+  const shown = useCountUp(minor);
   return (
     <div className="flex items-baseline gap-2">
-      <span className="hero-number money">{amount(minor, currency)}</span>
+      <span className="hero-number money">{amount(shown, currency)}</span>
       <span className="hero-unit">{currencyUnitLabel(currency)}</span>
     </div>
   );
@@ -69,11 +106,11 @@ export function StackBar({ parts }: { parts: Array<{ key: BucketKey; amountMinor
     <div className="stack-bar" role="img" aria-label={parts.map((p) => `${bucketLabel(p.key)} ${money(p.amountMinor)}`).join(", ")}>
       {parts
         .filter((p) => p.amountMinor > 0)
-        .map((p) => (
+        .map((p, i) => (
           <div
             key={p.key}
             className="stack-seg"
-            style={{ flexGrow: p.amountMinor, flexBasis: 0, background: BUCKET_COLORS[p.key] }}
+            style={{ flexGrow: p.amountMinor, flexBasis: 0, background: BUCKET_COLORS[p.key], animationDelay: `${150 + i * 70}ms` }}
           />
         ))}
     </div>

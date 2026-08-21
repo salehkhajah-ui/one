@@ -6,7 +6,7 @@
 import type { AppState } from "../../lib/app/state";
 import type { AllocationItem, Category, MoneyInsight, OneScore, ScoreComponent } from "../../lib/engine/types";
 import type { WorthItAlternative, WorthItResult } from "../../lib/engine/worthIt";
-import { formatDateShort, money, t } from "../../lib/i18n";
+import { emergencyStageLabel, formatDateShort, money, t } from "../../lib/i18n";
 import type { StringKey } from "../../lib/i18n-strings";
 
 export function catLabel(category: Category): string {
@@ -24,11 +24,11 @@ export function allocationReason(item: AllocationItem, state: AppState): string 
     case "below_stage_target":
       return t("reason.protect.gap", {
         current: money(state.emergency.currentMinor),
-        stage: state.emergency.stageLabel,
+        stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths),
         target: money(state.emergency.stageTargetMinor),
       });
     case "stage_complete":
-      return t("reason.protect.done", { stage: state.emergency.stageLabel });
+      return t("reason.protect.done", { stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths) });
     case "goal_pace": {
       const goal = state.goals.find((g) => g.id === item.goalId);
       return t("reason.goal", {

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "../../lib/analytics";
 import { buildGrowPaths } from "../../lib/engine/growPaths";
 import { calculateCompoundProjection, SCENARIOS } from "../../lib/engine/projection";
-import { amount, moneyCompact, money, t } from "../../lib/i18n";
+import { amount, emergencyStageLabel, moneyCompact, money, t } from "../../lib/i18n";
 import type { StringKey } from "../../lib/i18n-strings";
 import { fromMajor } from "../../lib/money";
 import { useApp } from "../components/AppProvider";
@@ -179,7 +179,7 @@ export default function GrowPage() {
             </div>
             <p className="subtle mt-2">
               {t(PATH_KEYS[p.key].summary, {
-                stage: state.emergency.stageLabel,
+                stage: emergencyStageLabel(state.emergency.stage, state.profile.emergencyTargetMonths),
                 gap: money(state.emergency.stageGapMinor),
                 monthly: money(monthly),
               })}
@@ -314,14 +314,17 @@ function ProjectionChart({ monthlyMinor }: { monthlyMinor: number }) {
           <line key={v} x1={PAD_L} x2={W - PAD_R} y1={y(v)} y2={y(v)} stroke="var(--hairline)" strokeWidth="1" />
         ))}
         {[0, 5, 10, 15, 20].map((yr) => (
-          <text key={yr} x={x(yr)} y={H - 6} fontSize="9" fill="var(--text-3)" textAnchor="middle">
-            {yr === 0 ? "now" : `${yr}y`}
+          <text key={yr} x={x(yr)} y={H - 6} fontSize="9" fill="var(--text-3)" textAnchor={yr === 0 ? "start" : "middle"}>
+            {yr === 0 ? t("grow.nowAxis") : t("grow.yearAxis", { n: yr })}
           </text>
         ))}
-        {series.map((s) => (
+        {series.map((s, si) => (
           <g key={s.scenario.key}>
             <path
               d={s.points.map((p, i) => `${i === 0 ? "M" : "L"}${x(p.year).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ")}
+              pathLength={1}
+              className="draw-line"
+              style={{ animationDelay: `${200 + si * 140}ms` }}
               fill="none"
               stroke={SCENARIO_COLORS[s.scenario.key]}
               strokeWidth="2"
