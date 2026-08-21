@@ -78,7 +78,10 @@ The app ships fully bilingual (en/ar) with RTL layout in Arabic. Architecture:
   English `reason`/`title` strings plus machine-readable `reasonCode`/`meta`
   fields. Tests and audit trails keep one canonical language.
 - **The UI renders through a localization layer.** `lib/i18n-strings.ts` holds
-  every user-visible string as `{ en, ar }` pairs; `t(key, params)` in
+  every user-visible string as `{ en, ar }` pairs — the Arabic is **Kuwaiti
+  dialect** (white colloquial: شلون، شكثر، فلوسك، الحين، ماكو…), matching how
+  Kuwaiti apps talk to users; only the privacy policy stays MSA as a
+  quasi-legal document; `t(key, params)` in
   `lib/i18n.ts` interpolates in the active locale. Engine-derived sentences
   (allocation reasons, insights, Worth It verdicts, score moves) are rebuilt
   client-side from `reasonCode`/`meta` in `app/components/text.ts` — never by

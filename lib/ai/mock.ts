@@ -60,7 +60,7 @@ function answerAfford(question: string, state: DemoState): ChatAnswer {
   }
   const itemMatch =
     question.match(/afford (?:a |an |the )?([\w\s]+?)(?:\?|$|for|at)/i) ??
-    question.match(/(?:أشتري|اشتري|اشترى)\s+(.+?)(?:\s*(?:بـ|ب)\s*[\d٠-٩]|\?|؟|$)/);
+    question.match(/(?:أشتري|اشتري|اشترى|آخذ|اخذ)\s+(.+?)(?:\s*(?:بـ|ب)\s*[\d٠-٩]|\?|؟|$)/);
   const fallback = t("chat.a.thisItem");
   const item = itemMatch
     ? normalizeDigits(itemMatch[1]).trim().replace(/\d+(\.\d+)?\s*(kd|kwd|دينار)?/i, "").trim() || fallback
@@ -217,7 +217,7 @@ export const mockAIProvider: AIProvider = {
   answerFinancialQuestion(question: string, state: DemoState): ChatAnswer {
     const q = normalizeDigits(question.toLowerCase());
     const why = hasAny(q, ["why", "ليش", "لماذا", "ليه"]);
-    if (hasAny(q, ["afford", "worth it", "buy", "أقدر أشتري", "اقدر اشتري", "اشتري", "أشتري", "يستاهل", "شراء"]))
+    if (hasAny(q, ["afford", "worth it", "buy", "أقدر أشتري", "اقدر اشتري", "اشتري", "أشتري", "آخذ", "اخذ", "يستاهل", "يسوى", "على قدي", "شراء"]))
       return answerAfford(question, state);
     if (why && hasAny(q, ["lower", "safe to spend", "أقل", "اقل", "انخفض", "المتاح"])) return answerWhyLower(state);
     if (why && hasAny(q, ["protect", "حماية", "للحماية"])) return answerWhyProtect(state);
