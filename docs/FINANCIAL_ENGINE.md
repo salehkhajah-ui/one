@@ -61,6 +61,10 @@ Floating point is permitted **only** here (hypothetical projection, not a balanc
 
 Day-by-day balance projection over 30 days (max 90): salary lands on payday, each active recurring bill on its expected day-of-month, and a daily spending run-rate subtracts every day. Run-rate: with history, the average daily **non-recurring** debit over the last 30 days (bills counted separately to avoid double-counting); without history, (essentials + Enjoy pace) ÷ 30. Reports the minimum point and the **first day below the user's cash buffer** (`firstBelowBufferISO`), which powers the low-cash warning. Balances may go negative and are reported honestly. A projection, not a promise — the basis string is surfaced in the UI.
 
+## Grow Paths (`growPaths.ts`)
+
+Educational pathways for the Grow allocation with honest one-year ranges via `futureValueAtRate` (supports negative rates — losing years exist). Market band −18% / +7% / +22% (inside historical single-year dispersion of broad global indexes; extremes have been wider); capital-stable band 1% / 2.5% / 4% (illustrative, never presented as live rates). Path selection: safety-net-first whenever the emergency stage ≤ 2 (no return number attached to safety — tested), capital-stable leads for low risk preference. `TRUST_CRITERIA` and `RED_FLAGS` are engine constants surfaced verbatim in the UI. No individual securities, no providers named without verification, nothing executed.
+
 ## ONE Score (`score.ts`)
 
 0–100 resilience (NOT a credit score). Weights: Emergency 30 · Cash Flow 25 · Growth 20 · Goals 25.

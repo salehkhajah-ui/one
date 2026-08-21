@@ -56,7 +56,13 @@ Auto-commit is deliberately off: parsed transactions require a confirmation tap 
 
 Milestone 2 v1 syncs the entire `UserSetup` as one RLS-guarded `user_setups` row per user (newest-wins by `updatedAtISO`), with passwordless email-OTP sign-in and a "delete my cloud data" control. Normalized tables (DATA_MODEL.md) arrive when server-side computation does. The Supabase URL + *publishable* key are inlined behind an env override because Vercel env vars aren't manageable with current access — these are client-shipped values by design and grant nothing without a session; the service-role key never appears anywhere in this repo. `getSupabase()` returns null when unconfigured, so the whole layer is inert until provisioned.
 
-## 8. Demo Mode is seeded and date-anchored
+## 8. Grow Paths: educational pathways + vetted feed, never internet-scraped "opportunities"
+
+**Status:** accepted
+
+The product goal "suggest smart ways to grow allocated money and find trusted opportunities" ships as: (1) deterministic **Grow Paths** on the Grow screen — regulated-broker index investing and capital-stable saving, each with an honest one-year from–to range **that includes losing outcomes** (market band −18%/+7%/+22%, deposits 1%/2.5%/4%, assumptions surfaced), safety-net-first when the emergency fund is weak, ordering adjusted to risk preference; (2) published **trust criteria** (regulator-verifiable license, segregated client money, diversified low-fee products, no lock-ups) and **red-flag education**; (3) a future **vetted opportunities feed**: operator-approved entries in the database, reviewed before display. ONE will never surface auto-scraped internet offers — unvetted "opportunities" are the primary scam-delivery channel, and per spec §36/§63 ONE names no individual securities and guarantees nothing.
+
+## 9. Demo Mode is seeded and date-anchored
 
 **Status:** accepted
 

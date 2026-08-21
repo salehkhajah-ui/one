@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "../../lib/analytics";
+import { buildGrowPaths, RED_FLAGS, TRUST_CRITERIA } from "../../lib/engine/growPaths";
 import { calculateCompoundProjection, SCENARIOS } from "../../lib/engine/projection";
 import { amount, moneyCompact, money } from "../../lib/i18n";
 import { fromMajor } from "../../lib/money";
@@ -35,6 +36,16 @@ export default function GrowPage() {
   const futureMe = useMemo(
     () => calculateCompoundProjection(0, monthly, 20, SCENARIOS.find((s) => s.key === "base")!),
     [monthly],
+  );
+  const paths = useMemo(
+    () =>
+      buildGrowPaths({
+        currency: "KWD",
+        growMonthlyMinor: monthly,
+        emergency: state.emergency,
+        riskPreference: state.profile.riskPreference,
+      }),
+    [monthly, state.emergency, state.profile.riskPreference],
   );
 
   return (
@@ -132,6 +143,86 @@ export default function GrowPage() {
         </p>
         <Disclaimer>Hypothetical projection, not a guarantee. Investments can lose value.</Disclaimer>
       </section>
+
+      {/* Grow Paths — educational pathways with honest one-year ranges */}
+      <SectionHeader title="Ways to grow it" />
+      <div className="flex flex-col gap-3">
+        {paths.map((p) => (
+          <section key={p.key} className="card">
+            <div className="flex items-center gap-3">
+              <span className="text-xl" aria-hidden>
+                {p.emoji}
+              </span>
+              <div className="text-[15px] font-bold">{p.title}</div>
+            </div>
+            <p className="subtle mt-2">{p.summary}</p>
+            {p.range && (
+              <div className="card mt-3" style={{ padding: 12, background: "color-mix(in oklab, var(--accent) 4%, var(--card))" }}>
+                <div className="micro font-semibold uppercase tracking-widest">After one year — hypothetical</div>
+                <div className="mt-1.5 flex items-baseline gap-2">
+                  <span className="money text-[17px] font-bold">{money(p.range.lowMinor)}</span>
+                  <span className="micro">to</span>
+                  <span className="money text-[17px] font-bold" style={{ color: "var(--positive)" }}>
+                    {money(p.range.highMinor)}
+                  </span>
+                </div>
+                <div className="micro mt-1">
+                  on {money(p.range.contributedMinor)} contributed · mid case {money(p.range.midMinor)} (
+                  {p.range.lowRatePct}% to +{p.range.highRatePct}% band)
+                </div>
+                <Why summary="Assumptions">
+                  {p.range.assumptions.map((a) => (
+                    <span key={a}>{a} </span>
+                  ))}
+                </Why>
+              </div>
+            )}
+            <ol className="mt-3 flex flex-col gap-1.5">
+              {p.steps.map((s, i) => (
+                <li key={i} className="subtle flex gap-2">
+                  <span className="micro font-bold" style={{ color: "var(--accent)", minWidth: 14 }}>
+                    {i + 1}
+                  </span>
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="micro mt-3">Why this path: {p.reason}</p>
+          </section>
+        ))}
+      </div>
+
+      <SectionHeader title="Before trusting anyone with your money" />
+      <section className="card">
+        <div className="micro font-semibold uppercase tracking-widest" style={{ color: "var(--positive)" }}>
+          ONE&apos;s trust criteria
+        </div>
+        <ul className="mt-2 flex flex-col gap-1.5">
+          {TRUST_CRITERIA.map((c) => (
+            <li key={c} className="subtle flex gap-2">
+              <span aria-hidden>✓</span>
+              <span>{c}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="divider my-4" />
+        <div className="micro font-semibold uppercase tracking-widest" style={{ color: "var(--caution)" }}>
+          Walk away from
+        </div>
+        <ul className="mt-2 flex flex-col gap-1.5">
+          {RED_FLAGS.map((c) => (
+            <li key={c} className="subtle flex gap-2">
+              <span aria-hidden>✕</span>
+              <span>{c}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <Disclaimer>
+        ONE shows educational pathways and criteria — it does not recommend specific securities or providers, and it
+        never executes investments. A vetted, regularly-reviewed list of providers is planned; ONE will never surface
+        unverified offers from the internet.
+      </Disclaimer>
     </main>
   );
 }
