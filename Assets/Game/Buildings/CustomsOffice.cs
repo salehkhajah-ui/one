@@ -81,8 +81,20 @@ namespace PortGame
         /// <summary>The tractor dwells in the bay while this runs.</summary>
         public IEnumerator Inspect(Container container)
         {
+            float dwell = DwellSeconds;
+
+            // PORT AI express customs: urgent cargo pays a fee for half dwell.
+            bool urgent = container.Shipment != null &&
+                (container.Shipment.IsEmergency || container.Shipment.Urgency >= Urgency.Orange);
+            if (urgent && PortAI.Has(AiRule.ExpressCustoms) &&
+                EconomyManager.Instance.TrySpend(40, "express customs fee", quiet: true))
+            {
+                dwell *= 0.5f;
+                PortAI.Note();
+            }
+
             _scanning = true;
-            yield return new WaitForSeconds(DwellSeconds);
+            yield return new WaitForSeconds(dwell);
             _scanning = false;
             container.CustomsCleared = true;
             InspectedCount++;

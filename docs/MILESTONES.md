@@ -87,11 +87,23 @@ Save format v3 (cold store, customs, crane health) with the full
 v1→v2→v3 migration chain. Oversized cargo waits for the heavy crane in
 Phase 7.
 
-## Phase 6 — Automation
+## Phase 6 — Automation ✅ (this branch)
 
-PORT AI: rule builder (IF cargo type/deadline/capacity THEN route/priority),
-AI manager recommendations (accept/modify/ignore), automated equipment. The
-visible reward: the port flows without stopping.
+**PORT AI** lives in the operations tower (the admin building is now
+focusable). Five automation modules are bought there, each an IF→THEN rule
+that quietly runs the port better: **priority berthing** (urgent ships jump
+the berth queue), **cold-first unloading** (cranes take decaying reefers
+off the deck first), **auto-maintenance** (cranes self-service below 60%
+health), **express customs** (urgent cargo pays a per-box fee for half the
+inspection dwell), and **auto-accepted contracts**. Every automated action
+is counted on the tower's card and bannered when visible ("PORT AI:
+priority berth granted…"). For anything not yet automated, the **AI
+manager** watches the port and raises accept/ignore recommendations
+through the decision panel — service that worn crane, hire a tractor when
+the anchorage crowds, upgrade a chronically full store — on a polite
+cooldown, never fighting a contract offer for the panel. Focus cards can
+now hold four action buttons and grow to fit. Save v4 (owned modules +
+action count) with the v1→…→v4 migration chain.
 
 ## Phase 7 — Expansion
 

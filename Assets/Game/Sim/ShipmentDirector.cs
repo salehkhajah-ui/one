@@ -44,6 +44,12 @@ namespace PortGame
         private int _shipsInPlay;
         private float _nextRewardMultiplier = 1f;
 
+        /// <summary>Set by the bootstrap once PORT AI exists; enables priority berthing and save state.</summary>
+        public PortAI PortAIRef { get; set; }
+
+        /// <summary>Ships currently holding at anchor — read by PORT AI recommendations.</summary>
+        public static int WaitingShips { get; private set; }
+
         public static ShipmentDirector Build(Transform parent, CraneController craneWest,
             CraneController craneEast, VehicleDispatcher dispatcher, Warehouse dryStore,
             Warehouse coldStore, HudController hud, DayNightCycle dayNight, CameraRig cameraRig,
@@ -86,6 +92,7 @@ namespace PortGame
         private void Update()
         {
             int waiting = _berthQueue.Count;
+            WaitingShips = waiting;
             _hud.SetScheduleText(waiting > 0
                 ? string.Format("Offshore queue: {0} ship{1}", waiting, waiting == 1 ? "" : "s")
                 : "");
@@ -204,20 +211,14 @@ namespace PortGame
 
             yield return ship.ApproachAnchor();
 
-            // Berths are granted strictly in arrival order — except emergency
-            // ships, which jump the queue. A storm closes the harbor, so
-            // ships ride it out at anchor with deadlines burning.
+            // Berths go out in arrival order — except emergencies, and, with
+            // PORT AI priority berthing, whoever is closest to blowing a
+            // deadline. A storm closes the harbor, so ships ride it out at
+            // anchor with deadlines burning.
             if (shipment.IsEmergency) _berthQueue.Insert(0, ship);
             else _berthQueue.Add(ship);
-            Berth berth = null;
-            while (berth == null)
-            {
-                bool mayDock = WeatherManager.Instance == null || WeatherManager.Instance.ShipsMayDock;
-                if (mayDock && _berthQueue[0] == ship) berth = FreeBerth();
-                if (berth == null) yield return null;
-            }
-            _berthQueue.RemoveAt(0);
-            berth.Ship = ship;
+            Berth berth;
+            while (!TryClaimBerth(ship, out berth)) yield return null;
             _anchorSlots[anchorSlot] = false; // the anchorage spot is open again
 
             // Tugs run out to escort her in; the session's first docking gets
@@ -276,6 +277,57 @@ namespace PortGame
             return null;
         }
 
+        private bool TryClaimBerth(ShipController ship, out Berth berth)
+        {
+            berth = null;
+            if (WeatherManager.Instance != null && !WeatherManager.Instance.ShipsMayDock) return false;
+            if (NextInLine() != ship) return false;
+            var free = FreeBerth();
+            if (free == null) return false;
+
+            bool jumped = _berthQueue.Count > 0 && _berthQueue[0] != ship;
+            _berthQueue.Remove(ship);
+            free.Ship = ship;
+            berth = free;
+            if (jumped && !ship.Shipment.IsEmergency)
+                PortAI.Note("PORT AI: priority berth granted to " + ship.Shipment.ShipName);
+            return true;
+        }
+
+        private ShipController NextInLine()
+        {
+            if (_berthQueue.Count == 0) return null;
+            if (PortAIRef == null || !PortAI.Has(AiRule.PriorityBerthing)) return _berthQueue[0];
+
+            // Emergencies absolutely first, then by deadline urgency, then
+            // arrival order (list order breaks ties).
+            ShipController best = _berthQueue[0];
+            int bestScore = QueueScore(best);
+            for (int i = 1; i < _berthQueue.Count; i++)
+            {
+                int score = QueueScore(_berthQueue[i]);
+                if (score > bestScore)
+                {
+                    best = _berthQueue[i];
+                    bestScore = score;
+                }
+            }
+            return best;
+        }
+
+        private static int QueueScore(ShipController ship)
+        {
+            var s = ship.Shipment;
+            if (s.IsEmergency) return 1000;
+            switch (s.Urgency)
+            {
+                case Urgency.Red: return 30;
+                case Urgency.Orange: return 20;
+                case Urgency.Amber: return 10;
+                default: return 0;
+            }
+        }
+
         private IEnumerator OnboardingBeat()
         {
             _hud.Banner("Welcome to your port — every shipment matters", 4f);
@@ -310,6 +362,8 @@ namespace PortGame
                 coldDispatchLevel = _coldStore.DispatchLevel,
                 customsLevel = _dispatcher.Customs.Level,
                 tractorCount = _dispatcher.Tractors.Count,
+                aiRules = PortAIRef != null ? (int)PortAIRef.ActiveRules : 0,
+                aiActions = PortAIRef != null ? PortAIRef.ActionCount : 0,
             });
         }
 

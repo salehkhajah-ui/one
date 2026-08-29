@@ -38,7 +38,7 @@ namespace PortGame
             var audio = AudioManager.Build(root);
             var ocean = Ocean.Build(root);
             var weather = WeatherManager.Build(root, dayNight, ocean);
-            PortEnvironmentBuilder.Build(root, dayNight);
+            var operationsBuilding = PortEnvironmentBuilder.Build(root, dayNight);
 
             var dryStore = Warehouse.Build(root, dayNight, new WarehouseConfig
             {
@@ -104,9 +104,15 @@ namespace PortGame
             hud.SetWeather(weather);
             dryStore.OnDelivered += _ => audio.Chime();
             coldStore.OnDelivered += _ => audio.Chime();
+
+            var portAI = PortAI.Attach(operationsBuilding, hud, dispatcher,
+                new[] { craneWest, craneEast }, new[] { dryStore, coldStore });
+            if (save != null) portAI.LoadRules(save.aiRules, save.aiActions);
+
             ContractManager.Build(root, new[] { dryStore, coldStore }, hud, reputation);
             var director = ShipmentDirector.Build(root, craneWest, craneEast, dispatcher,
                 dryStore, coldStore, hud, dayNight, cameraRig, reputation, tugs, save);
+            director.PortAIRef = portAI;
             EventManager.Build(root, director, customs, new[] { craneWest, craneEast }, hud);
 
             if (save != null) hud.Banner("Welcome back to your port", 3f);

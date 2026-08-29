@@ -34,10 +34,12 @@ namespace PortGame
         private Text _cardTitle;
         private Text _cardBody;
         private CanvasGroup _cardGroup;
-        private readonly Button[] _cardButtons = new Button[2];
-        private readonly Text[] _cardButtonLabels = new Text[2];
+        private readonly Button[] _cardButtons = new Button[4];
+        private readonly Text[] _cardButtonLabels = new Text[4];
+        private RectTransform _cardRect;
         private FocusAction[] _cardActions;
 
+        private bool _offerVisible;
         private GameObject _offerPanel;
         private Text _offerText;
         private Action _offerAccept;
@@ -142,6 +144,7 @@ namespace PortGame
             cardGo.transform.SetParent(canvasGo.transform, false);
             var cardRect = cardGo.AddComponent<RectTransform>();
             SetAnchored(cardRect, new Vector2(1f, 0f), new Vector2(-30f, 30f), new Vector2(440f, 280f));
+            _cardRect = cardRect;
             _cardGroup = cardGo.AddComponent<CanvasGroup>();
             _cardGroup.alpha = 0f;
             var cardBg = cardGo.AddComponent<Image>();
@@ -160,8 +163,8 @@ namespace PortGame
             SetAnchored(bodyRect, new Vector2(0.5f, 1f), new Vector2(0f, -58f), new Vector2(400f, 120f));
             _cardBody = Label(bodyRect, "", 21, TextAnchor.UpperLeft, TextDim, FontStyle.Normal);
 
-            // Up to two contextual action buttons (upgrades, hires).
-            for (int i = 0; i < 2; i++)
+            // Up to four contextual action buttons (upgrades, hires, AI modules).
+            for (int i = 0; i < 4; i++)
             {
                 int slot = i;
                 _cardButtons[i] = MakeButton(cardGo.transform, new Vector2(0.5f, 0f),
@@ -274,6 +277,7 @@ namespace PortGame
             _offerText.text = text;
             _offerAccept = onAccept;
             _offerDecline = onDecline;
+            _offerVisible = true;
             _offerPanel.SetActive(true);
             if (AudioManager.Instance != null) AudioManager.Instance.Alert();
         }
@@ -282,8 +286,12 @@ namespace PortGame
         {
             _offerAccept = null;
             _offerDecline = null;
+            _offerVisible = false;
             _offerPanel.SetActive(false);
         }
+
+        /// <summary>True while the accept/decline panel is showing (contract offer or AI recommendation).</summary>
+        public bool DecisionBusy => _offerVisible;
 
         // ---- Internals ---------------------------------------------------
 
@@ -326,17 +334,21 @@ namespace PortGame
 
                 var actionSource = _focusTarget.GetComponent<IFocusActions>();
                 _cardActions = actionSource != null ? actionSource.FocusActions : null;
+                int shown = 0;
                 for (int i = 0; i < _cardButtons.Length; i++)
                 {
                     bool has = _cardActions != null && i < _cardActions.Length;
                     _cardButtons[i].gameObject.SetActive(has);
                     if (!has) continue;
+                    shown++;
                     var a = _cardActions[i];
                     _cardButtonLabels[i].text = a.Cost > 0
                         ? string.Format("{0} — KD {1:N0}", a.Label, a.Cost)
                         : a.Label;
                     _cardButtons[i].interactable = a.Available();
                 }
+                // The card grows to fit its buttons.
+                _cardRect.sizeDelta = new Vector2(440f, 184f + shown * 48f);
             }
             else if (!show && _cardActions != null)
             {

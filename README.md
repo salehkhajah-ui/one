@@ -6,7 +6,19 @@ This repository branch is a **standalone Unity project** — it is completely
 independent of the `main` branch of this repository (it shares no history and
 no files with it).
 
-Current state: **Phase 5 — strategy.**
+Current state: **Phase 6 — automation.**
+
+The operations tower now houses **PORT AI**. Tap it to buy automation
+modules — priority berthing for urgent ships, cold-first unloading,
+crane auto-maintenance, express customs for urgent cargo, auto-accepted
+contracts — and watch the port start running itself: the banner tells you
+each time the AI acts, and the tower's card counts its interventions. For
+everything you haven't automated, the AI manager raises accept/ignore
+recommendations (service that worn crane, hire a tractor, upgrade a full
+store). The endgame fantasy from the spec begins here: containers barely
+stop moving.
+
+On top of **Phase 5 — strategy:**
 
 Cargo now has consequences. Refrigerated goods decay from the moment the
 crane lifts them until the new **Cold Store** takes them in, and pay by the
@@ -139,12 +151,13 @@ All gameplay/feel constants live in `Assets/Game/Core/Tuning.cs`
 (day length, crane speeds, tractor speed, rewards, container count per ship,
 camera limits). Change and re-enter Play mode.
 
-## Known limitations at Phase 5
+## Known limitations at Phase 6
 
-By design (see `docs/MILESTONES.md`): berths are auto-assigned in arrival
-order (player dock choice arrives with PORT AI priorities in Phase 6),
-oversized cargo waits for the Phase 7 heavy crane, tractors don't wear yet
-(cranes carry the maintenance gameplay), haptics are a single coarse buzz
-until a platform plugin replaces `Haptics`, and audio is synthesized
-placeholder ambience that recorded sound can replace clip-for-clip. The
-architecture for all of these is specified in `docs/TDD.md`.
+By design (see `docs/MILESTONES.md`): berth order is FIFO until the
+priority-berthing AI module is bought (a free-form per-ship dock picker
+remains future work), oversized cargo waits for the Phase 7 heavy crane,
+tractors don't wear yet (cranes carry the maintenance gameplay), haptics
+are a single coarse buzz until a platform plugin replaces `Haptics`, and
+audio is synthesized placeholder ambience that recorded sound can replace
+clip-for-clip. The architecture for all of these is specified in
+`docs/TDD.md`.

@@ -47,10 +47,10 @@ namespace PortGame
         }
 
         /// <summary>Spend if affordable. Returns false (and toasts nothing) when short.</summary>
-        public bool TrySpend(long cost, string reason)
+        public bool TrySpend(long cost, string reason, bool quiet = false)
         {
             if (Balance < cost) return false;
-            Add(-cost, reason);
+            Add(-cost, reason, quiet);
             return true;
         }
 

@@ -11,13 +11,14 @@ namespace PortGame
     /// interrupted shipment respawns fresh on the next run.
     ///
     /// Version 2 added reputation, upgrade levels and fleet size; version 3
-    /// added the cold store, customs and crane health. Older files are
-    /// migrated on load (missing fields take era-appropriate defaults).
+    /// the cold store, customs and crane health; version 4 the PORT AI
+    /// automation rules. Older files are migrated on load (missing fields
+    /// take era-appropriate defaults).
     /// </summary>
     [Serializable]
     public class SaveModel
     {
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
 
         public int version = CurrentVersion;
         public long balance;
@@ -42,6 +43,10 @@ namespace PortGame
         public int customsLevel;
         public float craneHealthA = 100f;
         public float craneHealthB = 100f;
+
+        // v4
+        public int aiRules;
+        public long aiActions;
     }
 
     /// <summary>
@@ -81,6 +86,13 @@ namespace PortGame
                     model.craneHealthA = 100f;
                     model.craneHealthB = 100f;
                     model.version = 3;
+                }
+                if (model.version == 3)
+                {
+                    // V3 → V4: no PORT AI modules owned yet.
+                    model.aiRules = 0;
+                    model.aiActions = 0;
+                    model.version = 4;
                 }
                 if (model.version != SaveModel.CurrentVersion) return null;
 

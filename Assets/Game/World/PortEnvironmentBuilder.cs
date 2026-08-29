@@ -9,7 +9,8 @@ namespace PortGame
     /// </summary>
     public static class PortEnvironmentBuilder
     {
-        public static void Build(Transform parent, DayNightCycle dayNight)
+        /// <summary>Builds all static scenery; returns the operations (admin) building so PORT AI can live in it.</summary>
+        public static Transform Build(Transform parent, DayNightCycle dayNight)
         {
             var root = Prim.Group("Environment", parent, Vector3.zero);
             var concrete = MaterialLibrary.Get(Palette.Concrete, 0.15f);
@@ -108,6 +109,8 @@ namespace PortGame
                     Prim.Cube("AdminWindow", admin,
                         new Vector3(wx * 2.3f, 3f + floor * 3.2f, -4.53f),
                         new Vector3(1.5f, 1.7f, 0.1f), windowMat);
+
+            return admin;
         }
 
         private static void Road(Transform parent, Material mat, Vector3 center, Vector2 size)

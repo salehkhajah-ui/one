@@ -118,11 +118,7 @@ namespace PortGame
                         Label = "Service crane (restore to 100%)",
                         Cost = serviceCost,
                         Available = () => !_serviceRequested && EconomyManager.Instance.Balance >= serviceCost,
-                        Execute = () =>
-                        {
-                            if (EconomyManager.Instance.TrySpend(serviceCost, _title + " maintenance"))
-                                _serviceRequested = true;
-                        },
+                        Execute = () => TryPurchaseService(""),
                     });
                 }
 
@@ -252,9 +248,24 @@ namespace PortGame
         {
             Busy = true;
             ship.BeginUnloading();
-            for (int i = 0; i < ship.Containers.Count; i++)
+
+            // PORT AI cold-first: decaying cargo comes off the deck before it
+            // spoils, even at the cost of extra gantry travel.
+            var order = ship.Containers;
+            if (PortAI.Has(AiRule.ColdFirst))
             {
-                var container = ship.Containers[i];
+                var sorted = new System.Collections.Generic.List<Container>(order.Count);
+                foreach (var c in order)
+                    if (c.Cargo != null && c.Cargo.DecayPerMinute > 0f) sorted.Add(c);
+                foreach (var c in order)
+                    if (c.Cargo == null || c.Cargo.DecayPerMinute <= 0f) sorted.Add(c);
+                if (sorted.Count > 0 && sorted[0] != order[0]) PortAI.Note();
+                order = sorted;
+            }
+
+            for (int i = 0; i < order.Count; i++)
+            {
+                var container = order[i];
                 yield return UnloadOne(container, dispatcher);
             }
             // Park: trolley in, gantry home.
@@ -266,6 +277,13 @@ namespace PortGame
 
         private IEnumerator UnloadOne(Container container, VehicleDispatcher dispatcher)
         {
+            // PORT AI auto-maintenance: self-service before wear becomes a breakdown.
+            if (PortAI.Has(AiRule.AutoMaintenance) && Health < 60f && !_serviceRequested)
+            {
+                if (TryPurchaseService(" (Port AI)"))
+                    PortAI.Note(_title + " — auto-maintenance scheduled by PORT AI");
+            }
+
             // Purchased maintenance runs between boxes: a short pause, full health.
             if (_serviceRequested)
             {
@@ -335,6 +353,16 @@ namespace PortGame
                 if ((float)_wearRng.NextDouble() < risk)
                     yield return BreakdownRoutine();
             }
+        }
+
+        /// <summary>Buys a maintenance stop (player, recommendation, or Port AI). False when already queued or unaffordable.</summary>
+        public bool TryPurchaseService(string sourceSuffix)
+        {
+            if (_serviceRequested || State == CraneState.Broken) return false;
+            if (!EconomyManager.Instance.TrySpend(Tuning.CraneMaintenanceCost,
+                    _title + " maintenance" + sourceSuffix)) return false;
+            _serviceRequested = true;
+            return true;
         }
 
         /// <summary>Immediate breakdown (random event); takes effect before the next box.</summary>

@@ -160,14 +160,20 @@ namespace PortGame
                             Tuning.DispatchIntervalPerLevel, DispatchLevel, DispatchLevel + 1),
                         Cost = cost,
                         Available = () => EconomyManager.Instance.Balance >= cost,
-                        Execute = () =>
-                        {
-                            if (EconomyManager.Instance.TrySpend(cost, Config.Title + " dispatch upgrade"))
-                                DispatchLevel++;
-                        },
+                        Execute = () => TryPurchaseDispatchUpgrade(""),
                     },
                 };
             }
+        }
+
+        /// <summary>Buys the next dispatch level (player or recommendation). False if maxed or unaffordable.</summary>
+        public bool TryPurchaseDispatchUpgrade(string sourceSuffix)
+        {
+            if (DispatchLevel >= Tuning.DispatchCosts.Length) return false;
+            if (!EconomyManager.Instance.TrySpend(Tuning.DispatchCosts[DispatchLevel],
+                    Config.Title + " dispatch upgrade" + sourceSuffix)) return false;
+            DispatchLevel++;
+            return true;
         }
 
         // ---- Storage -----------------------------------------------------

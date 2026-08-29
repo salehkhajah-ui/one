@@ -154,7 +154,7 @@ namespace PortGame
             }
         }
 
-        private void HireTractor()
+        public void HireTractor()
         {
             // Spawn at the first free staging node.
             string[] spots = { "PK1", "PK2", "W2", "M" };

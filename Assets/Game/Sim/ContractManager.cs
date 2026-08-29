@@ -92,6 +92,9 @@ namespace PortGame
             {
                 if (!Active)
                 {
+                    // Don't fight the panel with an AI recommendation.
+                    while (_hud.DecisionBusy) yield return null;
+
                     var client = Clients[_rng.Next(Clients.Length)];
                     int required = 10 + _rng.Next(9);
                     float window = required * 42f + 90f;
@@ -99,19 +102,29 @@ namespace PortGame
 
                     _offerAnswered = false;
                     _offerAccepted = false;
-                    _hud.ShowContractOffer(
-                        string.Format("{0}\nDeliver {1} containers within {2} min\nPayout: KD {3:N0}",
-                            client, required, Mathf.CeilToInt(window / 60f), payout),
-                        () => { _offerAnswered = true; _offerAccepted = true; },
-                        () => { _offerAnswered = true; });
 
-                    float waited = 0f;
-                    while (!_offerAnswered && waited < Tuning.ContractOfferTimeout)
+                    if (PortAI.Has(AiRule.AutoContracts))
                     {
-                        waited += Time.deltaTime;
-                        yield return null;
+                        // PORT AI signs on the port's behalf.
+                        _offerAccepted = true;
+                        PortAI.Note("PORT AI accepted contract — " + client);
                     }
-                    _hud.HideContractOffer();
+                    else
+                    {
+                        _hud.ShowContractOffer(
+                            string.Format("{0}\nDeliver {1} containers within {2} min\nPayout: KD {3:N0}",
+                                client, required, Mathf.CeilToInt(window / 60f), payout),
+                            () => { _offerAnswered = true; _offerAccepted = true; },
+                            () => { _offerAnswered = true; });
+
+                        float waited = 0f;
+                        while (!_offerAnswered && waited < Tuning.ContractOfferTimeout)
+                        {
+                            waited += Time.deltaTime;
+                            yield return null;
+                        }
+                        _hud.HideContractOffer();
+                    }
 
                     if (_offerAccepted)
                     {
