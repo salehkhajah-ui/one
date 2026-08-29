@@ -26,7 +26,7 @@ namespace PortGame
     /// damped spring driven by trolley/gantry acceleration adds cable sway so
     /// nothing moves robotically.
     /// </summary>
-    public class CraneController : MonoBehaviour
+    public class CraneController : MonoBehaviour, IFocusInfo
     {
         private const float LegHeight = 19f;
         private const float BoomLocalY = 19.6f;
@@ -36,6 +36,31 @@ namespace PortGame
         private const float CruiseCable = 3.5f;
 
         public CraneState State { get; private set; } = CraneState.Idle;
+
+        public string FocusTitle => "Quay Crane 1";
+
+        public string FocusBody
+        {
+            get
+            {
+                switch (State)
+                {
+                    case CraneState.Idle: return "Standing by";
+                    case CraneState.MoveGantry: return "Travelling to container";
+                    case CraneState.TrolleyOut:
+                    case CraneState.Lower:
+                    case CraneState.Grab: return "Picking container from ship";
+                    case CraneState.Raise:
+                    case CraneState.MoveGantryHome:
+                    case CraneState.TrolleyIn: return "Carrying container landside";
+                    case CraneState.WaitTractor: return "Waiting for tractor";
+                    case CraneState.LowerToTrailer:
+                    case CraneState.Release:
+                    case CraneState.RaiseEmpty: return "Loading tractor";
+                    default: return "";
+                }
+            }
+        }
 
         private Transform _trolley;
         private Transform _spreader;

@@ -26,6 +26,9 @@ namespace PortGame
         public int Id { get; private set; }
         public ContainerState State { get; set; } = ContainerState.OnShip;
 
+        /// <summary>What's inside — drives its per-container reward. Null for décor.</summary>
+        public CargoType Cargo { get; set; }
+
         public static Container Build(Transform parent, Vector3 localPos, Color color)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);

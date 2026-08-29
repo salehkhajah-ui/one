@@ -31,6 +31,16 @@ namespace PortGame
         /// <summary>0 = midnight, 0.5 = noon.</summary>
         public float DayFraction => _dayFraction;
 
+        public int DayCount => _dayCount;
+
+        /// <summary>Restores saved time on load.</summary>
+        public void LoadState(int day, float fraction)
+        {
+            _dayCount = Mathf.Max(1, day);
+            _dayFraction = Mathf.Clamp01(fraction);
+            ApplyTime();
+        }
+
         /// <summary>0 at night, 1 at high noon.</summary>
         public float Daylight { get; private set; }
 

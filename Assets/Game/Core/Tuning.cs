@@ -23,9 +23,20 @@ namespace PortGame
         public static readonly Vector3 ContainerSize = new Vector3(4f, 2.5f, 2.5f);
 
         // ---- Ship ----
-        public const int ContainersPerShip = 8;
+        public const int MinContainersPerShip = 6;
+        public const int MaxContainersPerShip = 10;
         public const float ShipCruiseSpeed = 9f;
         public const float ShipDockSeconds = 5f;
+
+        // ---- Shipments / deadlines (seconds of real time) ----
+        public const float DeadlineBuffer = 160f;
+        public const float DeadlinePerContainer = 48f;
+        public const float NextShipDelay = 30f;   // next ship announced this long after one docks
+
+        // ---- Warehouse ----
+        public const int WarehouseCapacity = 9;
+        public const float WarehouseDispatchInterval = 16f;
+        public const long DispatchRevenue = 120;
 
         // ---- Crane ----
         public const float GantrySpeed = 4.5f;       // m/s along the quay
@@ -39,8 +50,6 @@ namespace PortGame
         public const float TractorTurnDegPerSec = 110f;
 
         // ---- Economy ----
-        public const long RewardPerContainer = 500;
-        public const long ShipmentBonus = 1500;
         public const long StartingBalance = 12000;
 
         // ---- Camera ----

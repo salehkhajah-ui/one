@@ -25,28 +25,32 @@ namespace PortGame
             DisableSceneDefaults();
 
             var root = transform;
+            var save = SaveSystem.LoadOrNull();
 
             var economy = EconomyManager.Build(root);
+            if (save != null) economy.LoadBalance(save.balance);
 
             var sunGo = new GameObject("Sun");
             sunGo.transform.SetParent(root, false);
             var dayNight = sunGo.AddComponent<DayNightCycle>();
+            if (save != null) dayNight.LoadState(save.day, save.dayFraction);
 
             Ocean.Build(root);
             PortEnvironmentBuilder.Build(root, dayNight);
 
             var warehouse = Warehouse.Build(root, dayNight);
+            if (save != null) warehouse.LoadStored(save.warehouseStored);
             var crane = CraneController.Build(root);
             crane.RegisterNightVisuals(dayNight);
             var tractor = TerminalTractor.Build(root, warehouse);
 
             Gulls.Build(root);
-            CameraRig.Build(root);
+            var cameraRig = CameraRig.Build(root);
 
-            var hud = HudController.Build(root, dayNight, economy);
-            ShipmentDirector.Build(root, crane, tractor, warehouse, hud);
+            var hud = HudController.Build(root, dayNight, economy, cameraRig);
+            ShipmentDirector.Build(root, crane, tractor, warehouse, hud, dayNight, cameraRig, save);
 
-            hud.Banner("Welcome to your port", 3f);
+            if (save != null) hud.Banner("Welcome back to your port", 3f);
         }
 
         /// <summary>

@@ -19,9 +19,26 @@ namespace PortGame
     /// drive the return loop. Driving uses acceleration, braking distance and
     /// a turn-rate limit so the motion reads as a real vehicle.
     /// </summary>
-    public class TerminalTractor : MonoBehaviour
+    public class TerminalTractor : MonoBehaviour, IFocusInfo
     {
         public TractorState State { get; private set; } = TractorState.ParkAtLoadPoint;
+
+        public string FocusTitle => "Terminal Tractor 1";
+
+        public string FocusBody
+        {
+            get
+            {
+                switch (State)
+                {
+                    case TractorState.WaitForLoad: return "Waiting under the crane";
+                    case TractorState.HaulToWarehouse: return "Hauling to warehouse";
+                    case TractorState.Unloading: return "Delivering at warehouse door";
+                    case TractorState.ReturnLoop: return "Returning empty";
+                    default: return "Parked at load point";
+                }
+            }
+        }
 
         /// <summary>True when parked at the load point with an empty trailer.</summary>
         public bool ReadyForLoad { get; private set; }

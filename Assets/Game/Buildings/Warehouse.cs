@@ -5,11 +5,14 @@ using UnityEngine;
 namespace PortGame
 {
     /// <summary>
-    /// The receiving warehouse. Its door slides open for each arriving
-    /// container, the cargo glides inside, and the delivered count drives the
-    /// economy. Interior strip glows warm at night.
+    /// The receiving warehouse. Finite capacity: each stored container
+    /// occupies a visible floor slot; a dispatch cycle clears one slot every
+    /// few seconds (distribution trucks, abstracted for now). When the floor
+    /// is full the door stays shut and the tractor waits outside — the first
+    /// domino: a full warehouse stalls the tractor, which stalls the crane,
+    /// which stalls the ship, which burns the deadline.
     /// </summary>
-    public class Warehouse : MonoBehaviour
+    public class Warehouse : MonoBehaviour, IFocusInfo
     {
         private const float Width = 16f;
         private const float Depth = 12f;
@@ -18,10 +21,30 @@ namespace PortGame
         private const float DoorHeight = 4.6f;
 
         public int DeliveredCount { get; private set; }
+        public int StoredCount { get; private set; }
         public event Action<Container> OnDelivered;
 
         private Transform _door;
         private bool _doorOpen;
+        // One slot per storable container; occupied slots hold the visual box.
+        private GameObject[] _slots;
+
+        private static readonly Vector3[] SlotLocals = BuildSlotGrid();
+
+        private static Vector3[] BuildSlotGrid()
+        {
+            // 3×3 floor grid, filled front row first so fill reads through the door.
+            var slots = new Vector3[Tuning.WarehouseCapacity];
+            float y = Tuning.ContainerSize.y * 0.5f + 0.08f;
+            int i = 0;
+            foreach (float z in new[] { -2f, 1.2f, 4.4f })
+                foreach (float x in new[] { -5f, 0f, 5f })
+                {
+                    if (i >= slots.Length) break;
+                    slots[i++] = new Vector3(x, y, z);
+                }
+            return slots;
+        }
 
         public static Warehouse Build(Transform parent, DayNightCycle dayNight)
         {
@@ -30,6 +53,7 @@ namespace PortGame
             go.transform.position = new Vector3(30f, Tuning.QuayTopY, 31f);
 
             var wh = go.AddComponent<Warehouse>();
+            wh._slots = new GameObject[Tuning.WarehouseCapacity];
             wh.BuildVisual(dayNight);
 
             var focus = go.AddComponent<FocusTarget>();
@@ -71,10 +95,6 @@ namespace PortGame
             Prim.Cube("Floor", transform, new Vector3(0f, 0.03f, 0f),
                 new Vector3(Width - 0.2f, 0.06f, Depth - 0.2f), MaterialLibrary.Get(Palette.ConcreteDark, 0.15f));
 
-            // Simple interior racks, visible through the open door.
-            foreach (float x in new[] { -4.5f, 4.5f })
-                Prim.Cube("Rack", transform, new Vector3(x, 1.6f, 1.5f), new Vector3(3.2f, 3.2f, 6.5f), steel);
-
             // Warm interior glow strip above the door, on at night.
             var glowMat = MaterialLibrary.Create(Palette.WarmLight, 0.3f);
             dayNight.RegisterNightEmissive(glowMat, Palette.WarmLight * 1.8f);
@@ -86,34 +106,108 @@ namespace PortGame
                 new Vector3(DoorWidth - 0.2f, DoorHeight, 0.18f), steel).transform;
         }
 
+        // ---- IFocusInfo --------------------------------------------------
+
+        public string FocusTitle => "Warehouse";
+
+        public string FocusBody => string.Format(
+            "Storage: {0} of {1} slots{2}\nDispatch truck clears one every {3:0}s\nReceived total: {4}",
+            StoredCount, Tuning.WarehouseCapacity,
+            StoredCount >= Tuning.WarehouseCapacity ? "  ·  FULL" : "",
+            Tuning.WarehouseDispatchInterval, DeliveredCount);
+
+        // ---- Storage -----------------------------------------------------
+
+        private void Start()
+        {
+            StartCoroutine(DispatchLoop());
+        }
+
+        /// <summary>Restores saved inventory as neutral boxes on load.</summary>
+        public void LoadStored(int count)
+        {
+            count = Mathf.Clamp(count, 0, Tuning.WarehouseCapacity);
+            for (int i = 0; i < count; i++)
+                FillSlot(Palette.Containers[i % Palette.Containers.Length]);
+        }
+
         public IEnumerator Receive(Container container)
         {
             container.State = ContainerState.BeingReceived;
+
+            // Full floor: the tractor waits at the door until dispatch clears a slot.
+            while (StoredCount >= Tuning.WarehouseCapacity) yield return null;
+
             yield return SlideDoor(open: true);
 
+            int slot = FirstFreeSlot();
             container.transform.SetParent(transform, true);
             Vector3 p0 = container.transform.position;
             Quaternion r0 = container.transform.rotation;
-            Vector3 inside = transform.position + new Vector3(0f, Tuning.ContainerSize.y * 0.5f + 0.06f, 1f);
-            Quaternion rIn = Quaternion.identity;
+            Vector3 inside = transform.TransformPoint(SlotLocals[slot]);
 
             yield return Ease.Animate(1.5f, t =>
             {
                 container.transform.SetPositionAndRotation(
-                    Vector3.Lerp(p0, inside, t), Quaternion.Slerp(r0, rIn, t));
+                    Vector3.Lerp(p0, inside, t), Quaternion.Slerp(r0, transform.rotation, t));
             });
 
             container.State = ContainerState.Delivered;
+            _slots[slot] = container.gameObject;
+            StoredCount++;
             DeliveredCount++;
             var handler = OnDelivered;
             if (handler != null) handler(container);
 
-            // Absorbed into inventory.
-            Vector3 s0 = container.transform.localScale;
-            yield return Ease.Animate(0.45f, t => container.transform.localScale = s0 * (1f - t * 0.97f), Ease.InCubic);
-            Destroy(container.gameObject);
-
             yield return SlideDoor(open: false);
+        }
+
+        private IEnumerator DispatchLoop()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(Tuning.WarehouseDispatchInterval);
+                if (StoredCount == 0) continue;
+
+                int slot = LastOccupiedSlot();
+                var box = _slots[slot];
+                _slots[slot] = null;
+                StoredCount--;
+                EconomyManager.Instance.Add(Tuning.DispatchRevenue, "cargo dispatched", quiet: true);
+
+                if (box != null)
+                {
+                    // Quietly absorbed into the distribution network (door stays shut).
+                    Vector3 s0 = box.transform.localScale;
+                    yield return Ease.Animate(0.4f, t => box.transform.localScale = s0 * (1f - t * 0.97f),
+                        Ease.InCubic);
+                    Destroy(box);
+                }
+            }
+        }
+
+        private void FillSlot(Color color)
+        {
+            int slot = FirstFreeSlot();
+            if (slot < 0) return;
+            var box = Prim.Cube("StoredContainer", transform, SlotLocals[slot],
+                Tuning.ContainerSize, MaterialLibrary.Get(color, 0.3f));
+            _slots[slot] = box;
+            StoredCount++;
+        }
+
+        private int FirstFreeSlot()
+        {
+            for (int i = 0; i < _slots.Length; i++)
+                if (_slots[i] == null) return i;
+            return -1;
+        }
+
+        private int LastOccupiedSlot()
+        {
+            for (int i = _slots.Length - 1; i >= 0; i--)
+                if (_slots[i] != null) return i;
+            return -1;
         }
 
         private IEnumerator SlideDoor(bool open)

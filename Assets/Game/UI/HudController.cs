@@ -24,13 +24,23 @@ namespace PortGame
         private CanvasGroup _toastGroup;
         private RectTransform _toastRect;
 
+        private Text _scheduleText;
+        private Text _cardTitle;
+        private Text _cardBody;
+        private CanvasGroup _cardGroup;
+
         private DayNightCycle _dayNight;
         private long _moneyActual;
         private double _moneyShown;
         private Coroutine _bannerRoutine;
         private Coroutine _toastRoutine;
 
-        public static HudController Build(Transform parent, DayNightCycle dayNight, EconomyManager economy)
+        private FocusTarget _focusTarget;
+        private IFocusInfo _focusInfo;
+        private float _cardRefreshAt;
+
+        public static HudController Build(Transform parent, DayNightCycle dayNight,
+            EconomyManager economy, CameraRig cameraRig)
         {
             var go = new GameObject("HUD");
             go.transform.SetParent(parent, false);
@@ -42,7 +52,15 @@ namespace PortGame
             hud._moneyShown = economy.Balance;
             economy.OnChanged += balance => hud._moneyActual = balance;
             economy.OnToast += hud.Toast;
+            cameraRig.FocusChanged += hud.OnFocusChanged;
             return hud;
+        }
+
+        private void OnFocusChanged(FocusTarget target)
+        {
+            _focusTarget = target;
+            _focusInfo = target != null ? target.GetComponent<IFocusInfo>() : null;
+            _cardRefreshAt = 0f;
         }
 
         private void BuildUi()
@@ -63,9 +81,38 @@ namespace PortGame
             _moneyText = Label(moneyPanel, "KD 0", 34, TextAnchor.MiddleLeft, TextWarm, FontStyle.Bold);
             Pad(_moneyText.rectTransform, 22f, 0f);
 
-            // Clock — top right.
+            // Clock — top right, with the inbound-ship schedule line beneath it.
             var clockPanel = Panel(canvasGo.transform, new Vector2(1f, 1f), new Vector2(-30f, -30f), new Vector2(300f, 56f));
             _clockText = Label(clockPanel, "", 26, TextAnchor.MiddleCenter, TextWarm, FontStyle.Normal);
+
+            var scheduleGo = new GameObject("Schedule");
+            scheduleGo.transform.SetParent(canvasGo.transform, false);
+            var scheduleRect = scheduleGo.AddComponent<RectTransform>();
+            SetAnchored(scheduleRect, new Vector2(1f, 1f), new Vector2(-30f, -96f), new Vector2(420f, 34f));
+            _scheduleText = Label(scheduleRect, "", 20, TextAnchor.MiddleRight, TextDim, FontStyle.Normal);
+
+            // Focus card — bottom right, shown while an object is camera-focused.
+            var cardGo = new GameObject("FocusCard");
+            cardGo.transform.SetParent(canvasGo.transform, false);
+            var cardRect = cardGo.AddComponent<RectTransform>();
+            SetAnchored(cardRect, new Vector2(1f, 0f), new Vector2(-30f, 30f), new Vector2(440f, 190f));
+            _cardGroup = cardGo.AddComponent<CanvasGroup>();
+            _cardGroup.alpha = 0f;
+            var cardBg = cardGo.AddComponent<Image>();
+            cardBg.color = PanelColor;
+            cardBg.raycastTarget = false;
+
+            var titleGo = new GameObject("CardTitle");
+            titleGo.transform.SetParent(cardGo.transform, false);
+            var titleRect = titleGo.AddComponent<RectTransform>();
+            SetAnchored(titleRect, new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(400f, 36f));
+            _cardTitle = Label(titleRect, "", 28, TextAnchor.UpperLeft, TextWarm, FontStyle.Bold);
+
+            var bodyGo = new GameObject("CardBody");
+            bodyGo.transform.SetParent(cardGo.transform, false);
+            var bodyRect = bodyGo.AddComponent<RectTransform>();
+            SetAnchored(bodyRect, new Vector2(0.5f, 1f), new Vector2(0f, -58f), new Vector2(400f, 120f));
+            _cardBody = Label(bodyRect, "", 21, TextAnchor.UpperLeft, TextDim, FontStyle.Normal);
 
             // Banner — center top, transient.
             var bannerGo = new GameObject("Banner");
@@ -112,6 +159,12 @@ namespace PortGame
             _toastRoutine = StartCoroutine(ToastRoutine(message));
         }
 
+        /// <summary>Inbound-ship line under the clock; empty string hides it.</summary>
+        public void SetScheduleText(string text)
+        {
+            _scheduleText.text = text;
+        }
+
         // ---- Internals ---------------------------------------------------
 
         private void Update()
@@ -125,6 +178,29 @@ namespace PortGame
             _moneyText.text = string.Format("KD {0:N0}", (long)System.Math.Round(_moneyShown));
 
             if (_dayNight != null) _clockText.text = _dayNight.ClockText;
+
+            UpdateFocusCard();
+        }
+
+        private void UpdateFocusCard()
+        {
+            // The target may have been destroyed (a departed ship) — drop it.
+            bool show = _focusTarget != null && _focusInfo != null;
+            if (!show && _focusInfo != null)
+            {
+                _focusTarget = null;
+                _focusInfo = null;
+            }
+
+            float targetAlpha = show ? 1f : 0f;
+            _cardGroup.alpha = Mathf.MoveTowards(_cardGroup.alpha, targetAlpha, Time.deltaTime * 5f);
+
+            if (show && Time.unscaledTime >= _cardRefreshAt)
+            {
+                _cardRefreshAt = Time.unscaledTime + 0.25f;
+                _cardTitle.text = _focusInfo.FocusTitle;
+                _cardBody.text = _focusInfo.FocusBody;
+            }
         }
 
         private IEnumerator BannerRoutine(string message, float hold)

@@ -7,6 +7,7 @@ namespace PortGame
     public enum ShipState
     {
         Offshore,
+        Anchored,
         Approaching,
         Docking,
         Docked,
@@ -16,21 +17,24 @@ namespace PortGame
     }
 
     /// <summary>
-    /// A named cargo ship. Sails in along waypoints with distance-based
-    /// deceleration, eases onto the berth, bobs gently on a Hull child
-    /// (so root motion stays clean for docking math), and departs.
+    /// A named cargo ship carrying one Shipment. Sails from open sea to the
+    /// holding anchorage; when the berth is free it runs the approach and
+    /// eases onto the berth. A ship waiting at anchor is the visible face of
+    /// berth congestion — and its deadline keeps burning while it waits.
+    /// Bob/roll live on a Hull child so root motion stays clean.
     /// </summary>
-    public class ShipController : MonoBehaviour
+    public class ShipController : MonoBehaviour, IFocusInfo
     {
         private const float RootY = 0.15f;
 
         public ShipState State { get; private set; } = ShipState.Offshore;
-        public string ShipName { get; private set; }
+        public Shipment Shipment { get; private set; }
         public readonly List<Container> Containers = new List<Container>();
 
         private Transform _hull;
         private float _bobPhase;
 
+        // The first point doubles as the holding anchorage.
         private static readonly Vector3[] ArrivalPath =
         {
             new Vector3(95f, RootY, -62f),
@@ -48,17 +52,18 @@ namespace PortGame
         private static readonly Vector3 BerthPos = new Vector3(0f, RootY, Tuning.BerthZ);
         private static readonly Quaternion BerthRot = Quaternion.Euler(0f, 270f, 0f);
 
-        public static ShipController Build(Transform parent, string shipName, int containerCount)
+        public static ShipController Build(Transform parent, Shipment shipment)
         {
-            var go = new GameObject("Ship " + shipName);
+            var go = new GameObject("Ship " + shipment.ShipName);
             go.transform.SetParent(parent, false);
             go.transform.position = new Vector3(150f, RootY, -95f);
             go.transform.rotation = Quaternion.LookRotation(ArrivalPath[0] - go.transform.position);
 
             var ship = go.AddComponent<ShipController>();
-            ship.ShipName = shipName;
+            ship.Shipment = shipment;
             ship._bobPhase = Random.value * 10f;
-            ship.BuildVisual(containerCount);
+            ship.BuildVisual(shipment);
+            DeadlineBeacon.Attach(ship);
 
             var focus = go.AddComponent<FocusTarget>();
             focus.focusDistance = 36f;
@@ -71,7 +76,7 @@ namespace PortGame
             return ship;
         }
 
-        private void BuildVisual(int containerCount)
+        private void BuildVisual(Shipment shipment)
         {
             _hull = Prim.Group("Hull", transform, Vector3.zero);
             var hullMat = MaterialLibrary.Get(Palette.HullRed, 0.3f);
@@ -93,46 +98,79 @@ namespace PortGame
             Prim.Cylinder("Funnel", _hull, new Vector3(0f, 9.4f, -19.6f),
                 new Vector3(1.6f, 1.1f, 1.6f), hullMat);
 
-            // Deck cargo: a single row of containers the crane will pick.
-            for (int i = 0; i < containerCount; i++)
+            // Deck cargo: one row of containers in the shipment's cargo color,
+            // alternating lightness so the row reads as individual boxes.
+            for (int i = 0; i < shipment.Count; i++)
             {
-                float z = -14f + i * 4f;
-                var color = Palette.Containers[i % Palette.Containers.Length];
-                var c = Container.Build(_hull, new Vector3(0f, 2.8f + Tuning.ContainerSize.y * 0.5f + 0.12f, z), color);
+                float z = -14f + i * (30f / Mathf.Max(1, shipment.Count - 1));
+                var color = Color.Lerp(shipment.Cargo.Color, Palette.ShipWhite, (i % 2) * 0.18f);
+                var c = Container.Build(_hull,
+                    new Vector3(0f, 2.8f + Tuning.ContainerSize.y * 0.5f + 0.12f, z), color);
                 // Long axis along the ship's length.
                 c.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                c.Cargo = shipment.Cargo;
                 Containers.Add(c);
             }
         }
 
-        public IEnumerator SailIn()
+        // ---- IFocusInfo --------------------------------------------------
+
+        public string FocusTitle => Shipment.ShipName;
+
+        public string FocusBody
+        {
+            get
+            {
+                int left = Shipment.Count - Shipment.Delivered;
+                return string.Format(
+                    "{0} · from {1}{2}\nContainers: {3} of {4} remaining\nDeadline: {5}\nReward: KD {6:N0} per container\n{7}",
+                    Shipment.Cargo.DisplayName, Shipment.Cargo.Origin,
+                    Shipment.Cargo.Refrigerated ? "  ·  refrigerated" : "",
+                    left, Shipment.Count,
+                    Shipment.RemainingText,
+                    Shipment.RewardPerContainer,
+                    StatusLine());
+            }
+        }
+
+        private string StatusLine()
+        {
+            switch (State)
+            {
+                case ShipState.Anchored: return "Holding at anchor — berth occupied";
+                case ShipState.Approaching:
+                case ShipState.Offshore: return "Inbound";
+                case ShipState.Docking: return "Docking";
+                case ShipState.Docked: return "Docked";
+                case ShipState.Unloading: return "Unloading";
+                case ShipState.Departing: return "Departing";
+                default: return "";
+            }
+        }
+
+        // ---- Voyage ------------------------------------------------------
+
+        /// <summary>Open sea → holding anchorage. Started right at spawn.</summary>
+        public IEnumerator ApproachAnchor()
+        {
+            State = ShipState.Offshore;
+            yield return SailTowards(ArrivalPath[0], 3f, Tuning.ShipCruiseSpeed);
+            State = ShipState.Anchored;
+        }
+
+        /// <summary>Anchorage → approach legs → eased berth blend. Call once the berth is free.</summary>
+        public IEnumerator DockFromAnchor()
         {
             State = ShipState.Approaching;
-
-            for (int leg = 0; leg < ArrivalPath.Length; leg++)
+            for (int leg = 1; leg < ArrivalPath.Length; leg++)
             {
-                Vector3 target = ArrivalPath[leg];
-                while (true)
-                {
-                    Vector3 toTarget = target - transform.position;
-                    toTarget.y = 0f;
-                    float dist = toTarget.magnitude;
-                    if (dist < 2f) break;
-
-                    // Remaining distance across this and all later legs → slow near the berth.
-                    float remaining = dist;
-                    for (int i = leg + 1; i < ArrivalPath.Length; i++)
-                        remaining += Vector3.Distance(ArrivalPath[i - 1], ArrivalPath[i]);
-                    float speed = Mathf.Min(Tuning.ShipCruiseSpeed, 2f + remaining * 0.09f);
-
-                    transform.rotation = Quaternion.Slerp(transform.rotation,
-                        Quaternion.LookRotation(toTarget.normalized), 0.6f * Time.deltaTime);
-                    transform.position += transform.forward * speed * Time.deltaTime;
-                    yield return null;
-                }
+                // Slow down as the total remaining distance shrinks.
+                float remainingAfter = 0f;
+                for (int i = leg + 1; i < ArrivalPath.Length; i++)
+                    remainingAfter += Vector3.Distance(ArrivalPath[i - 1], ArrivalPath[i]);
+                yield return SailTowards(ArrivalPath[leg], 2f, -1f, remainingAfter);
             }
 
-            // Final eased pose blend onto the berth.
             State = ShipState.Docking;
             Vector3 startPos = transform.position;
             Quaternion startRot = transform.rotation;
@@ -170,6 +208,32 @@ namespace PortGame
                 }
             }
             State = ShipState.Gone;
+        }
+
+        /// <summary>
+        /// Sail toward a point, slerping the heading. Speed is fixedSpeed, or
+        /// (when fixedSpeed &lt; 0) derived from remaining distance including
+        /// <paramref name="distanceAfter"/> so multi-leg approaches decelerate.
+        /// </summary>
+        private IEnumerator SailTowards(Vector3 target, float arriveWithin, float fixedSpeed,
+            float distanceAfter = 0f)
+        {
+            while (true)
+            {
+                Vector3 toTarget = target - transform.position;
+                toTarget.y = 0f;
+                float dist = toTarget.magnitude;
+                if (dist < arriveWithin) break;
+
+                float speed = fixedSpeed > 0f
+                    ? fixedSpeed
+                    : Mathf.Min(Tuning.ShipCruiseSpeed, 2f + (dist + distanceAfter) * 0.09f);
+
+                transform.rotation = Quaternion.Slerp(transform.rotation,
+                    Quaternion.LookRotation(toTarget.normalized), 0.6f * Time.deltaTime);
+                transform.position += transform.forward * speed * Time.deltaTime;
+                yield return null;
+            }
         }
 
         private void Update()

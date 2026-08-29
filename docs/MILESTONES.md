@@ -13,19 +13,27 @@ tap-focus/inertia), day-night cycle with port lights, gulls, procedural
 placeholder art, HUD (money/clock/banners/toasts), full working loop with
 money rewards. Acceptance list in `README.md`.
 
-## Phase 2 — Gameplay loop
+## Phase 2 — Gameplay loop ✅ (this branch)
 
-Cargo identity (`CargoTypeSO`: goods, temperature, decay, value), deadlines
-with green/amber/red urgency shown in-world, shipment cards on focus,
-warehouse capacity, ship schedule (ETAs), save system (versioned JSON),
-first-60-seconds onboarding sequence.
+Cargo identity (`CargoCatalog`: 10 goods with origin, value, refrigeration
+flag — plain data records today, `CargoTypeSO` when authored content
+arrives), deadlines with green/amber/orange/red urgency carried in-world by
+a floating beacon over each ship (pulsing when critical), contextual focus
+cards (ship manifest + countdown, warehouse fill, crane/tractor status),
+warehouse capacity with a dispatch drain — the first domino: a full floor
+stalls the tractor → crane → ship → deadline — an inbound-ship schedule
+line, on-time bonuses and late penalties, versioned JSON save
+(balance/clock/counters, atomic write), and a first-run onboarding beat
+("tap the crane to begin unloading"). Pulled forward from Phase 3: a second
+ship is announced while the first unloads and **visibly holds at the
+offshore anchorage** until the berth frees.
 
 ## Phase 3 — Management
 
-Multiple ships + offshore queue (anchored, visible), dock assignment, second
+Deeper offshore queue (multiple anchored ships), dock assignment, second
 crane, tractor fleet + road graph with intersections and queues (congestion
-emerges physically — the Domino System), equipment upgrades, contracts,
-reputation.
+emerges physically — the Domino System at full scale), equipment upgrades,
+contracts, reputation.
 
 ## Phase 4 — World
 

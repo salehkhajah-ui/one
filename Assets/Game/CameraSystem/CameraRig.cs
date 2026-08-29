@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace PortGame
@@ -56,17 +57,30 @@ namespace PortGame
             ApplyTransform();
         }
 
+        /// <summary>Current focus target, or null. Fired on every change (null = focus cancelled).</summary>
+        public event Action<FocusTarget> FocusChanged;
+
+        public FocusTarget CurrentFocus => _focus;
+
         public void Focus(FocusTarget target)
         {
             _focus = target;
             _distTarget = target.focusDistance;
             _smoothTime = 0.3f; // slower, cinematic glide toward the target
+            var handler = FocusChanged;
+            if (handler != null) handler(target);
         }
 
         private void CancelFocus()
         {
+            bool had = _focus != null;
             _focus = null;
             _smoothTime = 0.16f;
+            if (had)
+            {
+                var handler = FocusChanged;
+                if (handler != null) handler(null);
+            }
         }
 
         private void Update()

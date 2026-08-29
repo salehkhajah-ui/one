@@ -33,15 +33,25 @@ namespace PortGame
             Balance = Tuning.StartingBalance;
         }
 
-        public void Add(long amount, string reason)
+        /// <summary>Quiet entries adjust the balance without a toast (e.g. background dispatch revenue).</summary>
+        public void Add(long amount, string reason, bool quiet = false)
         {
             Balance += amount;
             var changed = OnChanged;
             if (changed != null) changed(Balance);
+            if (quiet) return;
             var toast = OnToast;
             if (toast != null)
                 toast(string.Format("{0}KD {1:N0} — {2}", amount >= 0 ? "+" : "−",
                     Math.Abs(amount), reason));
+        }
+
+        /// <summary>Restores a saved balance without a toast.</summary>
+        public void LoadBalance(long balance)
+        {
+            Balance = balance;
+            var changed = OnChanged;
+            if (changed != null) changed(Balance);
         }
     }
 }
