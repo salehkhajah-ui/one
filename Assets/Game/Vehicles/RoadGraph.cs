@@ -42,11 +42,22 @@ namespace PortGame
             g.Node("B1", 20f, y, 8f);
             g.Node("LPB", Tuning.BerthEastX, y, Tuning.TrolleyLandZ);  // crane B load bay
             g.Node("B2", 36f, y, 8f);
+            g.Node("CUS", 43f, y, 11f);                                // customs inspection bay
             g.Node("E2", 38f, y, 15f);
             g.Node("WHA", 30f, y, 18.5f);
-            g.Node("WH", 30f, y, 23f);                                 // warehouse door
-            // Return road (z=26) heading west, back to the lane entry.
-            g.Node("R1", 20f, y, 26f);
+            g.Node("WH", 30f, y, 23f);                                 // dry warehouse door
+            // Cold-store branch east of the dry warehouse.
+            g.Node("CW1", 46f, y, 16f);
+            g.Node("CWA", 52f, y, 19f);
+            g.Node("CWH", 52f, y, 23f);                                // cold warehouse door
+            // Scenic return from the cold store: east and around behind
+            // both warehouses, rejoining the main return road.
+            g.Node("CN1", 63f, y, 27f);
+            g.Node("CN2", 58f, y, 40f);
+            g.Node("CN3", 12f, y, 40f);
+            g.Node("CN4", -8f, y, 33f);
+            // Return road (z≈26) heading west, back to the lane entry.
+            g.Node("R1", 18f, y, 25f);
             g.Node("R2", 0f, y, 26f);
             g.Node("R3", -20f, y, 26f);
             g.Node("R4", -36f, y, 25f);
@@ -64,9 +75,19 @@ namespace PortGame
             g.Edge("B1", "B2");   // through lane past bay B
             g.Edge("B1", "LPB");
             g.Edge("LPB", "B2");
-            g.Edge("B2", "E2");
+            g.Edge("B2", "E2");    // clean cargo goes straight through
+            g.Edge("B2", "CUS");   // flagged cargo detours via the customs bay
+            g.Edge("CUS", "E2");
             g.Edge("E2", "WHA");
             g.Edge("WHA", "WH");
+            g.Edge("E2", "CW1");   // refrigerated branch
+            g.Edge("CW1", "CWA");
+            g.Edge("CWA", "CWH");
+            g.Edge("CWH", "CN1");
+            g.Edge("CN1", "CN2");
+            g.Edge("CN2", "CN3");
+            g.Edge("CN3", "CN4");
+            g.Edge("CN4", "R3");
             g.Edge("WH", "R1");
             g.Edge("R1", "R2");
             g.Edge("R2", "R3");

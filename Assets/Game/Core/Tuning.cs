@@ -38,11 +38,34 @@ namespace PortGame
         public const float SpawnIntervalSlowRep = 60f;   // at reputation 0
         public const float SpawnIntervalFastRep = 28f;   // at reputation 100
 
-        // ---- Warehouse ----
+        // ---- Warehouses ----
         public const int WarehouseCapacity = 9;
         public const float WarehouseDispatchInterval = 16f;
+        public const int ColdCapacity = 6;
+        public const float ColdDispatchInterval = 14f;
         public const float DispatchIntervalPerLevel = 3.5f; // upgrade shaves this off
         public const long DispatchRevenue = 120;
+
+        // ---- Customs ----
+        public const float CustomsChance = 0.18f;      // flagged containers per manifest
+        public const float CustomsBaseDwell = 12f;     // seconds per inspection
+        public const float CustomsDwellPerLevel = 0.25f; // fraction shaved per upgrade level
+        public const long CustomsFee = 60;             // quiet revenue per inspection
+        public static readonly long[] CustomsCosts = { 1500, 3000, 6000 };
+
+        // ---- Equipment wear ----
+        public const float CraneWearPerBox = 0.8f;     // health points per container
+        public const float HazardWearBonus = 1.2f;
+        public const float CraneBreakdownHealth = 70f; // risk begins below this
+        public const float CraneRepairSeconds = 32f;
+        public const long CraneMaintenanceCost = 500;
+        public const long CraneEmergencyRepairCost = 1200;
+
+        // ---- Events ----
+        public const float EventFirstDelay = 210f;
+        public const float EventIntervalMin = 150f;
+        public const float EventIntervalMax = 260f;
+        public const float CrackdownSeconds = 75f;
 
         // ---- Fleet ----
         public const int StartingTractors = 2;

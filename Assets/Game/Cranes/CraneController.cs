@@ -17,6 +17,8 @@ namespace PortGame
         LowerToTrailer,
         Release,
         RaiseEmpty,
+        Broken,
+        Servicing,
     }
 
     /// <summary>
@@ -43,10 +45,19 @@ namespace PortGame
         /// <summary>Bought speed level, 0–3; each level is +25% on every motion.</summary>
         public int SpeedLevel { get; set; }
 
+        /// <summary>100 → 0. Every container handled wears the crane; low health risks breakdown.</summary>
+        public float Health { get; set; } = 100f;
+
         public RoadNode LoadNode { get; private set; }
+
+        /// <summary>Fired when a crane breaks down mid-shift (the director banners it).</summary>
+        public static event System.Action<CraneController> OnBreakdown;
 
         private string _title;
         private float _homeX;
+        private bool _serviceRequested;
+        private bool _expediteRepair;
+        private readonly System.Random _wearRng = new System.Random();
 
         // Upgrades speed the crane up; bad weather slows it down.
         private float SpeedMult => (1f + 0.25f * SpeedLevel) /
@@ -54,12 +65,14 @@ namespace PortGame
 
         public string FocusTitle => _title;
 
-        public string FocusBody
+        public string FocusBody => StatusLine() + string.Format("\nHealth: {0:0}%", Health);
+
+        private string StatusLine()
         {
-            get
-            {
                 switch (State)
                 {
+                    case CraneState.Broken: return "BREAKDOWN — repair crew on site";
+                    case CraneState.Servicing: return "Scheduled maintenance underway";
                     case CraneState.Idle: return "Standing by";
                     case CraneState.MoveGantry: return "Travelling to container";
                     case CraneState.TrolleyOut:
@@ -74,18 +87,49 @@ namespace PortGame
                     case CraneState.RaiseEmpty: return "Loading tractor";
                     default: return "";
                 }
-            }
         }
 
         public FocusAction[] FocusActions
         {
             get
             {
-                if (SpeedLevel >= Tuning.CraneSpeedCosts.Length) return new FocusAction[0];
-                long cost = Tuning.CraneSpeedCosts[SpeedLevel];
-                return new[]
+                var actions = new System.Collections.Generic.List<FocusAction>(2);
+
+                if (State == CraneState.Broken)
                 {
-                    new FocusAction
+                    long repairCost = Tuning.CraneEmergencyRepairCost;
+                    actions.Add(new FocusAction
+                    {
+                        Label = "Emergency repair (fast-track crew)",
+                        Cost = repairCost,
+                        Available = () => !_expediteRepair && EconomyManager.Instance.Balance >= repairCost,
+                        Execute = () =>
+                        {
+                            if (EconomyManager.Instance.TrySpend(repairCost, _title + " emergency repair"))
+                                _expediteRepair = true;
+                        },
+                    });
+                }
+                else if (Health < 85f)
+                {
+                    long serviceCost = Tuning.CraneMaintenanceCost;
+                    actions.Add(new FocusAction
+                    {
+                        Label = "Service crane (restore to 100%)",
+                        Cost = serviceCost,
+                        Available = () => !_serviceRequested && EconomyManager.Instance.Balance >= serviceCost,
+                        Execute = () =>
+                        {
+                            if (EconomyManager.Instance.TrySpend(serviceCost, _title + " maintenance"))
+                                _serviceRequested = true;
+                        },
+                    });
+                }
+
+                if (SpeedLevel < Tuning.CraneSpeedCosts.Length)
+                {
+                    long cost = Tuning.CraneSpeedCosts[SpeedLevel];
+                    actions.Add(new FocusAction
                     {
                         Label = string.Format("Upgrade speed (+25%), Lv {0}→{1}", SpeedLevel, SpeedLevel + 1),
                         Cost = cost,
@@ -95,8 +139,10 @@ namespace PortGame
                             if (EconomyManager.Instance.TrySpend(cost, _title + " speed upgrade"))
                                 SpeedLevel++;
                         },
-                    },
-                };
+                    });
+                }
+
+                return actions.ToArray();
             }
         }
 
@@ -220,6 +266,15 @@ namespace PortGame
 
         private IEnumerator UnloadOne(Container container, VehicleDispatcher dispatcher)
         {
+            // Purchased maintenance runs between boxes: a short pause, full health.
+            if (_serviceRequested)
+            {
+                _serviceRequested = false;
+                State = CraneState.Servicing;
+                yield return new WaitForSeconds(6f);
+                Health = 100f;
+            }
+
             container.State = ContainerState.BeingUnloaded;
 
             State = CraneState.MoveGantry;
@@ -233,7 +288,9 @@ namespace PortGame
             yield return MoveCable(_trolley.position.y - (grabTop + SpreaderHalfHeight));
 
             State = CraneState.Grab;
-            yield return new WaitForSeconds(Tuning.GrabPause);
+            // Hazardous cargo is locked on slowly and deliberately.
+            bool hazard = container.Cargo != null && container.Cargo.Hazard;
+            yield return new WaitForSeconds(hazard ? Tuning.GrabPause * 2.5f : Tuning.GrabPause);
             container.transform.SetParent(_spreader, true);
             container.State = ContainerState.OnCraneSpreader;
             yield return SettleLocal(container.transform,
@@ -267,6 +324,41 @@ namespace PortGame
 
             State = CraneState.RaiseEmpty;
             yield return MoveCable(CruiseCable);
+
+            // Wear and tear: every box costs health; below the threshold each
+            // further box risks a breakdown.
+            Health = Mathf.Max(0f, Health -
+                (hazard ? Tuning.CraneWearPerBox + Tuning.HazardWearBonus : Tuning.CraneWearPerBox));
+            if (Health < Tuning.CraneBreakdownHealth)
+            {
+                float risk = (Tuning.CraneBreakdownHealth - Health) / Tuning.CraneBreakdownHealth * 0.25f;
+                if ((float)_wearRng.NextDouble() < risk)
+                    yield return BreakdownRoutine();
+            }
+        }
+
+        /// <summary>Immediate breakdown (random event); takes effect before the next box.</summary>
+        public void ForceBreakdown()
+        {
+            if (State != CraneState.Broken) Health = Mathf.Min(Health, 20f);
+        }
+
+        private IEnumerator BreakdownRoutine()
+        {
+            State = CraneState.Broken;
+            _expediteRepair = false;
+            var handler = OnBreakdown;
+            if (handler != null) handler(this);
+
+            float remaining = Tuning.CraneRepairSeconds;
+            while (remaining > 0f)
+            {
+                if (_expediteRepair) remaining = Mathf.Min(remaining, 3f);
+                remaining -= Time.deltaTime;
+                yield return null;
+            }
+            Health = 65f; // patched up, not factory-fresh
+            _expediteRepair = false;
         }
 
         // ---- Motion primitives (duration derived from distance) ----------

@@ -30,7 +30,6 @@ namespace PortGame
 
         private RoadGraph _graph;
         private VehicleDispatcher _dispatcher;
-        private Warehouse _warehouse;
         private Transform _bedAnchor;
         private readonly List<Transform> _wheels = new List<Transform>();
         private float _speed;
@@ -41,7 +40,7 @@ namespace PortGame
             CurrentNode == node && !_moving && Carrying == null && !_holdForLoading;
 
         public static TerminalTractor Build(Transform parent, int index, RoadGraph graph,
-            VehicleDispatcher dispatcher, Warehouse warehouse, RoadNode startNode)
+            VehicleDispatcher dispatcher, RoadNode startNode)
         {
             var go = new GameObject("TerminalTractor" + index);
             go.transform.SetParent(parent, false);
@@ -52,7 +51,6 @@ namespace PortGame
             tractor.Index = index;
             tractor._graph = graph;
             tractor._dispatcher = dispatcher;
-            tractor._warehouse = warehouse;
             tractor.CurrentNode = startNode;
             graph.TryClaim(startNode, tractor);
             tractor.BuildVisual();
@@ -162,10 +160,22 @@ namespace PortGame
                     // Brief pause so the spreader visibly lifts clear first.
                     State = TractorState.HaulToWarehouse;
                     yield return new WaitForSeconds(0.7f);
-                    yield return DriveTo(_graph["WH"]);
+
+                    // Flagged cargo (and everything, during a crackdown)
+                    // detours through the customs bay and dwells there.
+                    if (_dispatcher.Customs.RequiresInspection(Carrying))
+                    {
+                        yield return DriveTo(_dispatcher.CustomsNode);
+                        yield return _dispatcher.Customs.Inspect(Carrying);
+                    }
+
+                    RoadNode doorNode;
+                    Warehouse warehouse;
+                    _dispatcher.DestinationFor(Carrying, out doorNode, out warehouse);
+                    yield return DriveTo(doorNode);
 
                     State = TractorState.Unloading;
-                    yield return _warehouse.Receive(Carrying);
+                    yield return warehouse.Receive(Carrying);
                     Carrying = null;
                     continue;
                 }

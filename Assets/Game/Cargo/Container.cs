@@ -32,6 +32,30 @@ namespace PortGame
         /// <summary>The shipment this box belongs to, so parallel berths credit correctly.</summary>
         public Shipment Shipment { get; set; }
 
+        /// <summary>100 → 0. Refrigerated cargo loses quality outside the cold chain and pays by what's left.</summary>
+        public float Quality { get; private set; } = 100f;
+
+        /// <summary>Flagged on the manifest (or hazardous) — must clear the customs bay first.</summary>
+        public bool NeedsCustoms { get; set; }
+
+        public bool CustomsCleared { get; set; }
+
+        private void Update()
+        {
+            if (Cargo == null || Cargo.DecayPerMinute <= 0f) return;
+            // Outside the cold chain from crane pick to warehouse intake.
+            switch (State)
+            {
+                case ContainerState.BeingUnloaded:
+                case ContainerState.OnCraneSpreader:
+                case ContainerState.AwaitingTransport:
+                case ContainerState.OnTractor:
+                case ContainerState.BeingReceived:
+                    Quality = Mathf.Max(0f, Quality - Cargo.DecayPerMinute * Time.deltaTime / 60f);
+                    break;
+            }
+        }
+
         public static Container Build(Transform parent, Vector3 localPos, Color color)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);

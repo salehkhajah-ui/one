@@ -37,6 +37,12 @@ namespace PortGame
             Road(root, asphalt, new Vector3(-6f, roadY, 26f), new Vector2(70f, 6f));    // return road
             Road(root, asphalt, new Vector3(-40f, roadY, 16f), new Vector2(6f, 20f));   // west connector
             Road(root, asphalt, new Vector3(-46f, roadY, 9.5f), new Vector2(6f, 13f));  // parking lane
+            Road(root, asphalt, new Vector3(42f, roadY, 11f), new Vector2(9f, 6f));     // customs bay
+            Road(root, asphalt, new Vector3(48f, roadY, 18f), new Vector2(13f, 5f));    // cold-store spur
+            Road(root, asphalt, new Vector3(52f, roadY, 21.5f), new Vector2(5f, 6f));   // cold-store apron
+            Road(root, asphalt, new Vector3(61f, roadY, 33f), new Vector2(6f, 15f));    // cold return east leg
+            Road(root, asphalt, new Vector3(30f, roadY, 40f), new Vector2(60f, 5f));    // back-lot road
+            Road(root, asphalt, new Vector3(-2f, roadY, 34f), new Vector2(14f, 9f));    // back-lot rejoin
 
             // Dashed centerline on the main lane.
             for (int x = -38; x <= 34; x += 6)

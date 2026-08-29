@@ -6,7 +6,19 @@ This repository branch is a **standalone Unity project** — it is completely
 independent of the `main` branch of this repository (it shares no history and
 no files with it).
 
-Current state: **Phase 4 — the living world.**
+Current state: **Phase 5 — strategy.**
+
+Cargo now has consequences. Refrigerated goods decay from the moment the
+crane lifts them until the new **Cold Store** takes them in, and pay by the
+quality that survives. Flagged and hazardous containers detour through a
+**customs bay** and dwell under pulsing scanners (express clearance is an
+upgrade; crackdown events flag everything). Cranes **wear out** box by box —
+service them early or watch one break down mid-shift and pay for the
+emergency crew. And the world pushes back: emergency medical ships jump the
+berth queue on brutal deadlines, and market surges sweeten the next
+manifest.
+
+On top of **Phase 4 — the living world:**
 
 Weather now moves through the port — clear, cloudy, rain, storm, fog — and
 it isn't cosmetic: wet ground gleams, waves rise, rain streaks follow the
@@ -127,12 +139,12 @@ All gameplay/feel constants live in `Assets/Game/Core/Tuning.cs`
 (day length, crane speeds, tractor speed, rewards, container count per ship,
 camera limits). Change and re-enter Play mode.
 
-## Known limitations at Phase 4
+## Known limitations at Phase 5
 
 By design (see `docs/MILESTONES.md`): berths are auto-assigned in arrival
-order (player dock choice arrives with PORT AI priorities), refrigeration is
-identity-only until the cold chain lands in Phase 5, no breakdowns/events
-yet, haptics are a single coarse buzz until a platform plugin replaces
-`Haptics`, and audio is synthesized placeholder ambience that recorded
-sound can replace clip-for-clip. The architecture for all of these is
-specified in `docs/TDD.md`.
+order (player dock choice arrives with PORT AI priorities in Phase 6),
+oversized cargo waits for the Phase 7 heavy crane, tractors don't wear yet
+(cranes carry the maintenance gameplay), haptics are a single coarse buzz
+until a platform plugin replaces `Haptics`, and audio is synthesized
+placeholder ambience that recorded sound can replace clip-for-clip. The
+architecture for all of these is specified in `docs/TDD.md`.

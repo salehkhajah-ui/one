@@ -23,7 +23,8 @@ namespace PortGame
         }
 
         private VehicleDispatcher _dispatcher;
-        private Warehouse _warehouse;
+        private Warehouse _dryStore;
+        private Warehouse _coldStore;
         private HudController _hud;
         private DayNightCycle _dayNight;
         private Reputation _reputation;
@@ -41,17 +42,19 @@ namespace PortGame
         private bool _onboardingDone;
         private bool _craneTapped;
         private int _shipsInPlay;
+        private float _nextRewardMultiplier = 1f;
 
         public static ShipmentDirector Build(Transform parent, CraneController craneWest,
-            CraneController craneEast, VehicleDispatcher dispatcher, Warehouse warehouse,
-            HudController hud, DayNightCycle dayNight, CameraRig cameraRig,
+            CraneController craneEast, VehicleDispatcher dispatcher, Warehouse dryStore,
+            Warehouse coldStore, HudController hud, DayNightCycle dayNight, CameraRig cameraRig,
             Reputation reputation, Tugboats tugs, SaveModel save)
         {
             var go = new GameObject("ShipmentDirector");
             go.transform.SetParent(parent, false);
             var director = go.AddComponent<ShipmentDirector>();
             director._dispatcher = dispatcher;
-            director._warehouse = warehouse;
+            director._dryStore = dryStore;
+            director._coldStore = coldStore;
             director._hud = hud;
             director._dayNight = dayNight;
             director._reputation = reputation;
@@ -67,8 +70,11 @@ namespace PortGame
                 director._onboardingDone = save.onboardingDone;
             }
 
-            warehouse.OnDelivered += director.OnContainerDelivered;
+            dryStore.OnDelivered += director.OnContainerDelivered;
+            coldStore.OnDelivered += director.OnContainerDelivered;
             cameraRig.FocusChanged += director.OnFocusChanged;
+            CraneController.OnBreakdown += crane =>
+                hud.Banner(crane.FocusTitle + " — breakdown, repair crew dispatched");
             return director;
         }
 
@@ -87,9 +93,16 @@ namespace PortGame
 
         private void OnContainerDelivered(Container container)
         {
-            long reward = container.Cargo != null ? container.Cargo.ValuePerContainer : 300;
+            long baseReward = container.Shipment != null
+                ? container.Shipment.RewardPerContainer
+                : (container.Cargo != null ? container.Cargo.ValuePerContainer : 300);
+            // Refrigerated cargo pays by whatever quality survived the dock.
+            long reward = (long)(baseReward * container.Quality / 100f);
             string what = container.Cargo != null ? container.Cargo.DisplayName : "cargo";
-            EconomyManager.Instance.Add(reward, what + " received");
+            string note = container.Quality < 95f
+                ? string.Format("{0} received (quality {1:0}%)", what, container.Quality)
+                : what + " received";
+            EconomyManager.Instance.Add(reward, note);
             _totalDelivered++;
             if (container.Shipment != null) container.Shipment.Delivered++;
         }
@@ -127,31 +140,75 @@ namespace PortGame
 
         // ---- Per-ship lifecycle -----------------------------------------
 
-        private IEnumerator RunShipLifecycle(int anchorSlot)
+        /// <summary>Market-surge event: the next announced shipment pays this multiplier.</summary>
+        public void SurgeNextShipment(float multiplier)
         {
-            _anchorSlots[anchorSlot] = true;
-            _shipsInPlay++;
+            _nextRewardMultiplier = multiplier;
+        }
 
+        /// <summary>
+        /// Emergency event: a medical ship on a brutal deadline that jumps
+        /// the berth queue. Returns false when the anchorage is full.
+        /// </summary>
+        public bool SpawnEmergencyShipment()
+        {
+            int slot = FreeAnchorSlot();
+            if (slot < 0) return false;
+
+            var shipment = new Shipment
+            {
+                ShipName = "Mercy Runner",
+                Cargo = CargoCatalog.ById("medicine"),
+                Count = 5,
+                SpawnTime = Time.time,
+                RewardMultiplier = 1.6f,
+                IsEmergency = true,
+                RepWin = 4,
+                RepLose = -6,
+            };
+            shipment.DeadlineSeconds = 90f + shipment.Count * 30f;
+            StartCoroutine(RunShipLifecycle(slot, shipment));
+            return true;
+        }
+
+        private Shipment CreateScheduledShipment()
+        {
             var shipment = new Shipment
             {
                 ShipName = Tuning.ShipNames[_shipIndex % Tuning.ShipNames.Length],
                 Cargo = CargoCatalog.Pick(_rng),
                 Count = _rng.Next(Tuning.MinContainersPerShip, Tuning.MaxContainersPerShip + 1),
                 SpawnTime = Time.time,
+                RewardMultiplier = _nextRewardMultiplier,
             };
+            _nextRewardMultiplier = 1f;
             shipment.DeadlineSeconds = Tuning.DeadlineBuffer + shipment.Count * Tuning.DeadlinePerContainer;
             _shipIndex++;
+            return shipment;
+        }
+
+        private IEnumerator RunShipLifecycle(int anchorSlot, Shipment shipment = null)
+        {
+            _anchorSlots[anchorSlot] = true;
+            _shipsInPlay++;
+
+            if (shipment == null) shipment = CreateScheduledShipment();
 
             var ship = ShipController.Build(transform, shipment, anchorSlot);
-            _hud.Banner(string.Format("{0} inbound — {1}, {2} containers",
-                shipment.ShipName, shipment.Cargo.DisplayName, shipment.Count));
+            _hud.Banner(shipment.IsEmergency
+                ? string.Format("EMERGENCY — {0} inbound with {1} ({2} containers)",
+                    shipment.ShipName, shipment.Cargo.DisplayName, shipment.Count)
+                : string.Format("{0} inbound — {1}, {2} containers",
+                    shipment.ShipName, shipment.Cargo.DisplayName, shipment.Count));
+            if (shipment.IsEmergency && AudioManager.Instance != null) AudioManager.Instance.Alert();
 
             yield return ship.ApproachAnchor();
 
-            // Berths are granted strictly in arrival order; a storm closes
-            // the harbor, so ships ride it out at anchor with deadlines
-            // burning.
-            _berthQueue.Add(ship);
+            // Berths are granted strictly in arrival order — except emergency
+            // ships, which jump the queue. A storm closes the harbor, so
+            // ships ride it out at anchor with deadlines burning.
+            if (shipment.IsEmergency) _berthQueue.Insert(0, ship);
+            else _berthQueue.Add(ship);
             Berth berth = null;
             while (berth == null)
             {
@@ -191,13 +248,15 @@ namespace PortGame
             if (!shipment.IsLate)
             {
                 EconomyManager.Instance.Add(shipment.OnTimeBonus, "on-time shipment bonus");
-                _reputation.Add(Tuning.RepOnTime, "on-time delivery");
+                _reputation.Add(shipment.RepWin,
+                    shipment.IsEmergency ? "emergency delivered in time" : "on-time delivery");
                 _hud.Banner(string.Format("{0} — delivered on time", shipment.ShipName));
             }
             else
             {
                 EconomyManager.Instance.Add(-shipment.LatePenalty, "late delivery penalty");
-                _reputation.Add(Tuning.RepLate, "late delivery");
+                _reputation.Add(shipment.RepLose,
+                    shipment.IsEmergency ? "emergency delivered late" : "late delivery");
                 _hud.Banner(string.Format("{0} — delivered late", shipment.ShipName));
             }
             Haptics.Notable();
@@ -237,14 +296,19 @@ namespace PortGame
                 day = _dayNight.DayCount,
                 dayFraction = _dayNight.DayFraction,
                 shipIndex = _shipIndex,
-                warehouseStored = _warehouse.StoredCount,
+                warehouseStored = _dryStore.StoredCount,
+                coldStored = _coldStore.StoredCount,
                 totalDelivered = _totalDelivered,
                 onboardingDone = _onboardingDone,
                 reputation = _reputation.Value,
                 craneLevelA = _berths[0].Crane.SpeedLevel,
                 craneLevelB = _berths[1].Crane.SpeedLevel,
+                craneHealthA = _berths[0].Crane.Health,
+                craneHealthB = _berths[1].Crane.Health,
                 tractorSpeedLevel = _dispatcher.TractorSpeedLevel,
-                dispatchLevel = _warehouse.DispatchLevel,
+                dispatchLevel = _dryStore.DispatchLevel,
+                coldDispatchLevel = _coldStore.DispatchLevel,
+                customsLevel = _dispatcher.Customs.Level,
                 tractorCount = _dispatcher.Tractors.Count,
             });
         }

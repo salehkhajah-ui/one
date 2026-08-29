@@ -31,7 +31,7 @@ namespace PortGame
         private bool _offerAnswered;
         private bool _offerAccepted;
 
-        public static ContractManager Build(Transform parent, Warehouse warehouse,
+        public static ContractManager Build(Transform parent, Warehouse[] warehouses,
             HudController hud, Reputation reputation)
         {
             var go = new GameObject("Contracts");
@@ -39,7 +39,8 @@ namespace PortGame
             var cm = go.AddComponent<ContractManager>();
             cm._hud = hud;
             cm._reputation = reputation;
-            warehouse.OnDelivered += cm.OnContainerDelivered;
+            foreach (var warehouse in warehouses)
+                warehouse.OnDelivered += cm.OnContainerDelivered;
             return cm;
         }
 

@@ -40,12 +40,38 @@ namespace PortGame
             var weather = WeatherManager.Build(root, dayNight, ocean);
             PortEnvironmentBuilder.Build(root, dayNight);
 
-            var warehouse = Warehouse.Build(root, dayNight);
+            var dryStore = Warehouse.Build(root, dayNight, new WarehouseConfig
+            {
+                Title = "Warehouse",
+                Position = new Vector3(30f, Tuning.QuayTopY, 31f),
+                Wall = Palette.WarehouseWall,
+                Roof = Palette.WarehouseRoof,
+                Glow = Palette.WarmLight,
+                Capacity = Tuning.WarehouseCapacity,
+                DispatchBase = Tuning.WarehouseDispatchInterval,
+                Refrigerated = false,
+            });
+            var coldStore = Warehouse.Build(root, dayNight, new WarehouseConfig
+            {
+                Title = "Cold Store",
+                Position = new Vector3(52f, Tuning.QuayTopY, 31f),
+                Wall = Palette.Hex("#DCE4E6"),
+                Roof = Palette.Hex("#9FB3B8"),
+                Glow = Palette.Hex("#9FDCE8"),
+                Capacity = Tuning.ColdCapacity,
+                DispatchBase = Tuning.ColdDispatchInterval,
+                Refrigerated = true,
+            });
             if (save != null)
             {
-                warehouse.LoadStored(save.warehouseStored);
-                warehouse.DispatchLevel = save.dispatchLevel;
+                dryStore.LoadStored(save.warehouseStored);
+                dryStore.DispatchLevel = save.dispatchLevel;
+                coldStore.LoadStored(save.coldStored);
+                coldStore.DispatchLevel = save.coldDispatchLevel;
             }
+
+            var customs = CustomsOffice.Build(root, dayNight);
+            if (save != null) customs.Level = save.customsLevel;
 
             var graph = RoadGraph.BuildDefault();
             var craneWest = CraneController.Build(root, "Quay Crane 1", Tuning.BerthWestX, graph["LPA"]);
@@ -56,9 +82,11 @@ namespace PortGame
             {
                 craneWest.SpeedLevel = save.craneLevelA;
                 craneEast.SpeedLevel = save.craneLevelB;
+                craneWest.Health = save.craneHealthA;
+                craneEast.Health = save.craneHealthB;
             }
 
-            var dispatcher = VehicleDispatcher.Build(root, graph, warehouse);
+            var dispatcher = VehicleDispatcher.Build(root, graph, dryStore, coldStore, customs);
             dispatcher.RegisterCrane(craneWest);
             dispatcher.RegisterCrane(craneEast);
             if (save != null) dispatcher.TractorSpeedLevel = save.tractorSpeedLevel;
@@ -74,10 +102,12 @@ namespace PortGame
 
             var hud = HudController.Build(root, dayNight, economy, cameraRig, reputation);
             hud.SetWeather(weather);
-            warehouse.OnDelivered += _ => audio.Chime();
-            ContractManager.Build(root, warehouse, hud, reputation);
-            ShipmentDirector.Build(root, craneWest, craneEast, dispatcher, warehouse,
-                hud, dayNight, cameraRig, reputation, tugs, save);
+            dryStore.OnDelivered += _ => audio.Chime();
+            coldStore.OnDelivered += _ => audio.Chime();
+            ContractManager.Build(root, new[] { dryStore, coldStore }, hud, reputation);
+            var director = ShipmentDirector.Build(root, craneWest, craneEast, dispatcher,
+                dryStore, coldStore, hud, dayNight, cameraRig, reputation, tugs, save);
+            EventManager.Build(root, director, customs, new[] { craneWest, craneEast }, hud);
 
             if (save != null) hud.Banner("Welcome back to your port", 3f);
         }

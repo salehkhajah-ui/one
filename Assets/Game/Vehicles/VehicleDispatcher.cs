@@ -16,19 +16,35 @@ namespace PortGame
         public int TractorSpeedLevel { get; set; }
         public float TractorSpeedMult => 1f + 0.2f * TractorSpeedLevel;
 
+        public CustomsOffice Customs { get; private set; }
+        public RoadNode CustomsNode { get; private set; }
+
         private RoadGraph _graph;
-        private Warehouse _warehouse;
+        private Warehouse _dryStore;
+        private Warehouse _coldStore;
         private readonly List<CraneController> _cranes = new List<CraneController>();
         private readonly List<RoadNode> _stationScratch = new List<RoadNode>();
 
-        public static VehicleDispatcher Build(Transform parent, RoadGraph graph, Warehouse warehouse)
+        public static VehicleDispatcher Build(Transform parent, RoadGraph graph,
+            Warehouse dryStore, Warehouse coldStore, CustomsOffice customs)
         {
             var go = new GameObject("VehicleDispatcher");
             go.transform.SetParent(parent, false);
             var d = go.AddComponent<VehicleDispatcher>();
             d._graph = graph;
-            d._warehouse = warehouse;
+            d._dryStore = dryStore;
+            d._coldStore = coldStore;
+            d.Customs = customs;
+            d.CustomsNode = graph["CUS"];
             return d;
+        }
+
+        /// <summary>Where this container belongs: cold chain to the cold store, everything else to the dry store.</summary>
+        public void DestinationFor(Container container, out RoadNode node, out Warehouse warehouse)
+        {
+            bool cold = container.Cargo != null && container.Cargo.Refrigerated;
+            warehouse = cold ? _coldStore : _dryStore;
+            node = _graph[cold ? "CWH" : "WH"];
         }
 
         public void RegisterCrane(CraneController crane)
@@ -41,7 +57,7 @@ namespace PortGame
             count = Mathf.Clamp(count, 1, Tuning.MaxTractors);
             string[] starts = { "LPA", "LPB", "PK1", "PK2" };
             for (int i = 0; i < count; i++)
-                Tractors.Add(TerminalTractor.Build(transform, i + 1, _graph, this, _warehouse,
+                Tractors.Add(TerminalTractor.Build(transform, i + 1, _graph, this,
                     _graph[starts[i]]));
         }
 
@@ -148,7 +164,7 @@ namespace PortGame
                 if (node.ClaimedBy == null)
                 {
                     Tractors.Add(TerminalTractor.Build(transform, Tractors.Count + 1,
-                        _graph, this, _warehouse, node));
+                        _graph, this, node));
                     return;
                 }
             }

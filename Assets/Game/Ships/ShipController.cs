@@ -100,6 +100,8 @@ namespace PortGame
                 c.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
                 c.Cargo = shipment.Cargo;
                 c.Shipment = shipment;
+                // A cut of every manifest gets flagged for customs (hazard always is).
+                c.NeedsCustoms = shipment.Cargo.Hazard || Random.value < Tuning.CustomsChance;
                 Containers.Add(c);
             }
         }

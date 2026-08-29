@@ -66,10 +66,26 @@ first docking gets a **cinematic camera follow** (any pan/rotate skips it),
 and notable moments fire a light **haptic** buzz on device. Weather reads
 out beside the clock.
 
-## Phase 5 — Strategy
+## Phase 5 — Strategy ✅ (this branch)
 
-Customs, refrigerated chain, special cargo (hazmat, oversized, medical),
-equipment wear/breakdowns/maintenance, random events + emergency shipments.
+The **cold chain**: refrigerated cargo (strawberries, frozen seafood)
+loses quality every second it spends outside refrigeration — from crane
+pick to warehouse intake — and pays by what survives; a new **Cold Store**
+(chillers on the roof, cyan glow, its own dispatch cycle and upgrade) ends
+the decay, and a full cold store means strawberries dying on a waiting
+trailer. A **customs bay** with pulsing scanner posts pulls flagged
+containers (a cut of every manifest, all hazmat, and everything during a
+crackdown) into an inspection dwell, shortened by express-clearance
+upgrades. **Hazardous cargo** (industrial chemicals) is always inspected,
+handled slowly by the cranes, and wears them faster. **Equipment wear**:
+every container costs crane health; low health risks a mid-shift
+breakdown with a repair timer — pay for scheduled maintenance early, or
+emergency-repair the failure. **Random events**: emergency medical ships
+that jump the berth queue on brutal deadlines with reputation at stake,
+customs crackdowns, forced breakdowns on worn cranes, and market surges.
+Save format v3 (cold store, customs, crane health) with the full
+v1→v2→v3 migration chain. Oversized cargo waits for the heavy crane in
+Phase 7.
 
 ## Phase 6 — Automation
 

@@ -10,14 +10,14 @@ namespace PortGame
     /// visually from this on load. Ships in transit are not saved; an
     /// interrupted shipment respawns fresh on the next run.
     ///
-    /// Version 2 added reputation, upgrade levels and fleet size; a version-1
-    /// file is migrated on load (missing fields take era-appropriate
-    /// defaults).
+    /// Version 2 added reputation, upgrade levels and fleet size; version 3
+    /// added the cold store, customs and crane health. Older files are
+    /// migrated on load (missing fields take era-appropriate defaults).
     /// </summary>
     [Serializable]
     public class SaveModel
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public int version = CurrentVersion;
         public long balance;
@@ -35,6 +35,13 @@ namespace PortGame
         public int tractorSpeedLevel;
         public int dispatchLevel;
         public int tractorCount = Tuning.StartingTractors;
+
+        // v3
+        public int coldStored;
+        public int coldDispatchLevel;
+        public int customsLevel;
+        public float craneHealthA = 100f;
+        public float craneHealthB = 100f;
     }
 
     /// <summary>
@@ -64,6 +71,16 @@ namespace PortGame
                     model.dispatchLevel = 0;
                     model.tractorCount = Tuning.StartingTractors;
                     model.version = 2;
+                }
+                if (model.version == 2)
+                {
+                    // V2 → V3: cold store, customs and crane health arrive fresh.
+                    model.coldStored = 0;
+                    model.coldDispatchLevel = 0;
+                    model.customsLevel = 0;
+                    model.craneHealthA = 100f;
+                    model.craneHealthB = 100f;
+                    model.version = 3;
                 }
                 if (model.version != SaveModel.CurrentVersion) return null;
 

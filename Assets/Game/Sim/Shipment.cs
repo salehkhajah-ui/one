@@ -19,9 +19,17 @@ namespace PortGame
         public float DeadlineSeconds;
         public int Delivered;
 
-        public long RewardPerContainer => Cargo.ValuePerContainer;
-        public long OnTimeBonus => Cargo.ValuePerContainer * Count / 3;
-        public long LatePenalty => Cargo.ValuePerContainer * Count / 4;
+        /// <summary>Market surge / emergency premium on every payout.</summary>
+        public float RewardMultiplier = 1f;
+
+        /// <summary>Emergency shipments jump the berth queue and stake more reputation.</summary>
+        public bool IsEmergency;
+        public int RepWin = Tuning.RepOnTime;
+        public int RepLose = Tuning.RepLate;
+
+        public long RewardPerContainer => (long)(Cargo.ValuePerContainer * RewardMultiplier);
+        public long OnTimeBonus => RewardPerContainer * Count / 3;
+        public long LatePenalty => RewardPerContainer * Count / 4;
 
         public float Remaining => SpawnTime + DeadlineSeconds - Time.time;
         public bool IsLate => Remaining < 0f;
