@@ -1,0 +1,767 @@
+@import "tailwindcss";
+
+/* ============ ONE design tokens — instrument-panel theme ============ */
+:root {
+  /* Near-black, hairline-bordered, single cyan accent (dark-first) */
+  --page: #030608;
+  --card: #0a0f16;
+  --card-elevated: #0c1219;
+  --hairline: rgba(210, 230, 245, 0.09);
+  --hairline-strong: rgba(210, 230, 245, 0.16);
+  --text: #f2f6f9;
+  --text-2: #8b9aa8;
+  --text-3: #55636f;
+  --accent: #6fd6f2;
+  --accent-ink: #041014;
+  --brand: #7fd9f0;
+  --positive: #52d19a;
+  --caution: #e0b45c;
+
+  /* Bucket palette — validated (dataviz six checks, dark surface #0A0F16) */
+  --bucket-life: #4a82ea;
+  --bucket-bills: #a03bc4;
+  --bucket-protect: #12a5b0;
+  --bucket-grow: #2a7b36;
+  --bucket-goals: #c4831b;
+  --bucket-enjoy: #e25a80;
+
+  /* Grow scenario ordinal ramp (one hue, light→dark) */
+  --grow-1: #7fd08f;
+  --grow-2: #3f9e51;
+  --grow-3: #1f6b2c;
+
+  --nav-h: 64px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --page: #f4f6f7;
+    --card: #ffffff;
+    --card-elevated: #ffffff;
+    --hairline: rgba(9, 24, 34, 0.1);
+    --hairline-strong: rgba(9, 24, 34, 0.18);
+    --text: #0b1116;
+    --text-2: #55636f;
+    --text-3: #8b9aa8;
+    --accent: #0e7490;
+    --accent-ink: #ffffff;
+    --brand: #0e7490;
+    --positive: #177a4c;
+    --caution: #9a6410;
+
+    /* Bucket palette — validated (light surface #FFFFFF) */
+    --bucket-life: #2a66d9;
+    --bucket-bills: #8b2fad;
+    --bucket-protect: #0894a6;
+    --bucket-grow: #256b2e;
+    --bucket-goals: #b57200;
+    --bucket-enjoy: #c93a64;
+
+    --grow-1: #8fc79b;
+    --grow-2: #3d8a4e;
+    --grow-3: #1d5426;
+    color-scheme: light;
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background: var(--page);
+  color: var(--text);
+  font-family:
+    var(--font-sans, "Titillium Web"), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* Faint orbital glow at the top of the viewport — the only decoration */
+body::before {
+  content: "";
+  position: fixed;
+  inset-inline: 0;
+  top: -220px;
+  height: 440px;
+  pointer-events: none;
+  background: radial-gradient(420px 260px at 50% 0%, color-mix(in oklab, var(--accent) 7%, transparent), transparent 70%);
+  z-index: 0;
+}
+
+/* Phone-shaped column on any screen */
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 430px;
+  margin-inline: auto;
+  min-height: 100dvh;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+.screen {
+  padding: 16px 18px 8px;
+}
+
+/* ============ Motion — staggered entrances, sweeps, draws ============
+   All decorative motion lives inside this media query so reduced-motion
+   users get an instant, static UI. */
+@media (prefers-reduced-motion: no-preference) {
+  .screen > * {
+    animation: rise 460ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  }
+  .screen > *:nth-child(1) { animation-delay: 0ms; }
+  .screen > *:nth-child(2) { animation-delay: 50ms; }
+  .screen > *:nth-child(3) { animation-delay: 100ms; }
+  .screen > *:nth-child(4) { animation-delay: 150ms; }
+  .screen > *:nth-child(5) { animation-delay: 200ms; }
+  .screen > *:nth-child(6) { animation-delay: 250ms; }
+  .screen > *:nth-child(7) { animation-delay: 300ms; }
+  .screen > *:nth-child(8) { animation-delay: 350ms; }
+  .screen > *:nth-child(n + 9) { animation-delay: 400ms; }
+
+  /* One-time light sweep across elevated (hero) cards */
+  .card-elevated::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 32%,
+      color-mix(in oklab, var(--accent) 10%, transparent) 50%,
+      transparent 68%
+    );
+    background-size: 250% 100%;
+    animation: sheen 1300ms cubic-bezier(0.3, 0.5, 0.3, 1) 350ms forwards;
+    opacity: 0;
+  }
+
+  /* Bars grow in from their reading edge */
+  .progress-fill {
+    animation: bar-in 750ms cubic-bezier(0.2, 0.7, 0.3, 1) 150ms backwards;
+    transform-origin: 0% 50%;
+  }
+  [dir="rtl"] .progress-fill {
+    transform-origin: 100% 50%;
+  }
+  .stack-seg {
+    animation: bar-in 650ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+    transform-origin: 0% 50%;
+  }
+  [dir="rtl"] .stack-seg {
+    transform-origin: 100% 50%;
+  }
+
+  /* SVG lines draw themselves (requires pathLength={1} on the path) */
+  .draw-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw-line 1100ms cubic-bezier(0.4, 0, 0.2, 1) 200ms forwards;
+  }
+
+  .nav-item[data-active="true"]::before {
+    animation: bar-in 260ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  /* Network: reward reveal — premium pop, no casino energy */
+  .reveal-card {
+    animation: reveal-pop 520ms cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+  }
+  .gift-orb {
+    animation: gift-breathe 2400ms ease-in-out infinite;
+  }
+  .moment-banner {
+    animation: rise 460ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  }
+}
+
+@keyframes reveal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes gift-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 26%, transparent);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheen {
+  0% {
+    opacity: 1;
+    background-position: 130% 0;
+  }
+  100% {
+    opacity: 0;
+    background-position: -60% 0;
+  }
+}
+
+@keyframes bar-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes draw-line {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ============ Cards & type ============ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.card-elevated {
+  background: var(--card-elevated);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+}
+
+/* Instrument corner tick on elevated cards */
+.card-elevated::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  inset-inline-start: 16px;
+  width: 34px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.hero-number {
+  font-size: 54px;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  line-height: 1.02;
+}
+
+.hero-unit {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+  /* Money strings ("126.232 KD", "1.2 → 0.9") always read left-to-right,
+     isolated from surrounding RTL text. */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.subtle {
+  color: var(--text-2);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.micro {
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+h1 {
+  letter-spacing: -0.01em;
+}
+
+/* ============ Buttons ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px 20px;
+  min-height: 46px;
+  border: 1px solid transparent;
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease,
+    background 120ms ease;
+  cursor: pointer;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--text);
+  color: var(--page);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--hairline-strong);
+  color: var(--text);
+}
+
+.btn-quiet {
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+  color: var(--text);
+}
+
+/* ============ Bottom navigation ============ */
+.bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.bottom-nav-inner {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 430px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: color-mix(in oklab, var(--page) 90%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--hairline);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  min-height: 44px;
+  position: relative;
+}
+
+.nav-item[data-active="true"] {
+  color: var(--text);
+}
+
+.nav-item[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 22px;
+  height: 1.5px;
+  background: var(--accent);
+}
+
+.nav-item svg {
+  width: 21px;
+  height: 21px;
+}
+
+/* ============ Buckets ============ */
+.bucket-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.stack-bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stack-seg {
+  height: 100%;
+  min-width: 3px;
+  border-radius: 1px;
+}
+
+/* ============ Progress ============ */
+.progress-track {
+  height: 5px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--text) 9%, transparent);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 400ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* ============ Inputs ============ */
+.input {
+  width: 100%;
+  background: color-mix(in oklab, var(--text) 5%, transparent);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 16px;
+  padding: 13px 15px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.input::placeholder {
+  color: var(--text-3);
+}
+
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--text) 14%, transparent);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--page);
+  border: 1.5px solid var(--text);
+  margin-top: -8.5px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--text) 14%, transparent);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--page);
+  border: 1.5px solid var(--text);
+}
+
+/* ============ Misc placeholder */
+/* ============ Misc ============ */
+.divider {
+  height: 1px;
+  background: var(--hairline);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-2);
+  cursor: pointer;
+  min-height: 38px;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 120ms ease;
+}
+
+/* Tappable cards give tactile feedback */
+a.card,
+button.card {
+  transition:
+    transform 140ms ease,
+    border-color 200ms ease;
+}
+
+a.card:active,
+button.card:active {
+  transform: scale(0.98);
+}
+
+.nav-item {
+  transition: color 180ms ease;
+}
+
+.chip:active {
+  transform: scale(0.98);
+}
+
+/* ============ Financial Moment Network ============ */
+
+/* Portals (merchant / institution / admin / investor) use a wide column. */
+.shell-wide {
+  max-width: 1040px;
+  padding-bottom: 32px;
+}
+
+.shell-wide .screen {
+  padding: 20px 22px 24px;
+}
+
+.portal-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--hairline);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in oklab, var(--page) 88%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.portal-brand {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.portal-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+/* Small "demo data" marker — seeded merchants/institutions are never implied real. */
+.demo-tag {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--caution);
+  border: 1px solid color-mix(in oklab, var(--caution) 45%, transparent);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+/* Reveal stage: one glowing orb, one action */
+.gift-orb {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline: auto;
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in oklab, var(--accent) 24%, var(--card-elevated)),
+    var(--card)
+  );
+  border: 1px solid var(--hairline-strong);
+}
+
+.gift-orb svg {
+  width: 46px;
+  height: 46px;
+  color: var(--accent);
+}
+
+/* Reward value headline on reveal + wallet cards */
+.reward-headline {
+  font-size: 40px;
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+/* Single-use redemption code — large, unambiguous, LTR-isolated */
+.code-display {
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-align: center;
+  padding: 14px 10px 14px calc(10px + 0.34em);
+  border: 1px dashed var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--text) 4%, transparent);
+}
+
+/* Decorative scan matrix beside the code (the code itself is the credential) */
+.code-matrix {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 2px;
+  width: 72px;
+  height: 72px;
+  margin-inline: auto;
+}
+
+.code-matrix span {
+  border-radius: 1px;
+  background: color-mix(in oklab, var(--text) 14%, transparent);
+}
+
+.code-matrix span[data-on="true"] {
+  background: var(--text);
+}
+
+/* Reward ticket separator */
+.ticket-divider {
+  border-top: 1px dashed var(--hairline-strong);
+  margin-block: 12px;
+  position: relative;
+}
+
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1px solid var(--hairline-strong);
+}
+
+/* Simple two-column flow rows on pitch pages */
+.flow-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.flow-step {
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.flow-arrow {
+  color: var(--text-3);
+}
+
+[dir="rtl"] .flow-arrow {
+  transform: scaleX(-1);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
