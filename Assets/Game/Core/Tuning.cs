@@ -17,6 +17,8 @@ namespace PortGame
         public const float WaterY = 0.25f;           // mean ocean surface height
         public const float BerthZ = -16f;            // ship centerline when docked
         public const float TrolleyShipZ = BerthZ;    // trolley position over the ship
+        public const float BerthWestX = -27f;        // berth A centerline
+        public const float BerthEastX = 27f;         // berth B centerline
         public const float TrolleyLandZ = 2f;        // trolley position over the load lane
         public const float TrailerBedY = QuayTopY + 1.05f; // top of the tractor trailer bed
 
@@ -31,12 +33,38 @@ namespace PortGame
         // ---- Shipments / deadlines (seconds of real time) ----
         public const float DeadlineBuffer = 160f;
         public const float DeadlinePerContainer = 48f;
-        public const float NextShipDelay = 30f;   // next ship announced this long after one docks
+        public const int AnchorSlots = 3;
+        // Higher reputation brings ships faster (more business, more pressure).
+        public const float SpawnIntervalSlowRep = 60f;   // at reputation 0
+        public const float SpawnIntervalFastRep = 28f;   // at reputation 100
 
         // ---- Warehouse ----
         public const int WarehouseCapacity = 9;
         public const float WarehouseDispatchInterval = 16f;
+        public const float DispatchIntervalPerLevel = 3.5f; // upgrade shaves this off
         public const long DispatchRevenue = 120;
+
+        // ---- Fleet ----
+        public const int StartingTractors = 2;
+        public const int MaxTractors = 4;
+
+        // ---- Upgrade costs (KD, per level bought) ----
+        public static readonly long[] CraneSpeedCosts = { 2500, 5000, 10000 };
+        public static readonly long[] TractorSpeedCosts = { 1500, 3000, 6000 };
+        public static readonly long[] DispatchCosts = { 2000, 4000, 8000 };
+        public static readonly long[] HireTractorCosts = { 8000, 15000 };
+
+        // ---- Reputation ----
+        public const int RepOnTime = 2;
+        public const int RepLate = -4;
+        public const int RepContractWin = 3;
+        public const int RepContractFail = -3;
+
+        // ---- Contracts ----
+        public const float ContractFirstOfferDelay = 150f;
+        public const float ContractOfferIntervalMin = 150f;
+        public const float ContractOfferIntervalMax = 240f;
+        public const float ContractOfferTimeout = 25f;
 
         // ---- Crane ----
         public const float GantrySpeed = 4.5f;       // m/s along the quay
@@ -59,29 +87,6 @@ namespace PortGame
         public const float CamMaxPitch = 55f;
         public static readonly Vector2 CamPivotBoundsX = new Vector2(-70f, 70f);
         public static readonly Vector2 CamPivotBoundsZ = new Vector2(-60f, 45f);
-
-        // ---- Routes ----
-        // Tractor load point sits under the crane's landside drop lane.
-        public static readonly Vector3 LoadPoint = new Vector3(0f, QuayTopY, TrolleyLandZ);
-
-        public static readonly Vector3[] TractorOutboundPath =
-        {
-            new Vector3(10f, QuayTopY, 2f),
-            new Vector3(22f, QuayTopY, 4.5f),
-            new Vector3(29f, QuayTopY, 10f),
-            new Vector3(30f, QuayTopY, 18f),
-            new Vector3(30f, QuayTopY, 23f),   // warehouse door apron
-        };
-
-        public static readonly Vector3[] TractorReturnPath =
-        {
-            new Vector3(24f, QuayTopY, 26f),
-            new Vector3(-14f, QuayTopY, 26f),
-            new Vector3(-20f, QuayTopY, 20f),
-            new Vector3(-20f, QuayTopY, 9f),
-            new Vector3(-12f, QuayTopY, 3f),
-            new Vector3(0f, QuayTopY, TrolleyLandZ), // back to the load point
-        };
 
         public static readonly string[] ShipNames =
         {

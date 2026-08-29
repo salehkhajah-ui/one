@@ -39,16 +39,38 @@ namespace PortGame
             PortEnvironmentBuilder.Build(root, dayNight);
 
             var warehouse = Warehouse.Build(root, dayNight);
-            if (save != null) warehouse.LoadStored(save.warehouseStored);
-            var crane = CraneController.Build(root);
-            crane.RegisterNightVisuals(dayNight);
-            var tractor = TerminalTractor.Build(root, warehouse);
+            if (save != null)
+            {
+                warehouse.LoadStored(save.warehouseStored);
+                warehouse.DispatchLevel = save.dispatchLevel;
+            }
+
+            var graph = RoadGraph.BuildDefault();
+            var craneWest = CraneController.Build(root, "Quay Crane 1", Tuning.BerthWestX, graph["LPA"]);
+            var craneEast = CraneController.Build(root, "Quay Crane 2", Tuning.BerthEastX, graph["LPB"]);
+            craneWest.RegisterNightVisuals(dayNight);
+            craneEast.RegisterNightVisuals(dayNight);
+            if (save != null)
+            {
+                craneWest.SpeedLevel = save.craneLevelA;
+                craneEast.SpeedLevel = save.craneLevelB;
+            }
+
+            var dispatcher = VehicleDispatcher.Build(root, graph, warehouse);
+            dispatcher.RegisterCrane(craneWest);
+            dispatcher.RegisterCrane(craneEast);
+            if (save != null) dispatcher.TractorSpeedLevel = save.tractorSpeedLevel;
+            dispatcher.SpawnInitialFleet(save != null ? save.tractorCount : Tuning.StartingTractors);
 
             Gulls.Build(root);
             var cameraRig = CameraRig.Build(root);
+            var reputation = Reputation.Build(root);
+            if (save != null) reputation.LoadValue(save.reputation);
 
-            var hud = HudController.Build(root, dayNight, economy, cameraRig);
-            ShipmentDirector.Build(root, crane, tractor, warehouse, hud, dayNight, cameraRig, save);
+            var hud = HudController.Build(root, dayNight, economy, cameraRig, reputation);
+            ContractManager.Build(root, warehouse, hud, reputation);
+            ShipmentDirector.Build(root, craneWest, craneEast, dispatcher, warehouse,
+                hud, dayNight, cameraRig, reputation, save);
 
             if (save != null) hud.Banner("Welcome back to your port", 3f);
         }

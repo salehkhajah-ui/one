@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace PortGame
 {
@@ -37,6 +38,7 @@ namespace PortGame
         private float _prevPinchDist;
         private float _prevPinchAngle;
         private bool _pinchActive;
+        private bool _pointerOnUi; // gesture started on a HUD element — ignore it for the world
 
         public static CameraRig Build(Transform parent)
         {
@@ -102,13 +104,14 @@ namespace PortGame
 
             if (Input.GetMouseButtonDown(0))
             {
+                _pointerOnUi = IsPointerOverUi(-1);
                 _downPos = Input.mousePosition;
                 _downTime = Time.unscaledTime;
-                _maybeTap = true;
+                _maybeTap = !_pointerOnUi;
                 _panInertia = Vector3.zero;
             }
 
-            if (Input.GetMouseButton(0))
+            if (Input.GetMouseButton(0) && !_pointerOnUi)
             {
                 var delta = (Vector2)Input.mousePosition - _downPos;
                 if (_maybeTap && delta.magnitude > TapMaxPixels) _maybeTap = false;
@@ -120,10 +123,11 @@ namespace PortGame
                 }
             }
 
-            if (Input.GetMouseButtonUp(0) && _maybeTap &&
-                Time.unscaledTime - _downTime < TapMaxSeconds)
+            if (Input.GetMouseButtonUp(0))
             {
-                TryFocusAt(Input.mousePosition);
+                if (_maybeTap && !_pointerOnUi && Time.unscaledTime - _downTime < TapMaxSeconds)
+                    TryFocusAt(Input.mousePosition);
+                _pointerOnUi = false;
             }
 
             if (Input.GetMouseButton(1))
@@ -143,19 +147,23 @@ namespace PortGame
                 switch (t.phase)
                 {
                     case TouchPhase.Began:
+                        _pointerOnUi = IsPointerOverUi(t.fingerId);
                         _downPos = t.position;
                         _downTime = Time.unscaledTime;
-                        _maybeTap = true;
+                        _maybeTap = !_pointerOnUi;
                         _panInertia = Vector3.zero;
                         break;
                     case TouchPhase.Moved:
+                        if (_pointerOnUi) break;
                         if (_maybeTap && (t.position - _downPos).magnitude > TapMaxPixels * 2f)
                             _maybeTap = false;
                         if (!_maybeTap) Pan(t.deltaPosition);
                         break;
                     case TouchPhase.Ended:
-                        if (_maybeTap && Time.unscaledTime - _downTime < TapMaxSeconds)
+                    case TouchPhase.Canceled:
+                        if (_maybeTap && !_pointerOnUi && Time.unscaledTime - _downTime < TapMaxSeconds)
                             TryFocusAt(t.position);
+                        _pointerOnUi = false;
                         break;
                 }
             }
@@ -206,6 +214,13 @@ namespace PortGame
             _yawTarget += dxPixels * RotateSpeed;
             _pitchTarget = Mathf.Clamp(_pitchTarget - dyPixels * RotateSpeed * 0.6f,
                 Tuning.CamMinPitch, Tuning.CamMaxPitch);
+        }
+
+        private static bool IsPointerOverUi(int fingerId)
+        {
+            var es = EventSystem.current;
+            if (es == null) return false;
+            return fingerId >= 0 ? es.IsPointerOverGameObject(fingerId) : es.IsPointerOverGameObject();
         }
 
         private void TryFocusAt(Vector2 screenPos)

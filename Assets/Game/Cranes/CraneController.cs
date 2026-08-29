@@ -26,7 +26,7 @@ namespace PortGame
     /// damped spring driven by trolley/gantry acceleration adds cable sway so
     /// nothing moves robotically.
     /// </summary>
-    public class CraneController : MonoBehaviour, IFocusInfo
+    public class CraneController : MonoBehaviour, IFocusInfo, IFocusActions
     {
         private const float LegHeight = 19f;
         private const float BoomLocalY = 19.6f;
@@ -37,7 +37,20 @@ namespace PortGame
 
         public CraneState State { get; private set; } = CraneState.Idle;
 
-        public string FocusTitle => "Quay Crane 1";
+        /// <summary>True while working a ship — dispatcher stations tractors at busy cranes first.</summary>
+        public bool Busy { get; private set; }
+
+        /// <summary>Bought speed level, 0–3; each level is +25% on every motion.</summary>
+        public int SpeedLevel { get; set; }
+
+        public RoadNode LoadNode { get; private set; }
+
+        private string _title;
+        private float _homeX;
+
+        private float SpeedMult => 1f + 0.25f * SpeedLevel;
+
+        public string FocusTitle => _title;
 
         public string FocusBody
         {
@@ -62,6 +75,29 @@ namespace PortGame
             }
         }
 
+        public FocusAction[] FocusActions
+        {
+            get
+            {
+                if (SpeedLevel >= Tuning.CraneSpeedCosts.Length) return new FocusAction[0];
+                long cost = Tuning.CraneSpeedCosts[SpeedLevel];
+                return new[]
+                {
+                    new FocusAction
+                    {
+                        Label = string.Format("Upgrade speed (+25%), Lv {0}→{1}", SpeedLevel, SpeedLevel + 1),
+                        Cost = cost,
+                        Available = () => EconomyManager.Instance.Balance >= cost,
+                        Execute = () =>
+                        {
+                            if (EconomyManager.Instance.TrySpend(cost, _title + " speed upgrade"))
+                                SpeedLevel++;
+                        },
+                    },
+                };
+            }
+        }
+
         private Transform _trolley;
         private Transform _spreader;
         private LineRenderer _cableA;
@@ -73,13 +109,16 @@ namespace PortGame
         private Vector3 _prevTrolleyPos;
         private Vector3 _prevTrolleyVel;
 
-        public static CraneController Build(Transform parent)
+        public static CraneController Build(Transform parent, string title, float berthX, RoadNode loadNode)
         {
-            var go = new GameObject("QuayCrane");
+            var go = new GameObject(title.Replace(" ", ""));
             go.transform.SetParent(parent, false);
-            go.transform.position = new Vector3(0f, Tuning.QuayTopY, 0f);
+            go.transform.position = new Vector3(berthX, Tuning.QuayTopY, 0f);
 
             var crane = go.AddComponent<CraneController>();
+            crane._title = title;
+            crane._homeX = berthX;
+            crane.LoadNode = loadNode;
             crane.BuildVisual();
 
             var focus = go.AddComponent<FocusTarget>();
@@ -160,22 +199,24 @@ namespace PortGame
                 dayNight.RegisterNightEmissive(tip.GetComponent<Renderer>().material, Color.red * 2.5f);
         }
 
-        /// <summary>Unloads every container on the ship onto the tractor, one by one.</summary>
-        public IEnumerator UnloadAll(ShipController ship, TerminalTractor tractor)
+        /// <summary>Unloads every container on the ship, each onto whichever tractor the dispatcher stations here.</summary>
+        public IEnumerator UnloadAll(ShipController ship, VehicleDispatcher dispatcher)
         {
+            Busy = true;
             ship.BeginUnloading();
             for (int i = 0; i < ship.Containers.Count; i++)
             {
                 var container = ship.Containers[i];
-                yield return UnloadOne(container, tractor);
+                yield return UnloadOne(container, dispatcher);
             }
             // Park: trolley in, gantry home.
             State = CraneState.Idle;
+            Busy = false;
             yield return MoveTrolley(Tuning.TrolleyLandZ);
-            yield return MoveGantry(0f);
+            yield return MoveGantry(_homeX);
         }
 
-        private IEnumerator UnloadOne(Container container, TerminalTractor tractor)
+        private IEnumerator UnloadOne(Container container, VehicleDispatcher dispatcher)
         {
             container.State = ContainerState.BeingUnloaded;
 
@@ -201,14 +242,16 @@ namespace PortGame
             yield return MoveCable(CruiseCable);
 
             State = CraneState.MoveGantryHome;
-            yield return MoveGantry(Tuning.LoadPoint.x);
+            yield return MoveGantry(_homeX);
 
             State = CraneState.TrolleyIn;
             yield return MoveTrolley(Tuning.TrolleyLandZ);
 
             State = CraneState.WaitTractor;
             container.State = ContainerState.AwaitingTransport;
-            while (!tractor.ReadyForLoad) yield return null;
+            TerminalTractor tractor;
+            while ((tractor = dispatcher.TractorReadyAt(LoadNode)) == null) yield return null;
+            tractor.BeginLoading(); // pin it under the spreader until loaded
 
             State = CraneState.LowerToTrailer;
             float bedTop = Tuning.TrailerBedY;
@@ -229,7 +272,7 @@ namespace PortGame
         private IEnumerator MoveGantry(float worldX)
         {
             float startX = transform.position.x;
-            float duration = Mathf.Abs(worldX - startX) / Tuning.GantrySpeed + 0.3f;
+            float duration = (Mathf.Abs(worldX - startX) / Tuning.GantrySpeed + 0.3f) / SpeedMult;
             yield return Ease.Animate(duration, t =>
             {
                 var p = transform.position;
@@ -242,7 +285,7 @@ namespace PortGame
         {
             float startZ = _trolley.localPosition.z;
             float targetZ = worldZ - transform.position.z;
-            float duration = Mathf.Abs(targetZ - startZ) / Tuning.TrolleySpeed + 0.3f;
+            float duration = (Mathf.Abs(targetZ - startZ) / Tuning.TrolleySpeed + 0.3f) / SpeedMult;
             yield return Ease.Animate(duration, t =>
             {
                 var p = _trolley.localPosition;
@@ -255,7 +298,7 @@ namespace PortGame
         {
             targetLength = Mathf.Max(1.2f, targetLength);
             float start = _cable;
-            float duration = Mathf.Abs(targetLength - start) / Tuning.HoistSpeed + 0.25f;
+            float duration = (Mathf.Abs(targetLength - start) / Tuning.HoistSpeed + 0.25f) / SpeedMult;
             yield return Ease.Animate(duration, t => _cable = Mathf.LerpUnclamped(start, targetLength, t));
         }
 

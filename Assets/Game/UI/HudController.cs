@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace PortGame
@@ -24,10 +26,22 @@ namespace PortGame
         private CanvasGroup _toastGroup;
         private RectTransform _toastRect;
 
+        private static readonly Color ButtonColor = new Color(0.24f, 0.42f, 0.4f, 0.92f);
+
         private Text _scheduleText;
+        private Text _repText;
+        private Text _contractText;
         private Text _cardTitle;
         private Text _cardBody;
         private CanvasGroup _cardGroup;
+        private readonly Button[] _cardButtons = new Button[2];
+        private readonly Text[] _cardButtonLabels = new Text[2];
+        private FocusAction[] _cardActions;
+
+        private GameObject _offerPanel;
+        private Text _offerText;
+        private Action _offerAccept;
+        private Action _offerDecline;
 
         private DayNightCycle _dayNight;
         private long _moneyActual;
@@ -40,7 +54,7 @@ namespace PortGame
         private float _cardRefreshAt;
 
         public static HudController Build(Transform parent, DayNightCycle dayNight,
-            EconomyManager economy, CameraRig cameraRig)
+            EconomyManager economy, CameraRig cameraRig, Reputation reputation)
         {
             var go = new GameObject("HUD");
             go.transform.SetParent(parent, false);
@@ -53,6 +67,14 @@ namespace PortGame
             economy.OnChanged += balance => hud._moneyActual = balance;
             economy.OnToast += hud.Toast;
             cameraRig.FocusChanged += hud.OnFocusChanged;
+
+            hud.SetReputationText(reputation.Value);
+            reputation.OnChanged += (value, delta, reason) =>
+            {
+                hud.SetReputationText(value);
+                hud.Toast(string.Format("Reputation {0}{1} — {2}",
+                    delta > 0 ? "+" : "−", Math.Abs(delta), reason));
+            };
             return hud;
         }
 
@@ -75,11 +97,34 @@ namespace PortGame
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>();
 
-            // Money — top left.
+            // Buttons need an EventSystem; create one if the scene has none.
+            if (EventSystem.current == null)
+            {
+                var esGo = new GameObject("EventSystem");
+                esGo.transform.SetParent(transform, false);
+                esGo.AddComponent<EventSystem>();
+                esGo.AddComponent<StandaloneInputModule>();
+            }
+
+            // Money — top left, with reputation and contract lines beneath.
             var moneyPanel = Panel(canvasGo.transform, new Vector2(0f, 1f), new Vector2(30f, -30f), new Vector2(320f, 68f));
             _moneyText = Label(moneyPanel, "KD 0", 34, TextAnchor.MiddleLeft, TextWarm, FontStyle.Bold);
             Pad(_moneyText.rectTransform, 22f, 0f);
+
+            var repGo = new GameObject("Reputation");
+            repGo.transform.SetParent(canvasGo.transform, false);
+            var repRect = repGo.AddComponent<RectTransform>();
+            SetAnchored(repRect, new Vector2(0f, 1f), new Vector2(34f, -106f), new Vector2(400f, 30f));
+            _repText = Label(repRect, "", 21, TextAnchor.MiddleLeft, TextDim, FontStyle.Normal);
+
+            var contractGo = new GameObject("ContractLine");
+            contractGo.transform.SetParent(canvasGo.transform, false);
+            var contractRect = contractGo.AddComponent<RectTransform>();
+            SetAnchored(contractRect, new Vector2(0f, 1f), new Vector2(34f, -138f), new Vector2(560f, 30f));
+            _contractText = Label(contractRect, "", 21, TextAnchor.MiddleLeft,
+                Palette.Hex("#BFD8E3"), FontStyle.Normal);
 
             // Clock — top right, with the inbound-ship schedule line beneath it.
             var clockPanel = Panel(canvasGo.transform, new Vector2(1f, 1f), new Vector2(-30f, -30f), new Vector2(300f, 56f));
@@ -95,7 +140,7 @@ namespace PortGame
             var cardGo = new GameObject("FocusCard");
             cardGo.transform.SetParent(canvasGo.transform, false);
             var cardRect = cardGo.AddComponent<RectTransform>();
-            SetAnchored(cardRect, new Vector2(1f, 0f), new Vector2(-30f, 30f), new Vector2(440f, 190f));
+            SetAnchored(cardRect, new Vector2(1f, 0f), new Vector2(-30f, 30f), new Vector2(440f, 280f));
             _cardGroup = cardGo.AddComponent<CanvasGroup>();
             _cardGroup.alpha = 0f;
             var cardBg = cardGo.AddComponent<Image>();
@@ -113,6 +158,48 @@ namespace PortGame
             var bodyRect = bodyGo.AddComponent<RectTransform>();
             SetAnchored(bodyRect, new Vector2(0.5f, 1f), new Vector2(0f, -58f), new Vector2(400f, 120f));
             _cardBody = Label(bodyRect, "", 21, TextAnchor.UpperLeft, TextDim, FontStyle.Normal);
+
+            // Up to two contextual action buttons (upgrades, hires).
+            for (int i = 0; i < 2; i++)
+            {
+                int slot = i;
+                _cardButtons[i] = MakeButton(cardGo.transform, new Vector2(0.5f, 0f),
+                    new Vector2(0f, 16f + i * 48f), new Vector2(400f, 40f), "", out _cardButtonLabels[i]);
+                _cardButtons[i].onClick.AddListener(() =>
+                {
+                    var actions = _cardActions;
+                    if (actions == null || slot >= actions.Length) return;
+                    if (!actions[slot].Available()) return;
+                    actions[slot].Execute();
+                    _cardRefreshAt = 0f; // repaint immediately with the new level/price
+                });
+                _cardButtons[i].gameObject.SetActive(false);
+            }
+
+            // Contract offer panel — center, hidden until a client calls.
+            _offerPanel = new GameObject("ContractOffer");
+            _offerPanel.transform.SetParent(canvasGo.transform, false);
+            var offerRect = _offerPanel.AddComponent<RectTransform>();
+            SetAnchored(offerRect, new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(560f, 210f));
+            var offerBg = _offerPanel.AddComponent<Image>();
+            offerBg.color = PanelColor;
+
+            var offerTextGo = new GameObject("OfferText");
+            offerTextGo.transform.SetParent(_offerPanel.transform, false);
+            var offerTextRect = offerTextGo.AddComponent<RectTransform>();
+            SetAnchored(offerTextRect, new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(510f, 120f));
+            _offerText = Label(offerTextRect, "", 23, TextAnchor.UpperLeft, TextWarm, FontStyle.Normal);
+
+            Text acceptLabel;
+            var acceptBtn = MakeButton(_offerPanel.transform, new Vector2(0.5f, 0f),
+                new Vector2(-110f, 16f), new Vector2(200f, 42f), "ACCEPT", out acceptLabel);
+            acceptBtn.onClick.AddListener(() => { var cb = _offerAccept; if (cb != null) cb(); });
+
+            Text declineLabel;
+            var declineBtn = MakeButton(_offerPanel.transform, new Vector2(0.5f, 0f),
+                new Vector2(110f, 16f), new Vector2(200f, 42f), "DECLINE", out declineLabel);
+            declineBtn.onClick.AddListener(() => { var cb = _offerDecline; if (cb != null) cb(); });
+            _offerPanel.SetActive(false);
 
             // Banner — center top, transient.
             var bannerGo = new GameObject("Banner");
@@ -165,6 +252,32 @@ namespace PortGame
             _scheduleText.text = text;
         }
 
+        public void SetReputationText(int value)
+        {
+            _repText.text = "Reputation " + value;
+        }
+
+        /// <summary>Active-contract progress line under the money panel; empty string hides it.</summary>
+        public void SetContractText(string text)
+        {
+            _contractText.text = text;
+        }
+
+        public void ShowContractOffer(string text, Action onAccept, Action onDecline)
+        {
+            _offerText.text = text;
+            _offerAccept = onAccept;
+            _offerDecline = onDecline;
+            _offerPanel.SetActive(true);
+        }
+
+        public void HideContractOffer()
+        {
+            _offerAccept = null;
+            _offerDecline = null;
+            _offerPanel.SetActive(false);
+        }
+
         // ---- Internals ---------------------------------------------------
 
         private void Update()
@@ -200,6 +313,26 @@ namespace PortGame
                 _cardRefreshAt = Time.unscaledTime + 0.25f;
                 _cardTitle.text = _focusInfo.FocusTitle;
                 _cardBody.text = _focusInfo.FocusBody;
+
+                var actionSource = _focusTarget.GetComponent<IFocusActions>();
+                _cardActions = actionSource != null ? actionSource.FocusActions : null;
+                for (int i = 0; i < _cardButtons.Length; i++)
+                {
+                    bool has = _cardActions != null && i < _cardActions.Length;
+                    _cardButtons[i].gameObject.SetActive(has);
+                    if (!has) continue;
+                    var a = _cardActions[i];
+                    _cardButtonLabels[i].text = a.Cost > 0
+                        ? string.Format("{0} — KD {1:N0}", a.Label, a.Cost)
+                        : a.Label;
+                    _cardButtons[i].interactable = a.Available();
+                }
+            }
+            else if (!show && _cardActions != null)
+            {
+                _cardActions = null;
+                for (int i = 0; i < _cardButtons.Length; i++)
+                    _cardButtons[i].gameObject.SetActive(false);
             }
         }
 
@@ -231,6 +364,20 @@ namespace PortGame
         }
 
         // ---- uGUI helpers ------------------------------------------------
+
+        private Button MakeButton(Transform parent, Vector2 anchor, Vector2 offset, Vector2 size,
+            string label, out Text labelText)
+        {
+            var go = new GameObject("Button");
+            go.transform.SetParent(parent, false);
+            var rect = go.AddComponent<RectTransform>();
+            SetAnchored(rect, anchor, offset, size);
+            var img = go.AddComponent<Image>();
+            img.color = ButtonColor;
+            var btn = go.AddComponent<Button>();
+            labelText = Label(rect, label, 20, TextAnchor.MiddleCenter, TextWarm, FontStyle.Bold);
+            return btn;
+        }
 
         private RectTransform Panel(Transform parent, Vector2 anchor, Vector2 offset, Vector2 size)
         {

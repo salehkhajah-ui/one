@@ -6,58 +6,55 @@ namespace PortGame
 {
     public enum TractorState
     {
-        ParkAtLoadPoint,
-        WaitForLoad,
+        Parked,
+        EnRoute,
+        WaitingAtCrane,
         HaulToWarehouse,
         Unloading,
-        ReturnLoop,
     }
 
     /// <summary>
-    /// Terminal tractor on a perpetual duty loop: wait under the crane, haul
-    /// the container along the port road to the warehouse, hand it over,
-    /// drive the return loop. Driving uses acceleration, braking distance and
-    /// a turn-rate limit so the motion reads as a real vehicle.
+    /// A terminal tractor driving the road graph. It claims the next node
+    /// before entering it and holds its current node until it arrives at the
+    /// next — so following vehicles brake and queue physically behind it.
+    /// The dispatcher tells an empty tractor where to stand (a crane's load
+    /// bay, or the parking lane); a loaded tractor always hauls to the
+    /// warehouse. Fleet speed upgrades come from the dispatcher.
     /// </summary>
-    public class TerminalTractor : MonoBehaviour, IFocusInfo
+    public class TerminalTractor : MonoBehaviour, IFocusInfo, IFocusActions
     {
-        public TractorState State { get; private set; } = TractorState.ParkAtLoadPoint;
+        public TractorState State { get; private set; } = TractorState.Parked;
+        public RoadNode CurrentNode { get; private set; }
+        public Container Carrying { get; private set; }
+        public int Index { get; private set; }
 
-        public string FocusTitle => "Terminal Tractor 1";
-
-        public string FocusBody
-        {
-            get
-            {
-                switch (State)
-                {
-                    case TractorState.WaitForLoad: return "Waiting under the crane";
-                    case TractorState.HaulToWarehouse: return "Hauling to warehouse";
-                    case TractorState.Unloading: return "Delivering at warehouse door";
-                    case TractorState.ReturnLoop: return "Returning empty";
-                    default: return "Parked at load point";
-                }
-            }
-        }
-
-        /// <summary>True when parked at the load point with an empty trailer.</summary>
-        public bool ReadyForLoad { get; private set; }
-
-        private Transform _bedAnchor;
-        private Container _carried;
+        private RoadGraph _graph;
+        private VehicleDispatcher _dispatcher;
         private Warehouse _warehouse;
+        private Transform _bedAnchor;
         private readonly List<Transform> _wheels = new List<Transform>();
         private float _speed;
+        private bool _moving;
+        private bool _holdForLoading;
 
-        public static TerminalTractor Build(Transform parent, Warehouse warehouse)
+        public bool ParkedAt(RoadNode node) =>
+            CurrentNode == node && !_moving && Carrying == null && !_holdForLoading;
+
+        public static TerminalTractor Build(Transform parent, int index, RoadGraph graph,
+            VehicleDispatcher dispatcher, Warehouse warehouse, RoadNode startNode)
         {
-            var go = new GameObject("TerminalTractor");
+            var go = new GameObject("TerminalTractor" + index);
             go.transform.SetParent(parent, false);
-            go.transform.position = Tuning.LoadPoint;
-            go.transform.rotation = Quaternion.Euler(0f, 90f, 0f); // facing +x, down the lane
+            go.transform.position = startNode.Pos;
+            go.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
 
             var tractor = go.AddComponent<TerminalTractor>();
+            tractor.Index = index;
+            tractor._graph = graph;
+            tractor._dispatcher = dispatcher;
             tractor._warehouse = warehouse;
+            tractor.CurrentNode = startNode;
+            graph.TryClaim(startNode, tractor);
             tractor.BuildVisual();
 
             var focus = go.AddComponent<FocusTarget>();
@@ -84,7 +81,6 @@ namespace PortGame
             Prim.Cube("TrailerBed", transform, new Vector3(0f, Tuning.TrailerBedY - Tuning.QuayTopY - 0.09f, -0.9f),
                 new Vector3(2.5f, 0.18f, 5.4f), MaterialLibrary.Get(Palette.Steel, 0.35f, 0.4f));
 
-            // Wheels (spun by speed in Update).
             foreach (float z in new[] { 2.9f, -0.4f, -2.6f })
             {
                 foreach (float x in new[] { -1.05f, 1.05f })
@@ -106,15 +102,41 @@ namespace PortGame
             _bedAnchor = anchor.transform;
         }
 
-        private void Start()
+        // ---- IFocusInfo / IFocusActions ---------------------------------
+
+        public string FocusTitle => "Terminal Tractor " + Index;
+
+        public string FocusBody
         {
-            StartCoroutine(DutyLoop());
+            get
+            {
+                switch (State)
+                {
+                    case TractorState.WaitingAtCrane: return "Waiting under the crane";
+                    case TractorState.HaulToWarehouse: return "Hauling to warehouse";
+                    case TractorState.Unloading: return "Delivering at warehouse door";
+                    case TractorState.EnRoute: return "Driving";
+                    default: return "Parked";
+                }
+            }
+        }
+
+        /// <summary>Fleet-wide actions (speed, hires) live on the dispatcher; any tractor's card offers them.</summary>
+        public FocusAction[] FocusActions => _dispatcher.FleetActions;
+
+        // ---- Crane handshake --------------------------------------------
+
+        /// <summary>Called by a crane that has chosen this parked tractor — pins it until loaded.</summary>
+        public void BeginLoading()
+        {
+            _holdForLoading = true;
         }
 
         /// <summary>Called by the crane at the moment of release.</summary>
         public void AcceptContainer(Container container)
         {
-            _carried = container;
+            Carrying = container;
+            _holdForLoading = false;
             container.transform.SetParent(_bedAnchor, true);
             container.State = ContainerState.OnTractor;
             StartCoroutine(Ease.Animate(0.25f, t =>
@@ -122,72 +144,97 @@ namespace PortGame
                 container.transform.localPosition = Vector3.Lerp(container.transform.localPosition, Vector3.zero, t);
                 container.transform.localRotation = Quaternion.Slerp(container.transform.localRotation, Quaternion.identity, t);
             }, Ease.OutCubic));
-            ReadyForLoad = false;
+        }
+
+        // ---- Duty loop ---------------------------------------------------
+
+        private void Start()
+        {
+            StartCoroutine(DutyLoop());
         }
 
         private IEnumerator DutyLoop()
         {
             while (true)
             {
-                State = TractorState.WaitForLoad;
-                ReadyForLoad = true;
-                while (_carried == null) yield return null;
-
-                // Small pause so the spreader visibly lifts clear first.
-                yield return new WaitForSeconds(0.7f);
-
-                State = TractorState.HaulToWarehouse;
-                yield return DrivePath(Tuning.TractorOutboundPath);
-
-                State = TractorState.Unloading;
-                yield return _warehouse.Receive(_carried);
-                _carried = null;
-
-                State = TractorState.ReturnLoop;
-                yield return DrivePath(Tuning.TractorReturnPath);
-
-                // Settle back into the load-point pose.
-                State = TractorState.ParkAtLoadPoint;
-                Vector3 p0 = transform.position;
-                Quaternion r0 = transform.rotation;
-                yield return Ease.Animate(0.6f, t =>
+                if (Carrying != null)
                 {
-                    transform.SetPositionAndRotation(
-                        Vector3.Lerp(p0, Tuning.LoadPoint, t),
-                        Quaternion.Slerp(r0, Quaternion.Euler(0f, 90f, 0f), t));
-                }, Ease.OutCubic);
-            }
-        }
+                    // Brief pause so the spreader visibly lifts clear first.
+                    State = TractorState.HaulToWarehouse;
+                    yield return new WaitForSeconds(0.7f);
+                    yield return DriveTo(_graph["WH"]);
 
-        private IEnumerator DrivePath(Vector3[] path)
-        {
-            for (int leg = 0; leg < path.Length; leg++)
-            {
-                Vector3 target = path[leg];
-                while (true)
+                    State = TractorState.Unloading;
+                    yield return _warehouse.Receive(Carrying);
+                    Carrying = null;
+                    continue;
+                }
+
+                var station = _dispatcher.DesiredStation(this);
+                if (CurrentNode != station)
                 {
-                    Vector3 toTarget = target - transform.position;
-                    toTarget.y = 0f;
-                    float dist = toTarget.magnitude;
-                    if (dist < 0.8f) break;
+                    State = TractorState.EnRoute;
+                    yield return DriveTo(station);
+                    continue;
+                }
 
-                    // Braking distance to the end of the path: v = √(2·a·d).
-                    float remaining = dist;
-                    for (int i = leg + 1; i < path.Length; i++)
-                        remaining += Vector3.Distance(path[i - 1], path[i]);
-                    float vMax = Mathf.Min(Tuning.TractorMaxSpeed,
-                        Mathf.Sqrt(2f * Tuning.TractorAccel * remaining) * 0.85f + 0.4f);
+                State = _dispatcher.IsCraneStation(station)
+                    ? TractorState.WaitingAtCrane
+                    : TractorState.Parked;
 
-                    _speed = Mathf.MoveTowards(_speed, vMax, Tuning.TractorAccel * Time.deltaTime);
-
-                    Quaternion want = Quaternion.LookRotation(toTarget.normalized);
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, want,
-                        Tuning.TractorTurnDegPerSec * Time.deltaTime);
-                    transform.position += transform.forward * _speed * Time.deltaTime;
+                // Hold position; wake on load, on a crane pinning us, or to re-check assignment.
+                float t = 0f;
+                while ((t < 0.6f || _holdForLoading) && Carrying == null)
+                {
+                    t += Time.deltaTime;
                     yield return null;
                 }
             }
+        }
+
+        private IEnumerator DriveTo(RoadNode target)
+        {
+            if (CurrentNode == target) yield break;
+            _moving = true;
+            var path = _graph.FindPath(CurrentNode, target);
+            for (int i = 1; i < path.Count; i++)
+            {
+                var next = path[i];
+                // Queueing happens here: brake and hold until the node frees.
+                while (!_graph.TryClaim(next, this))
+                {
+                    _speed = Mathf.MoveTowards(_speed, 0f, Tuning.TractorAccel * 2f * Time.deltaTime);
+                    yield return null;
+                }
+                yield return DriveSegment(next.Pos, i == path.Count - 1 ? 0f : 2.2f);
+                _graph.Release(CurrentNode, this);
+                CurrentNode = next;
+            }
             _speed = 0f;
+            _moving = false;
+        }
+
+        private IEnumerator DriveSegment(Vector3 dest, float endSpeed)
+        {
+            while (true)
+            {
+                Vector3 toTarget = dest - transform.position;
+                toTarget.y = 0f;
+                float dist = toTarget.magnitude;
+                if (dist < 0.7f) break;
+
+                // Braking profile into the segment end: v = √(v_end² + 2·a·d).
+                float vMax = Mathf.Min(
+                    Tuning.TractorMaxSpeed * _dispatcher.TractorSpeedMult,
+                    Mathf.Sqrt(endSpeed * endSpeed + 2f * Tuning.TractorAccel * dist) * 0.9f + 0.3f);
+                _speed = Mathf.MoveTowards(_speed, vMax, Tuning.TractorAccel * Time.deltaTime);
+
+                Quaternion want = Quaternion.LookRotation(toTarget.normalized);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, want,
+                    Tuning.TractorTurnDegPerSec * Time.deltaTime);
+                transform.position += transform.forward * _speed * Time.deltaTime;
+                yield return null;
+            }
         }
 
         private void Update()

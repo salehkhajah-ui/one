@@ -46,6 +46,14 @@ namespace PortGame
                     Math.Abs(amount), reason));
         }
 
+        /// <summary>Spend if affordable. Returns false (and toasts nothing) when short.</summary>
+        public bool TrySpend(long cost, string reason)
+        {
+            if (Balance < cost) return false;
+            Add(-cost, reason);
+            return true;
+        }
+
         /// <summary>Restores a saved balance without a toast.</summary>
         public void LoadBalance(long balance)
         {

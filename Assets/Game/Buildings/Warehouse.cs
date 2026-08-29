@@ -12,7 +12,7 @@ namespace PortGame
     /// domino: a full warehouse stalls the tractor, which stalls the crane,
     /// which stalls the ship, which burns the deadline.
     /// </summary>
-    public class Warehouse : MonoBehaviour, IFocusInfo
+    public class Warehouse : MonoBehaviour, IFocusInfo, IFocusActions
     {
         private const float Width = 16f;
         private const float Depth = 12f;
@@ -23,6 +23,12 @@ namespace PortGame
         public int DeliveredCount { get; private set; }
         public int StoredCount { get; private set; }
         public event Action<Container> OnDelivered;
+
+        /// <summary>Bought dispatch level, 0–3; each level shortens the drain interval.</summary>
+        public int DispatchLevel { get; set; }
+
+        public float DispatchInterval =>
+            Tuning.WarehouseDispatchInterval - Tuning.DispatchIntervalPerLevel * DispatchLevel;
 
         private Transform _door;
         private bool _doorOpen;
@@ -111,10 +117,34 @@ namespace PortGame
         public string FocusTitle => "Warehouse";
 
         public string FocusBody => string.Format(
-            "Storage: {0} of {1} slots{2}\nDispatch truck clears one every {3:0}s\nReceived total: {4}",
+            "Storage: {0} of {1} slots{2}\nDispatch truck clears one every {3:0.#}s\nReceived total: {4}",
             StoredCount, Tuning.WarehouseCapacity,
             StoredCount >= Tuning.WarehouseCapacity ? "  ·  FULL" : "",
-            Tuning.WarehouseDispatchInterval, DeliveredCount);
+            DispatchInterval, DeliveredCount);
+
+        public FocusAction[] FocusActions
+        {
+            get
+            {
+                if (DispatchLevel >= Tuning.DispatchCosts.Length) return new FocusAction[0];
+                long cost = Tuning.DispatchCosts[DispatchLevel];
+                return new[]
+                {
+                    new FocusAction
+                    {
+                        Label = string.Format("Faster dispatch (−{0:0.#}s), Lv {1}→{2}",
+                            Tuning.DispatchIntervalPerLevel, DispatchLevel, DispatchLevel + 1),
+                        Cost = cost,
+                        Available = () => EconomyManager.Instance.Balance >= cost,
+                        Execute = () =>
+                        {
+                            if (EconomyManager.Instance.TrySpend(cost, "warehouse dispatch upgrade"))
+                                DispatchLevel++;
+                        },
+                    },
+                };
+            }
+        }
 
         // ---- Storage -----------------------------------------------------
 
@@ -166,7 +196,7 @@ namespace PortGame
         {
             while (true)
             {
-                yield return new WaitForSeconds(Tuning.WarehouseDispatchInterval);
+                yield return new WaitForSeconds(DispatchInterval);
                 if (StoredCount == 0) continue;
 
                 int slot = LastOccupiedSlot();

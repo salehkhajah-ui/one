@@ -25,21 +25,30 @@ namespace PortGame
             Prim.Cube("QuayEdge", root, new Vector3(0f, Tuning.QuayTopY - 0.35f, -10.3f),
                 new Vector3(140f, 1.4f, 0.9f), concreteDark);
 
-            // ---- Roads (thin slabs slightly above the quay to avoid z-fighting) ----
+            // ---- Roads matching the road graph (thin slabs above the quay
+            // surface to avoid z-fighting): main east lane, crane load bays,
+            // warehouse spur, return road, west connector, parking lane. ----
             float roadY = Tuning.QuayTopY + 0.02f;
-            Road(root, asphalt, new Vector3(0f, roadY, 2f), new Vector2(70f, 7f));      // crane load lane
-            Road(root, asphalt, new Vector3(30f, roadY, 13f), new Vector2(8f, 22f));    // spur to warehouse
-            Road(root, asphalt, new Vector3(3f, roadY, 26f), new Vector2(56f, 7f));     // return road
-            Road(root, asphalt, new Vector3(-20f, roadY, 14f), new Vector2(8f, 22f));   // west connector
+            Road(root, asphalt, new Vector3(-2f, roadY, 8f), new Vector2(88f, 6f));     // main east lane
+            Road(root, asphalt, new Vector3(Tuning.BerthWestX, roadY, 5f), new Vector2(7f, 8f));  // bay A spur
+            Road(root, asphalt, new Vector3(Tuning.BerthEastX, roadY, 5f), new Vector2(7f, 8f));  // bay B spur
+            Road(root, asphalt, new Vector3(37f, roadY, 12f), new Vector2(6f, 12f));    // east connector
+            Road(root, asphalt, new Vector3(31f, roadY, 19f), new Vector2(8f, 12f));    // warehouse spur
+            Road(root, asphalt, new Vector3(-6f, roadY, 26f), new Vector2(70f, 6f));    // return road
+            Road(root, asphalt, new Vector3(-40f, roadY, 16f), new Vector2(6f, 20f));   // west connector
+            Road(root, asphalt, new Vector3(-46f, roadY, 9.5f), new Vector2(6f, 13f));  // parking lane
 
-            // Dashed centerline on the load lane.
-            for (int x = -30; x <= 30; x += 6)
-                Prim.GroundQuad("LaneDash", root, new Vector3(x, roadY + 0.02f, 2f),
+            // Dashed centerline on the main lane.
+            for (int x = -38; x <= 34; x += 6)
+                Prim.GroundQuad("LaneDash", root, new Vector3(x, roadY + 0.02f, 8f),
                     new Vector2(2.4f, 0.3f), laneMark);
 
-            // Load-point box marking under the crane's landside lane.
-            Prim.GroundQuad("LoadBox", root,
-                new Vector3(Tuning.LoadPoint.x, roadY + 0.02f, Tuning.LoadPoint.z),
+            // Load-bay box markings under both cranes' landside lanes.
+            Prim.GroundQuad("LoadBoxA", root,
+                new Vector3(Tuning.BerthWestX, roadY + 0.02f, Tuning.TrolleyLandZ),
+                new Vector2(6.5f, 4.5f), laneMark);
+            Prim.GroundQuad("LoadBoxB", root,
+                new Vector3(Tuning.BerthEastX, roadY + 0.02f, Tuning.TrolleyLandZ),
                 new Vector2(6.5f, 4.5f), laneMark);
 
             // ---- Decorative container-yard stacks (west side) ----
@@ -55,7 +64,7 @@ namespace PortGame
                     {
                         var color = Palette.Containers[rng.Next(Palette.Containers.Length)];
                         Prim.Cube("YardContainer", yard,
-                            new Vector3(-58f + col * (cs.x + 0.6f),
+                            new Vector3(-66f + col * (cs.x + 0.6f),
                                 Tuning.QuayTopY + cs.y * (level + 0.5f),
                                 12f + row * (cs.z + 1.2f)),
                             cs, MaterialLibrary.Get(color, 0.3f));
@@ -73,7 +82,7 @@ namespace PortGame
             {
                 new Vector3(-50f, 0f, -6f), new Vector3(-25f, 0f, -6f),
                 new Vector3(25f, 0f, -6f), new Vector3(50f, 0f, -6f),
-                new Vector3(45f, 0f, 20f), new Vector3(-42f, 0f, 20f),
+                new Vector3(45f, 0f, 20f), new Vector3(-52f, 0f, 24f),
             };
             var lampHeadMat = MaterialLibrary.Create(Palette.WarmLight, 0.4f);
             dayNight.RegisterNightEmissive(lampHeadMat, Palette.WarmLight * 2.2f);

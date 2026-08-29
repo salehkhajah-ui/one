@@ -6,22 +6,24 @@ This repository branch is a **standalone Unity project** — it is completely
 independent of the `main` branch of this repository (it shares no history and
 no files with it).
 
-Current state: **Phase 2 — the gameplay loop on top of the living port.**
+Current state: **Phase 3 — the management layer.**
 
-Named ships now carry real goods (strawberries from Valencia, smartphones
-from Shenzhen…) against a deadline. A floating beacon over each ship carries
-its urgency into the world — green to red, pulsing when critical. The quay
-crane unloads onto a terminal tractor, the warehouse has a finite floor that
-distribution trucks drain on a cycle — when it's full the tractor waits, the
-crane waits, the ship waits, and the deadline burns (the first domino). A
-second ship is announced while the first is being worked and visibly holds
-at the offshore anchorage until the berth frees. On-time shipments pay a
-bonus, late ones a penalty; tap anything for a contextual card (manifest,
-countdown, warehouse fill); progress saves to versioned JSON and greets you
-back. First run has a single onboarding beat: tap the crane to begin.
-Everything is procedural placeholder geometry — clean boxes and cylinders in
-a pastel-industrial palette — built entirely from code so the loop could be
-proven before any art exists (see `docs/TDD.md` §14).
+The port now runs **two berths in parallel**, each with its own quay crane,
+fed in strict arrival order from a three-slot offshore anchorage that
+visibly crowds when you fall behind. A **tractor fleet** (2 to start, hire
+up to 4) drives a directed road graph — one-way loop, crane load-bay spurs,
+a warehouse-door service node, a parking lane — and every vehicle claims the
+node ahead before entering it, so queues and congestion chains emerge
+physically from arbitration: a full warehouse holds the door, the chain
+backs up the spur, cranes starve, ships overstay, deadlines burn, the
+anchorage fills. Ships carry real goods against color-coded deadlines
+(beacon over each ship), on-time work builds **reputation** which brings
+ships in faster, clients offer **contracts** you accept or decline, and
+**upgrades** (crane speed, fleet speed, hires, warehouse dispatch) are
+bought with buttons on the focus cards — the world is still the interface.
+Progress saves as versioned JSON (v2, with v1 migration). Everything is
+procedural placeholder geometry built entirely from code (`docs/TDD.md`
+§14).
 
 ## Requirements
 
@@ -75,13 +77,17 @@ a fresh onboarding.
 - The tractor driving the road loop to the warehouse, the warehouse door
   sliding open, cargo received, a reward toast naming the goods, money
   count-up — and the stored container visibly occupying a floor slot.
-- The urgency beacon over the ship shifting green → amber → orange → red as
-  its deadline shortens; on-time bonus or late penalty at settlement.
-- While the first ship is worked: the next ship announced (schedule line
-  under the clock) and holding at the offshore anchorage until the berth
-  frees.
+- The urgency beacon over each ship shifting green → amber → orange → red as
+  its deadline shortens; on-time bonus or late penalty (and reputation
+  up/down) at settlement.
+- Both berths working simultaneously, tractors queuing nose-to-tail behind a
+  busy load bay or a full warehouse door, and an offshore-queue counter under
+  the clock when ships are waiting at anchor.
 - Tap the ship / crane / warehouse / tractor: the camera glides in and a
-  contextual card appears (manifest + countdown, status, warehouse fill).
+  contextual card appears (manifest + countdown, status, warehouse fill) —
+  with purchase buttons for upgrades and hires where the object offers them.
+- Reputation and active-contract lines under the money panel; contract
+  offers appearing as an accept/decline panel every few minutes.
 
 ## Project layout
 
@@ -109,10 +115,10 @@ All gameplay/feel constants live in `Assets/Game/Core/Tuning.cs`
 (day length, crane speeds, tractor speed, rewards, container count per ship,
 camera limits). Change and re-enter Play mode.
 
-## Known limitations at Phase 2
+## Known limitations at Phase 3
 
-By design (see `docs/MILESTONES.md`): one dock / one crane / one tractor
-(the deeper fleet + road graph is Phase 3), no weather or audio yet
-(Phase 4), refrigeration is identity-only until the cold chain lands in
-Phase 5, no upgrades or contracts yet. The architecture for all of these is
-specified in `docs/TDD.md`.
+By design (see `docs/MILESTONES.md`): berths are auto-assigned in arrival
+order (player dock choice arrives with PORT AI priorities), no weather or
+audio yet (Phase 4), refrigeration is identity-only until the cold chain
+lands in Phase 5, no breakdowns/events yet. The architecture for all of
+these is specified in `docs/TDD.md`.

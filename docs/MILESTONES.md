@@ -28,12 +28,26 @@ line, on-time bonuses and late penalties, versioned JSON save
 ship is announced while the first unloads and **visibly holds at the
 offshore anchorage** until the berth frees.
 
-## Phase 3 — Management
+## Phase 3 — Management ✅ (this branch)
 
-Deeper offshore queue (multiple anchored ships), dock assignment, second
-crane, tractor fleet + road graph with intersections and queues (congestion
-emerges physically — the Domino System at full scale), equipment upgrades,
-contracts, reputation.
+Two berths served in strict arrival order from a three-slot offshore
+anchorage, each with its own quay crane working in parallel. The tractor
+fleet (2 to start, hire up to 4) drives a **directed road graph** — a
+one-way loop with crane load-bay spurs, a warehouse-door service node and a
+parking lane — where vehicles claim the node ahead before entering it, so
+queues, brake-and-hold chains and gridlock-free congestion emerge from
+arbitration, never from scripts (the Domino System at full scale: full
+warehouse → tractor holds the door node → the chain backs up the spur →
+cranes starve → ships overstay → the anchorage crowds). Upgrades are bought
+on the focus cards (crane speed, fleet speed, hires, faster warehouse
+dispatch), fictional clients offer throughput **contracts** (accept/decline,
+payout + reputation at stake), and **reputation** (0–100) rises with on-time
+work, falls with late cargo, and directly drives how fast new ships arrive.
+Save format bumped to v2 with a working v1→v2 migration.
+
+Still open from the original Phase 3 sketch: per-ship dock *choice* by the
+player (docks are auto-assigned in arrival order today) — lands alongside
+the priority controls of Phase 6's PORT AI.
 
 ## Phase 4 — World
 

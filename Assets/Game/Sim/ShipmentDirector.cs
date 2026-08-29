@@ -1,45 +1,59 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PortGame
 {
     /// <summary>
-    /// Orchestrates the core loop: announce ship → sail to anchorage → dock
-    /// when the berth frees → crane unloads → tractor hauls → warehouse
-    /// receives → settle the shipment against its deadline → depart → next.
-    /// The next ship is announced while the current one is still unloading,
-    /// so a slow port visibly grows an offshore queue. Also owns the save
-    /// lifecycle and the first-run onboarding beat.
+    /// Runs the port's shipping operation: spawns ships on a reputation-
+    /// driven cadence (better ports attract more business), holds them at
+    /// numbered anchorage slots, assigns freed berths in arrival order, runs
+    /// each ship's full lifecycle (dock → its berth's crane unloads → settle
+    /// against the deadline → depart) as an independent coroutine so both
+    /// berths work in parallel, and owns reputation hooks and the save
+    /// lifecycle.
     /// </summary>
     public class ShipmentDirector : MonoBehaviour
     {
-        private CraneController _crane;
-        private TerminalTractor _tractor;
+        private class Berth
+        {
+            public float X;
+            public CraneController Crane;
+            public ShipController Ship;
+        }
+
+        private VehicleDispatcher _dispatcher;
         private Warehouse _warehouse;
         private HudController _hud;
         private DayNightCycle _dayNight;
+        private Reputation _reputation;
 
         private readonly System.Random _rng = new System.Random();
-        private ShipController _next;
+        private readonly List<Berth> _berths = new List<Berth>();
+        private readonly List<ShipController> _berthQueue = new List<ShipController>();
+        private readonly bool[] _anchorSlots = new bool[Tuning.AnchorSlots];
+
         private int _shipIndex;
         private long _totalDelivered;
         private bool _onboardingDone;
         private bool _craneTapped;
+        private int _shipsInPlay;
 
-        public ShipController CurrentShip { get; private set; }
-
-        public static ShipmentDirector Build(Transform parent, CraneController crane,
-            TerminalTractor tractor, Warehouse warehouse, HudController hud,
-            DayNightCycle dayNight, CameraRig cameraRig, SaveModelV1 save)
+        public static ShipmentDirector Build(Transform parent, CraneController craneWest,
+            CraneController craneEast, VehicleDispatcher dispatcher, Warehouse warehouse,
+            HudController hud, DayNightCycle dayNight, CameraRig cameraRig,
+            Reputation reputation, SaveModel save)
         {
             var go = new GameObject("ShipmentDirector");
             go.transform.SetParent(parent, false);
             var director = go.AddComponent<ShipmentDirector>();
-            director._crane = crane;
-            director._tractor = tractor;
+            director._dispatcher = dispatcher;
             director._warehouse = warehouse;
             director._hud = hud;
             director._dayNight = dayNight;
+            director._reputation = reputation;
+            director._berths.Add(new Berth { X = Tuning.BerthWestX, Crane = craneWest });
+            director._berths.Add(new Berth { X = Tuning.BerthEastX, Crane = craneEast });
 
             if (save != null)
             {
@@ -55,7 +69,15 @@ namespace PortGame
 
         private void Start()
         {
-            StartCoroutine(MainLoop());
+            StartCoroutine(SpawnLoop());
+        }
+
+        private void Update()
+        {
+            int waiting = _berthQueue.Count;
+            _hud.SetScheduleText(waiting > 0
+                ? string.Format("Offshore queue: {0} ship{1}", waiting, waiting == 1 ? "" : "s")
+                : "");
         }
 
         private void OnContainerDelivered(Container container)
@@ -64,7 +86,7 @@ namespace PortGame
             string what = container.Cargo != null ? container.Cargo.DisplayName : "cargo";
             EconomyManager.Instance.Add(reward, what + " received");
             _totalDelivered++;
-            if (CurrentShip != null) CurrentShip.Shipment.Delivered++;
+            if (container.Shipment != null) container.Shipment.Delivered++;
         }
 
         private void OnFocusChanged(FocusTarget target)
@@ -73,64 +95,38 @@ namespace PortGame
                 _craneTapped = true;
         }
 
-        private IEnumerator MainLoop()
+        // ---- Spawning ----------------------------------------------------
+
+        private IEnumerator SpawnLoop()
         {
             yield return new WaitForSeconds(3f);
-
             while (true)
             {
-                if (_next == null) _next = Announce();
-                var ship = _next;
-                _next = null;
-
-                // Ship makes its own way to the anchorage; hold there until picked up here.
-                while (ship.State != ShipState.Anchored) yield return null;
-
-                yield return ship.DockFromAnchor();
-                CurrentShip = ship;
-                var shipment = ship.Shipment;
-                _hud.Banner(string.Format("{0} docked — unloading begins", shipment.ShipName), 3f);
-                _hud.SetScheduleText("");
-
-                if (!_onboardingDone)
+                int slot = FreeAnchorSlot();
+                if (slot >= 0 && _shipsInPlay < _berths.Count + Tuning.AnchorSlots)
                 {
-                    yield return OnboardingBeat();
-                    _onboardingDone = true;
-                    SaveNow();
+                    StartCoroutine(RunShipLifecycle(slot));
                 }
-
-                // Announce the next arrival while this one is worked — deadline
-                // pressure and the offshore queue come from this overlap.
-                StartCoroutine(AnnounceNextAfterDelay());
-
-                int baseline = _warehouse.DeliveredCount;
-                yield return _crane.UnloadAll(ship, _tractor);
-
-                // The crane is done; wait for the tractor to land the last box.
-                while (_warehouse.DeliveredCount < baseline + shipment.Count)
-                    yield return null;
-
-                if (!shipment.IsLate)
-                {
-                    EconomyManager.Instance.Add(shipment.OnTimeBonus, "on-time shipment bonus");
-                    _hud.Banner(string.Format("{0} — delivered on time", shipment.ShipName));
-                }
-                else
-                {
-                    EconomyManager.Instance.Add(-shipment.LatePenalty, "late delivery penalty");
-                    _hud.Banner(string.Format("{0} — delivered late", shipment.ShipName));
-                }
-                SaveNow();
-
-                yield return new WaitForSeconds(1.5f);
-                yield return ship.Depart();
-                Destroy(ship.gameObject);
-                CurrentShip = null;
+                float interval = Mathf.Lerp(Tuning.SpawnIntervalSlowRep,
+                    Tuning.SpawnIntervalFastRep, _reputation.Normalized);
+                yield return new WaitForSeconds(interval + (float)_rng.NextDouble() * 10f);
             }
         }
 
-        private ShipController Announce()
+        private int FreeAnchorSlot()
         {
+            for (int i = 0; i < _anchorSlots.Length; i++)
+                if (!_anchorSlots[i]) return i;
+            return -1;
+        }
+
+        // ---- Per-ship lifecycle -----------------------------------------
+
+        private IEnumerator RunShipLifecycle(int anchorSlot)
+        {
+            _anchorSlots[anchorSlot] = true;
+            _shipsInPlay++;
+
             var shipment = new Shipment
             {
                 ShipName = Tuning.ShipNames[_shipIndex % Tuning.ShipNames.Length],
@@ -141,20 +137,65 @@ namespace PortGame
             shipment.DeadlineSeconds = Tuning.DeadlineBuffer + shipment.Count * Tuning.DeadlinePerContainer;
             _shipIndex++;
 
-            var ship = ShipController.Build(transform, shipment);
-            StartCoroutine(ship.ApproachAnchor());
-
+            var ship = ShipController.Build(transform, shipment, anchorSlot);
             _hud.Banner(string.Format("{0} inbound — {1}, {2} containers",
                 shipment.ShipName, shipment.Cargo.DisplayName, shipment.Count));
-            _hud.SetScheduleText(string.Format("Inbound: {0} · {1} ×{2}",
-                shipment.ShipName, shipment.Cargo.DisplayName, shipment.Count));
-            return ship;
+
+            yield return ship.ApproachAnchor();
+
+            // Berths are granted strictly in arrival order.
+            _berthQueue.Add(ship);
+            Berth berth = null;
+            while (berth == null)
+            {
+                if (_berthQueue[0] == ship) berth = FreeBerth();
+                if (berth == null) yield return null;
+            }
+            _berthQueue.RemoveAt(0);
+            berth.Ship = ship;
+            _anchorSlots[anchorSlot] = false; // the anchorage spot is open again
+
+            yield return ship.DockFromAnchor(berth.X);
+            _hud.Banner(string.Format("{0} docked — unloading begins", shipment.ShipName), 3f);
+
+            if (!_onboardingDone)
+            {
+                yield return OnboardingBeat();
+                _onboardingDone = true;
+                SaveNow();
+            }
+
+            yield return berth.Crane.UnloadAll(ship, _dispatcher);
+
+            // The crane is done; the tractors still have to land the last boxes.
+            while (shipment.Delivered < shipment.Count) yield return null;
+
+            if (!shipment.IsLate)
+            {
+                EconomyManager.Instance.Add(shipment.OnTimeBonus, "on-time shipment bonus");
+                _reputation.Add(Tuning.RepOnTime, "on-time delivery");
+                _hud.Banner(string.Format("{0} — delivered on time", shipment.ShipName));
+            }
+            else
+            {
+                EconomyManager.Instance.Add(-shipment.LatePenalty, "late delivery penalty");
+                _reputation.Add(Tuning.RepLate, "late delivery");
+                _hud.Banner(string.Format("{0} — delivered late", shipment.ShipName));
+            }
+            SaveNow();
+
+            yield return new WaitForSeconds(1.5f);
+            berth.Ship = null; // berth frees as the ship pulls out
+            yield return ship.Depart();
+            Destroy(ship.gameObject);
+            _shipsInPlay--;
         }
 
-        private IEnumerator AnnounceNextAfterDelay()
+        private Berth FreeBerth()
         {
-            yield return new WaitForSeconds(Tuning.NextShipDelay);
-            if (_next == null) _next = Announce();
+            for (int i = 0; i < _berths.Count; i++)
+                if (_berths[i].Ship == null) return _berths[i];
+            return null;
         }
 
         private IEnumerator OnboardingBeat()
@@ -171,7 +212,7 @@ namespace PortGame
 
         private void SaveNow()
         {
-            SaveSystem.Save(new SaveModelV1
+            SaveSystem.Save(new SaveModel
             {
                 balance = EconomyManager.Instance.Balance,
                 day = _dayNight.DayCount,
@@ -180,6 +221,12 @@ namespace PortGame
                 warehouseStored = _warehouse.StoredCount,
                 totalDelivered = _totalDelivered,
                 onboardingDone = _onboardingDone,
+                reputation = _reputation.Value,
+                craneLevelA = _berths[0].Crane.SpeedLevel,
+                craneLevelB = _berths[1].Crane.SpeedLevel,
+                tractorSpeedLevel = _dispatcher.TractorSpeedLevel,
+                dispatchLevel = _warehouse.DispatchLevel,
+                tractorCount = _dispatcher.Tractors.Count,
             });
         }
 
