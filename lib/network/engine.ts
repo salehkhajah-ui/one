@@ -38,6 +38,22 @@ export function rewardValueMinor(spec: RewardSpec, basketMinor = REFERENCE_BASKE
   }
 }
 
+/**
+ * The spec a reward instance actually renders/redeems as: recipient-side
+ * instances use the campaign's recipientReward, and issuance-time referral
+ * boosts widen percent rewards. The single source of truth for the UI.
+ */
+export function rewardSpecFor(
+  campaign: Campaign,
+  reward: Pick<import("./types").RewardInstance, "holder" | "boostBps">,
+): RewardSpec {
+  const base = reward.holder === "recipient" && campaign.recipientReward ? campaign.recipientReward : campaign.reward;
+  if (reward.boostBps && base.kind === "percent") {
+    return { ...base, valueBps: (base.valueBps ?? 0) + reward.boostBps };
+  }
+  return base;
+}
+
 /** Expected merchant fee ONE bills if this campaign converts (minor units). */
 export function expectedBillingMinor(campaign: Campaign): number {
   const p = campaign.pricing;

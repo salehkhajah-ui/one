@@ -7,6 +7,7 @@
  */
 import { useState } from "react";
 import { money, t } from "../../../lib/i18n";
+import { rewardSpecFor } from "../../../lib/network/engine";
 import { fromMajor } from "../../../lib/money";
 import type { RedeemResult } from "../../../lib/network/lifecycle";
 import { useNetwork } from "../../components/network/NetworkProvider";
@@ -89,8 +90,7 @@ export default function ScannerPage() {
           {(() => {
             const merchant = state.merchants.find((m) => m.id === pending.merchantId);
             const campaign = state.campaigns.find((c) => c.id === pending.campaignId);
-            const spec =
-              pending.holder === "recipient" && campaign?.recipientReward ? campaign.recipientReward : campaign?.reward;
+            const spec = campaign ? rewardSpecFor(campaign, pending) : undefined;
             if (!merchant || !spec) return null;
             return (
               <>

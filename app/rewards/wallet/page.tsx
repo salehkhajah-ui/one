@@ -6,6 +6,7 @@
  */
 import { useState } from "react";
 import { t } from "../../../lib/i18n";
+import { rewardSpecFor } from "../../../lib/network/engine";
 import type { RewardInstance } from "../../../lib/network/types";
 import { useNetwork } from "../../components/network/NetworkProvider";
 import { CodeMatrix, expiryLabel, MerchantMark, RewardHeadline, rewardLabel } from "../../components/network/net-ui";
@@ -55,7 +56,7 @@ export default function WalletPage() {
       {rewards.map((reward) => {
         const merchant = state.merchants.find((m) => m.id === reward.merchantId);
         const campaign = state.campaigns.find((c) => c.id === reward.campaignId);
-        const spec = reward.holder === "recipient" && campaign?.recipientReward ? campaign.recipientReward : campaign?.reward;
+        const spec = campaign ? rewardSpecFor(campaign, reward) : undefined;
         if (!merchant || !spec) return null;
         const open = openId === reward.id;
         return (

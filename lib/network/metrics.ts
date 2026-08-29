@@ -69,6 +69,49 @@ export function merchantMetrics(state: NetworkState, merchantId: string, now: Da
   };
 }
 
+// ---------------------------------------------------------------- billing ----
+
+export interface MerchantBilling {
+  /** What ONE will invoice for the current 14-day period. */
+  upcomingInvoiceMinor: number;
+  /** Remaining budget across this merchant's live campaigns. */
+  budgetRemainingMinor: number;
+  /** Daily statement, newest first: billed outcomes per day (baseline + live). */
+  days: Array<{ dateISO: string; outcomes: number; billedMinor: number }>;
+}
+
+export function merchantBilling(state: NetworkState, merchantId: string, now: Date): MerchantBilling {
+  const base = state.baseline.merchants[merchantId] ?? [];
+  const live = state.redemptions.filter((r) => r.merchantId === merchantId && !r.refunded);
+
+  const dayMs = 86_400_000;
+  const dateFor = (offset: number) => new Date(now.getTime() - offset * dayMs).toISOString().slice(0, 10);
+  const days = new Map<string, { outcomes: number; billedMinor: number }>();
+  for (const d of base.slice(0, 7)) {
+    days.set(dateFor(d.dayOffset), { outcomes: d.redeemed, billedMinor: d.spendMinor });
+  }
+  for (const r of live) {
+    const key = r.atISO.slice(0, 10);
+    const row = days.get(key) ?? { outcomes: 0, billedMinor: 0 };
+    days.set(key, { outcomes: row.outcomes + 1, billedMinor: row.billedMinor + r.billedMinor });
+  }
+
+  const budgetRemainingMinor = state.campaigns
+    .filter((c) => c.merchantId === merchantId && (c.status === "active" || c.status === "paused"))
+    .reduce((a, c) => a + Math.max(0, c.budget.totalMinor - c.budget.spentMinor), 0);
+  const upcomingInvoiceMinor =
+    base.reduce((a, d) => a + d.spendMinor, 0) + sumMinor(live.map((r) => r.billedMinor));
+
+  return {
+    upcomingInvoiceMinor,
+    budgetRemainingMinor,
+    days: [...days.entries()]
+      .map(([dateISO, v]) => ({ dateISO, ...v }))
+      .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+      .slice(0, 7),
+  };
+}
+
 export interface InstitutionMetrics {
   events: number;
   revealed: number;

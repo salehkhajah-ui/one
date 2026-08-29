@@ -57,12 +57,25 @@ products.
   on first open.
 - **`storage.ts`** — localStorage persistence (`one.network.v1`).
 
-Reward modes (institution-configurable): **A** one reward (`single`), **B**
-choice of 3 (`choice`, default), **C** `surprise`, **D** `boosted` (base +
-upgrade — architecture present, experience TBD).
+Reward modes (institution-configurable, all four live): **A** one reward
+(`single`), **B** choice of 3 (`choice`, default), **C** `surprise`, **D**
+`boosted` — a guaranteed base reward plus an upgrade draw whose target is the
+runner-up candidate with strictly higher customer value; the draw is
+deterministic from the moment id in this demo build (stable, testable, no
+casino energy).
 
 Tiers (ONE → Silver → Gold → Black) progress with *engagement counts only*,
-never transfer size — no incentive to remit irresponsibly.
+never transfer size — no incentive to remit irresponsibly. The same principle
+governs **referrals**: each verified referral adds +5pp to the user's percent
+rewards, hard-capped at +10pp (`referralBoostBps`), baked into the reward
+instance at issuance and funded by merchants — farming has no unbounded upside.
+
+Merchant self-onboarding lives at `/merchant/join` (three steps, instantly
+live and demo-labeled), handing off to the campaign creator with the new
+merchant preselected. The merchant dashboard's **Billing** section
+(`merchantBilling` in metrics.ts) shows the upcoming invoice, remaining
+campaign budget and a daily statement of billed outcomes; refunds credit back
+automatically.
 
 ## Integration contract (sandbox)
 

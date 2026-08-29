@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { money, t } from "../../lib/i18n";
-import { merchantMetrics } from "../../lib/network/metrics";
+import { merchantBilling, merchantMetrics } from "../../lib/network/metrics";
 import type { Campaign } from "../../lib/network/types";
 import { useNetwork } from "../components/network/NetworkProvider";
 import { formatPctBps, formatRoi, MerchantMark, rewardLabel, StatCard } from "../components/network/net-ui";
@@ -20,6 +20,7 @@ export default function MerchantDashboard() {
   const [merchantId, setMerchantId] = useState("m_tropicfeel");
   const merchant = state.merchants.find((m) => m.id === merchantId) ?? merchants[0];
   const metrics = merchantMetrics(state, merchant.id, new Date());
+  const billing = merchantBilling(state, merchant.id, new Date());
   const campaigns = state.campaigns.filter((c) => c.merchantId === merchant.id);
 
   // Copilot: one grounded recommendation for the first live percent campaign.
@@ -127,10 +128,44 @@ export default function MerchantDashboard() {
         campaigns.map((campaign) => <CampaignRow key={campaign.id} campaign={campaign} onToggle={setStatus} />)
       )}
 
+      <h2 className="section-title mb-3 mt-6">{t("net.billing.title")}</h2>
+      <div className="card">
+        <div className="stat-grid">
+          <div>
+            <div className="micro">{t("net.billing.upcoming")}</div>
+            <div className="stat-value money mt-1">{money(billing.upcomingInvoiceMinor)}</div>
+          </div>
+          <div>
+            <div className="micro">{t("net.billing.budgetRemaining")}</div>
+            <div className="stat-value money mt-1">{money(billing.budgetRemainingMinor)}</div>
+          </div>
+          <div>
+            <div className="micro">{t("net.billing.method")}</div>
+            <div className="subtle mt-2">{t("net.billing.methodValue")}</div>
+          </div>
+        </div>
+        <div className="ticket-divider" />
+        <div className="micro mb-1">{t("net.billing.statement")}</div>
+        {billing.days.map((d) => (
+          <div key={d.dateISO} className="mt-1 flex items-center justify-between">
+            <span className="micro money">{d.dateISO}</span>
+            <span className="micro">{t("net.billing.outcomes", { count: d.outcomes })}</span>
+            <span className="subtle money">{money(d.billedMinor)}</span>
+          </div>
+        ))}
+        <p className="micro mt-3">{t("net.billing.note")}</p>
+      </div>
+
       <div className="card mt-6 flex flex-wrap items-center justify-between gap-3">
         <span className="subtle">{t("net.merchant.pitchTeaser")}</span>
         <Link href="/pitch" className="btn btn-quiet">
           {t("net.merchant.seeHow")}
+        </Link>
+      </div>
+      <div className="card mt-3 flex flex-wrap items-center justify-between gap-3">
+        <span className="subtle">{t("net.join.teaser")}</span>
+        <Link href="/merchant/join" className="btn btn-quiet">
+          {t("net.join.cta")}
         </Link>
       </div>
     </main>

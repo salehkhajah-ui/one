@@ -6,7 +6,7 @@
  */
 import Link from "next/link";
 import { t } from "../../../lib/i18n";
-import { tierFor } from "../../../lib/network/lifecycle";
+import { referralBoostBps, tierFor } from "../../../lib/network/lifecycle";
 import type { MerchantCategory } from "../../../lib/network/types";
 import { useNetwork } from "../../components/network/NetworkProvider";
 import { CATEGORY_COLORS, categoryLabel, TierBadge } from "../../components/network/net-ui";
@@ -19,8 +19,9 @@ const TIER_THRESHOLDS: Array<{ at: number; tier: ReturnType<typeof tierFor> }> =
 ];
 
 export default function ProfilePage() {
-  const { state, chooseIntent, resetDemo } = useNetwork();
+  const { state, chooseIntent, referral, resetDemo } = useNetwork();
   const c = state.consumer;
+  const boostBps = referralBoostBps(c.referrals);
   const next = TIER_THRESHOLDS.find((s) => c.momentCount < s.at);
   const cats = Object.entries(c.prefs).sort((a, b) => b[1] - a[1]) as Array<[MerchantCategory, number]>;
   const notifications = state.notifications.filter((n) => n.audience === "consumer").slice(0, 5);
@@ -48,6 +49,23 @@ export default function ProfilePage() {
           <p className="micro mt-2">{t("net.profile.topTier")}</p>
         )}
         <p className="micro mt-2">{t("net.profile.tierNote")}</p>
+      </div>
+
+      <h2 className="section-title mb-3 mt-6">{t("net.referral.title")}</h2>
+      <div className="card">
+        <div className="flex items-baseline justify-between">
+          <span className="subtle">{t("net.referral.count", { count: c.referrals })}</span>
+          {boostBps > 0 ? (
+            <span className="subtle money" style={{ color: "var(--positive)" }}>
+              +{boostBps / 100}%
+            </span>
+          ) : null}
+        </div>
+        <p className="micro mt-1">{boostBps > 0 ? t("net.referral.boost", { pct: boostBps / 100 }) : t("net.referral.pitch")}</p>
+        <button className="btn btn-quiet mt-3 w-full" onClick={referral}>
+          {t("net.referral.simulate")}
+        </button>
+        <p className="micro mt-2">{t("net.referral.note")}</p>
       </div>
 
       <h2 className="section-title mb-3 mt-6">{t("net.profile.taste")}</h2>
