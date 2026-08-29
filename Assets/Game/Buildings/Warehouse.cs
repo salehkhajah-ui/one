@@ -222,6 +222,29 @@ namespace PortGame
             yield return SlideDoor(open: false);
         }
 
+        /// <summary>
+        /// The rail terminal pulls one stored container straight off the
+        /// floor (no door cycle, no dispatch revenue — rail pays its own
+        /// rate). Returns the box's color for the wagon load visual.
+        /// </summary>
+        public bool TryDispatchExternal(out Color color)
+        {
+            color = Palette.ConcreteDark;
+            int slot = LastOccupiedSlot();
+            if (slot < 0) return false;
+            var box = _slots[slot];
+            _slots[slot] = null;
+            StoredCount--;
+            if (box != null)
+            {
+                var renderer = box.GetComponent<Renderer>();
+                if (renderer != null && renderer.sharedMaterial != null)
+                    color = renderer.sharedMaterial.color;
+                Destroy(box);
+            }
+            return true;
+        }
+
         private IEnumerator DispatchLoop()
         {
             while (true)
@@ -233,7 +256,9 @@ namespace PortGame
                 var box = _slots[slot];
                 _slots[slot] = null;
                 StoredCount--;
-                EconomyManager.Instance.Add(Tuning.DispatchRevenue, "cargo dispatched", quiet: true);
+                long revenue = Tuning.DispatchRevenue +
+                    (GreenEnergyYard.SolarActive ? Tuning.GreenDispatchBonus : 0);
+                EconomyManager.Instance.Add(revenue, "cargo dispatched", quiet: true);
 
                 if (box != null)
                 {

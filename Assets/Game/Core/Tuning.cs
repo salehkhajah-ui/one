@@ -67,6 +67,28 @@ namespace PortGame
         public const float EventIntervalMax = 260f;
         public const float CrackdownSeconds = 75f;
 
+        // ---- Ship classes ----
+        public const int PanamaxRepGate = 60;          // Panamax calls begin at this reputation
+        public const float PanamaxChance = 0.35f;
+        public const int PanamaxMinContainers = 14;
+        public const int PanamaxMaxContainers = 18;
+        public const float ProjectCargoChance = 0.25f; // Panamax carrying oversized pieces
+
+        // ---- Rail terminal ----
+        public const long RailCost = 30000;
+        public const float RailConstructionSeconds = 90f;
+        public const long RailBoxRevenue = 220;        // per container loaded onto the train
+        public const int TrainCapacity = 6;
+        public const float TrainIntervalMin = 70f;
+        public const float TrainIntervalMax = 130f;
+        public const float TrainMaxDwell = 50f;
+
+        // ---- Green port ----
+        public const long SolarCost = 9000;
+        public const long ElectricFleetCost = 12000;
+        public const long GreenDispatchBonus = 40;     // added to dispatch revenue with solar
+        public const int GreenRepBonus = 5;
+
         // ---- Fleet ----
         public const int StartingTractors = 2;
         public const int MaxTractors = 4;

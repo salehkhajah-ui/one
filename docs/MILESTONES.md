@@ -105,8 +105,24 @@ cooldown, never fighting a contract offer for the panel. Focus cards can
 now hold four action buttons and grow to fit. Save v4 (owned modules +
 action count) with the v1→…→v4 migration chain.
 
-## Phase 7 — Expansion
+## Phase 7 — Expansion ✅ (this branch)
 
-Terminal expansion with visible construction, larger ship classes, rail,
-air cargo, green-port systems, port value metric, second port / global map.
-Multiplayer-ready architecture stays a constraint, not an MVP feature.
+**Physical expansion**: a vacant lot on the back quay becomes the **Rail
+Terminal** — buy it and scaffolding, fencing and material piles appear for
+a visible 90-second construction, then the spur, sleepers and platform
+replace them and a freight train starts calling. While the train stands at
+the platform it bulk-drains the dry warehouse, each container appearing on
+a wagon at a premium rail rate. **Ship classes**: reputable ports draw
+Panamax calls — double-stacked decks (unloaded top layer first, stow order
+protected from cold-first resequencing) of 14–18 containers, sometimes
+with an oversized heavy-machinery piece at the bow handled under the
+heavy-lift protocol and saved for last. **Green port**: the energy yard
+sells solar arrays (visible on both warehouse roofs, green premium on
+dispatch, +reputation) and fleet electrification (repainted tractors,
++10% speed, +reputation). **Port value** — the long-term score (cash +
+capital invested + throughput + standing) — ticks under the money panel.
+Save v5 completes the migration chain.
+
+Post-MVP (unchanged from the spec's horizon): air cargo, a dedicated
+heavy-lift berth, the second port / global map, photo mode, monetization
+cosmetics, and multiplayer — the architecture keeps them reachable.

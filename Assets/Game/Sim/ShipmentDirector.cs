@@ -47,6 +47,10 @@ namespace PortGame
         /// <summary>Set by the bootstrap once PORT AI exists; enables priority berthing and save state.</summary>
         public PortAI PortAIRef { get; set; }
 
+        /// <summary>Set by the bootstrap; read for the save file and port value.</summary>
+        public RailTerminal RailRef { get; set; }
+        public GreenEnergyYard GreenRef { get; set; }
+
         /// <summary>Ships currently holding at anchor — read by PORT AI recommendations.</summary>
         public static int WaitingShips { get; private set; }
 
@@ -89,6 +93,8 @@ namespace PortGame
             StartCoroutine(SpawnLoop());
         }
 
+        private float _portValueRefreshAt;
+
         private void Update()
         {
             int waiting = _berthQueue.Count;
@@ -96,13 +102,28 @@ namespace PortGame
             _hud.SetScheduleText(waiting > 0
                 ? string.Format("Offshore queue: {0} ship{1}", waiting, waiting == 1 ? "" : "s")
                 : "");
+
+            // Port value: the long-term score. Cash plus everything ever
+            // invested plus throughput history plus standing.
+            if (Time.unscaledTime >= _portValueRefreshAt)
+            {
+                _portValueRefreshAt = Time.unscaledTime + 1f;
+                long value = 20000
+                    + EconomyManager.Instance.Balance
+                    + EconomyManager.Instance.CapitalInvested
+                    + _totalDelivered * 40
+                    + _reputation.Value * 300L;
+                _hud.SetPortValueText(string.Format("Port value  KD {0:N0}", value));
+            }
         }
 
         private void OnContainerDelivered(Container container)
         {
-            long baseReward = container.Shipment != null
-                ? container.Shipment.RewardPerContainer
-                : (container.Cargo != null ? container.Cargo.ValuePerContainer : 300);
+            // Per-container value (project cargo pays its own rate), scaled by
+            // any shipment-wide multiplier.
+            long unit = container.Cargo != null ? container.Cargo.ValuePerContainer : 300;
+            float mult = container.Shipment != null ? container.Shipment.RewardMultiplier : 1f;
+            long baseReward = (long)(unit * mult);
             // Refrigerated cargo pays by whatever quality survived the dock.
             long reward = (long)(baseReward * container.Quality / 100f);
             string what = container.Cargo != null ? container.Cargo.DisplayName : "cargo";
@@ -188,6 +209,18 @@ namespace PortGame
                 SpawnTime = Time.time,
                 RewardMultiplier = _nextRewardMultiplier,
             };
+
+            // A reputable port draws Panamax calls: double-stacked decks,
+            // sometimes with an oversized heavy-lift piece at the bow.
+            if (_reputation.Value >= Tuning.PanamaxRepGate &&
+                _rng.NextDouble() < Tuning.PanamaxChance)
+            {
+                shipment.ClassName = "Panamax";
+                shipment.Stacked = true;
+                shipment.Count = _rng.Next(Tuning.PanamaxMinContainers, Tuning.PanamaxMaxContainers + 1);
+                shipment.HasProjectCargo = _rng.NextDouble() < Tuning.ProjectCargoChance;
+            }
+
             _nextRewardMultiplier = 1f;
             shipment.DeadlineSeconds = Tuning.DeadlineBuffer + shipment.Count * Tuning.DeadlinePerContainer;
             _shipIndex++;
@@ -364,6 +397,10 @@ namespace PortGame
                 tractorCount = _dispatcher.Tractors.Count,
                 aiRules = PortAIRef != null ? (int)PortAIRef.ActiveRules : 0,
                 aiActions = PortAIRef != null ? PortAIRef.ActionCount : 0,
+                capitalInvested = EconomyManager.Instance.CapitalInvested,
+                railState = RailRef != null ? RailRef.StateAsInt : 0,
+                greenSolar = GreenRef != null && GreenRef.Solar,
+                greenFleet = GreenRef != null && GreenRef.ElectricFleet,
             });
         }
 

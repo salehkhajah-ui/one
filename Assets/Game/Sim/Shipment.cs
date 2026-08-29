@@ -27,6 +27,11 @@ namespace PortGame
         public int RepWin = Tuning.RepOnTime;
         public int RepLose = Tuning.RepLate;
 
+        /// <summary>Vessel class. Panamax calls are double-stacked and unlock with reputation.</summary>
+        public string ClassName = "Feeder";
+        public bool Stacked;
+        public bool HasProjectCargo;   // two oversized heavy-machinery pieces on deck
+
         public long RewardPerContainer => (long)(Cargo.ValuePerContainer * RewardMultiplier);
         public long OnTimeBonus => RewardPerContainer * Count / 3;
         public long LatePenalty => RewardPerContainer * Count / 4;

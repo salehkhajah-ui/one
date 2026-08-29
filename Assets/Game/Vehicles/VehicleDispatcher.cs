@@ -14,7 +14,11 @@ namespace PortGame
         public readonly List<TerminalTractor> Tractors = new List<TerminalTractor>();
 
         public int TractorSpeedLevel { get; set; }
-        public float TractorSpeedMult => 1f + 0.2f * TractorSpeedLevel;
+
+        /// <summary>Green-port electrification: the whole fleet runs a bit quicker.</summary>
+        public bool ElectricFleet { get; set; }
+
+        public float TractorSpeedMult => (1f + 0.2f * TractorSpeedLevel) * (ElectricFleet ? 1.1f : 1f);
 
         public CustomsOffice Customs { get; private set; }
         public RoadNode CustomsNode { get; private set; }

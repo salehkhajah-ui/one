@@ -6,7 +6,18 @@ This repository branch is a **standalone Unity project** — it is completely
 independent of the `main` branch of this repository (it shares no history and
 no files with it).
 
-Current state: **Phase 6 — automation.**
+Current state: **Phase 7 — expansion. All seven planned phases are built.**
+
+The port now grows. A vacant lot behind the warehouses can be bought and
+visibly constructed into a **Rail Terminal** — scaffolding first, then a
+spur where a freight train calls and bulk-ships stored cargo at a premium.
+High reputation draws **Panamax-class** ships with double-stacked decks and
+the occasional oversized heavy-lift piece. The **green energy yard** sells
+solar roofs and an electric tractor fleet (both visible, both worth
+reputation), and **port value** — the long-term score — ticks away under
+your money.
+
+On top of **Phase 6 — automation:**
 
 The operations tower now houses **PORT AI**. Tap it to buy automation
 modules — priority berthing for urgent ships, cold-first unloading,
@@ -151,13 +162,15 @@ All gameplay/feel constants live in `Assets/Game/Core/Tuning.cs`
 (day length, crane speeds, tractor speed, rewards, container count per ship,
 camera limits). Change and re-enter Play mode.
 
-## Known limitations at Phase 6
+## Known limitations at Phase 7 (MVP complete)
 
 By design (see `docs/MILESTONES.md`): berth order is FIFO until the
 priority-berthing AI module is bought (a free-form per-ship dock picker
-remains future work), oversized cargo waits for the Phase 7 heavy crane,
-tractors don't wear yet (cranes carry the maintenance gameplay), haptics
-are a single coarse buzz until a platform plugin replaces `Haptics`, and
-audio is synthesized placeholder ambience that recorded sound can replace
-clip-for-clip. The architecture for all of these is specified in
-`docs/TDD.md`.
+remains future work), oversized pieces are handled by the quay cranes under
+a slow heavy-lift protocol (a dedicated heavy-lift berth is post-MVP),
+tractors don't wear (cranes carry the maintenance gameplay), haptics are a
+single coarse buzz until a platform plugin replaces `Haptics`, and audio is
+synthesized placeholder ambience that recorded sound can replace
+clip-for-clip. Post-MVP horizon: air cargo, second port / global map, photo
+mode, cosmetics, multiplayer. The architecture for all of these is
+specified in `docs/TDD.md`.

@@ -31,6 +31,7 @@ namespace PortGame
         private Text _scheduleText;
         private Text _repText;
         private Text _contractText;
+        private Text _portValueText;
         private Text _cardTitle;
         private Text _cardBody;
         private CanvasGroup _cardGroup;
@@ -128,6 +129,12 @@ namespace PortGame
             SetAnchored(contractRect, new Vector2(0f, 1f), new Vector2(34f, -138f), new Vector2(560f, 30f));
             _contractText = Label(contractRect, "", 21, TextAnchor.MiddleLeft,
                 Palette.Hex("#BFD8E3"), FontStyle.Normal);
+
+            var portValueGo = new GameObject("PortValueLine");
+            portValueGo.transform.SetParent(canvasGo.transform, false);
+            var portValueRect = portValueGo.AddComponent<RectTransform>();
+            SetAnchored(portValueRect, new Vector2(0f, 1f), new Vector2(34f, -170f), new Vector2(460f, 30f));
+            _portValueText = Label(portValueRect, "", 20, TextAnchor.MiddleLeft, TextDim, FontStyle.Normal);
 
             // Clock — top right, with the inbound-ship schedule line beneath it.
             var clockPanel = Panel(canvasGo.transform, new Vector2(1f, 1f), new Vector2(-30f, -30f), new Vector2(300f, 56f));
@@ -264,6 +271,12 @@ namespace PortGame
         public void SetReputationText(int value)
         {
             _repText.text = "Reputation " + value;
+        }
+
+        /// <summary>The long-term score line under the money panel.</summary>
+        public void SetPortValueText(string text)
+        {
+            _portValueText.text = text;
         }
 
         /// <summary>Active-contract progress line under the money panel; empty string hides it.</summary>

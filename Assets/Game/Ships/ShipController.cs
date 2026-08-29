@@ -86,24 +86,61 @@ namespace PortGame
             Prim.Cylinder("Funnel", _hull, new Vector3(0f, 9.4f, -19.6f),
                 new Vector3(1.6f, 1.1f, 1.6f), hullMat);
 
-            // Deck cargo: one row of containers in the shipment's cargo color,
-            // alternating lightness so the row reads as individual boxes.
-            // Spread stays within ±12 m so the crane gantry (legs ±4.5 m
-            // beyond) never sweeps into the parking lane west of the quay.
-            for (int i = 0; i < shipment.Count; i++)
+            // Deck cargo in the shipment's cargo color, alternating lightness
+            // so rows read as individual boxes. Spread stays within ±12 m so
+            // the crane gantry (legs ±4.5 m beyond) never sweeps into the
+            // parking lane west of the quay. Panamax calls stack two layers;
+            // the Containers list is ordered top layer first so the crane
+            // never lifts through a box.
+            float baseY = 2.8f + Tuning.ContainerSize.y * 0.5f + 0.12f;
+            int regular = shipment.HasProjectCargo ? shipment.Count - 1 : shipment.Count;
+
+            if (!shipment.Stacked)
             {
-                float z = -12f + i * (24f / Mathf.Max(1, shipment.Count - 1));
-                var color = Color.Lerp(shipment.Cargo.Color, Palette.ShipWhite, (i % 2) * 0.18f);
-                var c = Container.Build(_hull,
-                    new Vector3(0f, 2.8f + Tuning.ContainerSize.y * 0.5f + 0.12f, z), color);
-                // Long axis along the ship's length.
-                c.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
-                c.Cargo = shipment.Cargo;
-                c.Shipment = shipment;
-                // A cut of every manifest gets flagged for customs (hazard always is).
-                c.NeedsCustoms = shipment.Cargo.Hazard || Random.value < Tuning.CustomsChance;
-                Containers.Add(c);
+                for (int i = 0; i < regular; i++)
+                {
+                    float z = -12f + i * (24f / Mathf.Max(1, regular - 1));
+                    Containers.Add(MakeDeckBox(shipment, new Vector3(0f, baseY, z), i));
+                }
             }
+            else
+            {
+                int bottom = Mathf.Min(regular, 9);
+                int top = regular - bottom;
+                float SlotZ(int slot) => -12f + slot * 3f;
+                for (int j = 0; j < top; j++)
+                    Containers.Add(MakeDeckBox(shipment,
+                        new Vector3(0f, baseY + Tuning.ContainerSize.y + 0.12f, SlotZ(j)), j + 1));
+                for (int i = 0; i < bottom; i++)
+                    Containers.Add(MakeDeckBox(shipment, new Vector3(0f, baseY, SlotZ(i)), i));
+            }
+
+            if (shipment.HasProjectCargo)
+            {
+                // One oversized heavy-machinery piece at the bow, saved for
+                // last — the heavy-lift finale of the unload.
+                var heavy = CargoCatalog.HeavyMachinery;
+                var piece = Container.Build(_hull, new Vector3(0f, 2.8f + 1.4f + 0.12f, 16.5f), heavy.Color);
+                piece.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                piece.transform.localScale = new Vector3(8f, 2.8f, 2.9f);
+                piece.Cargo = heavy;
+                piece.Shipment = shipment;
+                piece.NeedsCustoms = true; // project cargo is always inspected
+                Containers.Add(piece);
+            }
+        }
+
+        private Container MakeDeckBox(Shipment shipment, Vector3 localPos, int shadeIndex)
+        {
+            var color = Color.Lerp(shipment.Cargo.Color, Palette.ShipWhite, (shadeIndex % 2) * 0.18f);
+            var c = Container.Build(_hull, localPos, color);
+            // Long axis along the ship's length.
+            c.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+            c.Cargo = shipment.Cargo;
+            c.Shipment = shipment;
+            // A cut of every manifest gets flagged for customs (hazard always is).
+            c.NeedsCustoms = shipment.Cargo.Hazard || Random.value < Tuning.CustomsChance;
+            return c;
         }
 
         // ---- IFocusInfo --------------------------------------------------
@@ -116,13 +153,14 @@ namespace PortGame
             {
                 int left = Shipment.Count - Shipment.Delivered;
                 return string.Format(
-                    "{0} · from {1}{2}\nContainers: {3} of {4} remaining\nDeadline: {5}\nReward: KD {6:N0} per container\n{7}",
+                    "{8} class — {0} · from {1}{2}\nContainers: {3} of {4} remaining\nDeadline: {5}\nReward: KD {6:N0} per container\n{7}",
                     Shipment.Cargo.DisplayName, Shipment.Cargo.Origin,
                     Shipment.Cargo.Refrigerated ? "  ·  refrigerated" : "",
                     left, Shipment.Count,
                     Shipment.RemainingText,
                     Shipment.RewardPerContainer,
-                    StatusLine());
+                    StatusLine(),
+                    Shipment.ClassName);
             }
         }
 

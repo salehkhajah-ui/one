@@ -42,7 +42,7 @@ namespace PortGame
             Road(root, asphalt, new Vector3(48f, roadY, 18f), new Vector2(13f, 5f));    // cold-store spur
             Road(root, asphalt, new Vector3(52f, roadY, 21.5f), new Vector2(5f, 6f));   // cold-store apron
             Road(root, asphalt, new Vector3(61f, roadY, 33f), new Vector2(6f, 15f));    // cold return east leg
-            Road(root, asphalt, new Vector3(30f, roadY, 40f), new Vector2(60f, 5f));    // back-lot road
+            Road(root, asphalt, new Vector3(30f, roadY, 39f), new Vector2(60f, 5f));    // back-lot road
             Road(root, asphalt, new Vector3(-2f, roadY, 34f), new Vector2(14f, 9f));    // back-lot rejoin
 
             // Dashed centerline on the main lane.

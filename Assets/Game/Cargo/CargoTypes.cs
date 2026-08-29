@@ -23,10 +23,11 @@ namespace PortGame
         public readonly bool Refrigerated;
         public readonly float DecayPerMinute;     // quality points lost per minute outside cold
         public readonly bool Hazard;
+        public readonly bool Oversized;           // project cargo — double-length, heavy-lift protocol
 
         public CargoType(string id, string displayName, string origin, string hexColor,
             long valuePerContainer, bool refrigerated = false, float decayPerMinute = 0f,
-            bool hazard = false)
+            bool hazard = false, bool oversized = false)
         {
             Id = id;
             DisplayName = displayName;
@@ -36,6 +37,7 @@ namespace PortGame
             Refrigerated = refrigerated;
             DecayPerMinute = decayPerMinute;
             Hazard = hazard;
+            Oversized = oversized;
         }
     }
 
@@ -55,6 +57,11 @@ namespace PortGame
             new CargoType("materials", "Building Materials", "Alexandria", "#C2A05A", 300),
             new CargoType("chemicals", "Industrial Chemicals", "Jubail", "#9BA65F", 700, false, 0f, true),
         };
+
+        /// <summary>Not in the random rotation — arrives only as Panamax project cargo.</summary>
+        public static readonly CargoType HeavyMachinery =
+            new CargoType("heavy", "Heavy Machinery", "Ulsan", "#7A6F63", 1400,
+                false, 0f, false, oversized: true);
 
         public static CargoType Pick(System.Random rng)
         {

@@ -28,7 +28,11 @@ namespace PortGame
             var save = SaveSystem.LoadOrNull();
 
             var economy = EconomyManager.Build(root);
-            if (save != null) economy.LoadBalance(save.balance);
+            if (save != null)
+            {
+                economy.LoadBalance(save.balance);
+                economy.LoadCapital(save.capitalInvested);
+            }
 
             var sunGo = new GameObject("Sun");
             sunGo.transform.SetParent(root, false);
@@ -109,10 +113,21 @@ namespace PortGame
                 new[] { craneWest, craneEast }, new[] { dryStore, coldStore });
             if (save != null) portAI.LoadRules(save.aiRules, save.aiActions);
 
+            var rail = RailTerminal.Build(root, dryStore, hud);
+            var green = GreenEnergyYard.Build(root, new[] { dryStore, coldStore },
+                dispatcher, reputation, hud);
+            if (save != null)
+            {
+                rail.LoadState(save.railState);
+                green.LoadState(save.greenSolar, save.greenFleet);
+            }
+
             ContractManager.Build(root, new[] { dryStore, coldStore }, hud, reputation);
             var director = ShipmentDirector.Build(root, craneWest, craneEast, dispatcher,
                 dryStore, coldStore, hud, dayNight, cameraRig, reputation, tugs, save);
             director.PortAIRef = portAI;
+            director.RailRef = rail;
+            director.GreenRef = green;
             EventManager.Build(root, director, customs, new[] { craneWest, craneEast }, hud);
 
             if (save != null) hud.Banner("Welcome back to your port", 3f);

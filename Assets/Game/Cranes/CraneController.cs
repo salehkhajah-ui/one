@@ -250,9 +250,10 @@ namespace PortGame
             ship.BeginUnloading();
 
             // PORT AI cold-first: decaying cargo comes off the deck before it
-            // spoils, even at the cost of extra gantry travel.
+            // spoils, even at the cost of extra gantry travel. Stacked ships
+            // keep their stow order — never lift through a box above.
             var order = ship.Containers;
-            if (PortAI.Has(AiRule.ColdFirst))
+            if (PortAI.Has(AiRule.ColdFirst) && !ship.Shipment.Stacked)
             {
                 var sorted = new System.Collections.Generic.List<Container>(order.Count);
                 foreach (var c in order)
@@ -306,9 +307,10 @@ namespace PortGame
             yield return MoveCable(_trolley.position.y - (grabTop + SpreaderHalfHeight));
 
             State = CraneState.Grab;
-            // Hazardous cargo is locked on slowly and deliberately.
+            // Hazardous and oversized cargo is locked on slowly and deliberately.
             bool hazard = container.Cargo != null && container.Cargo.Hazard;
-            yield return new WaitForSeconds(hazard ? Tuning.GrabPause * 2.5f : Tuning.GrabPause);
+            bool careful = hazard || (container.Cargo != null && container.Cargo.Oversized);
+            yield return new WaitForSeconds(careful ? Tuning.GrabPause * 2.5f : Tuning.GrabPause);
             container.transform.SetParent(_spreader, true);
             container.State = ContainerState.OnCraneSpreader;
             yield return SettleLocal(container.transform,

@@ -52,9 +52,10 @@ namespace PortGame
             g.Node("CWH", 52f, y, 23f);                                // cold warehouse door
             // Scenic return from the cold store: east and around behind
             // both warehouses, rejoining the main return road.
+            // The back-lot lane sits at z 39, south of the rail spur (z ≈ 43).
             g.Node("CN1", 63f, y, 27f);
-            g.Node("CN2", 58f, y, 40f);
-            g.Node("CN3", 12f, y, 40f);
+            g.Node("CN2", 58f, y, 39f);
+            g.Node("CN3", 12f, y, 39f);
             g.Node("CN4", -8f, y, 33f);
             // Return road (z≈26) heading west, back to the lane entry.
             g.Node("R1", 18f, y, 25f);

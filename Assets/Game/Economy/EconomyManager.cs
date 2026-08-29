@@ -14,6 +14,9 @@ namespace PortGame
 
         public long Balance { get; private set; }
 
+        /// <summary>Everything ever spent on the port (visible purchases) — feeds the port-value score.</summary>
+        public long CapitalInvested { get; private set; }
+
         /// <summary>New balance.</summary>
         public event Action<long> OnChanged;
 
@@ -51,7 +54,13 @@ namespace PortGame
         {
             if (Balance < cost) return false;
             Add(-cost, reason, quiet);
+            if (!quiet) CapitalInvested += cost; // quiet spends are operating fees, not capital
             return true;
+        }
+
+        public void LoadCapital(long invested)
+        {
+            CapitalInvested = invested;
         }
 
         /// <summary>Restores a saved balance without a toast.</summary>

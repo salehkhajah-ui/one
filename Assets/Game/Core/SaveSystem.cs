@@ -12,13 +12,14 @@ namespace PortGame
     ///
     /// Version 2 added reputation, upgrade levels and fleet size; version 3
     /// the cold store, customs and crane health; version 4 the PORT AI
-    /// automation rules. Older files are migrated on load (missing fields
-    /// take era-appropriate defaults).
+    /// automation rules; version 5 the expansions (rail, green port) and the
+    /// capital-invested score. Older files are migrated on load (missing
+    /// fields take era-appropriate defaults).
     /// </summary>
     [Serializable]
     public class SaveModel
     {
-        public const int CurrentVersion = 4;
+        public const int CurrentVersion = 5;
 
         public int version = CurrentVersion;
         public long balance;
@@ -47,6 +48,12 @@ namespace PortGame
         // v4
         public int aiRules;
         public long aiActions;
+
+        // v5
+        public long capitalInvested;
+        public int railState;      // 0 vacant, 1 construction (restarts), 2 operational
+        public bool greenSolar;
+        public bool greenFleet;
     }
 
     /// <summary>
@@ -93,6 +100,15 @@ namespace PortGame
                     model.aiRules = 0;
                     model.aiActions = 0;
                     model.version = 4;
+                }
+                if (model.version == 4)
+                {
+                    // V4 → V5: no expansions yet; capital history starts now.
+                    model.capitalInvested = 0;
+                    model.railState = 0;
+                    model.greenSolar = false;
+                    model.greenFleet = false;
+                    model.version = 5;
                 }
                 if (model.version != SaveModel.CurrentVersion) return null;
 
