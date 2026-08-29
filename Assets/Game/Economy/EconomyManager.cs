@@ -1,0 +1,47 @@
+using System;
+using UnityEngine;
+
+namespace PortGame
+{
+    /// <summary>
+    /// Single writer for money. Integer KD only — no floating point ever
+    /// touches a balance. Rewards flow from world events (warehouse receipts,
+    /// shipment completion); the HUD merely listens and animates.
+    /// </summary>
+    public class EconomyManager : MonoBehaviour
+    {
+        public static EconomyManager Instance { get; private set; }
+
+        public long Balance { get; private set; }
+
+        /// <summary>New balance.</summary>
+        public event Action<long> OnChanged;
+
+        /// <summary>Short reward/expense message for the toast line.</summary>
+        public event Action<string> OnToast;
+
+        public static EconomyManager Build(Transform parent)
+        {
+            var go = new GameObject("Economy");
+            go.transform.SetParent(parent, false);
+            return go.AddComponent<EconomyManager>();
+        }
+
+        private void Awake()
+        {
+            Instance = this;
+            Balance = Tuning.StartingBalance;
+        }
+
+        public void Add(long amount, string reason)
+        {
+            Balance += amount;
+            var changed = OnChanged;
+            if (changed != null) changed(Balance);
+            var toast = OnToast;
+            if (toast != null)
+                toast(string.Format("{0}KD {1:N0} — {2}", amount >= 0 ? "+" : "−",
+                    Math.Abs(amount), reason));
+        }
+    }
+}

@@ -1,0 +1,38 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+Assets/AssetStoreTools*
+Assets/Plugins/Editor/JetBrains*
+
+# ProjectSettings is regenerated except the pinned editor version
+ProjectSettings/*
+!ProjectSettings/ProjectVersion.txt
+
+# Package lock is regenerated from manifest.json
+Packages/packages-lock.json
+
+# IDE
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.user
+*.pidb
+*.booproj
+*.svd
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+node_modules/
+crashlytics-build.properties
