@@ -44,6 +44,7 @@ namespace PortGame
         private Action _offerDecline;
 
         private DayNightCycle _dayNight;
+        private WeatherManager _weather;
         private long _moneyActual;
         private double _moneyShown;
         private Coroutine _bannerRoutine;
@@ -252,6 +253,11 @@ namespace PortGame
             _scheduleText.text = text;
         }
 
+        public void SetWeather(WeatherManager weather)
+        {
+            _weather = weather;
+        }
+
         public void SetReputationText(int value)
         {
             _repText.text = "Reputation " + value;
@@ -269,6 +275,7 @@ namespace PortGame
             _offerAccept = onAccept;
             _offerDecline = onDecline;
             _offerPanel.SetActive(true);
+            if (AudioManager.Instance != null) AudioManager.Instance.Alert();
         }
 
         public void HideContractOffer()
@@ -290,7 +297,10 @@ namespace PortGame
                 _moneyShown = _moneyActual;
             _moneyText.text = string.Format("KD {0:N0}", (long)System.Math.Round(_moneyShown));
 
-            if (_dayNight != null) _clockText.text = _dayNight.ClockText;
+            if (_dayNight != null)
+                _clockText.text = _weather != null
+                    ? _dayNight.ClockText + "  ·  " + _weather.DisplayName
+                    : _dayNight.ClockText;
 
             UpdateFocusCard();
         }
@@ -375,6 +385,10 @@ namespace PortGame
             var img = go.AddComponent<Image>();
             img.color = ButtonColor;
             var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() =>
+            {
+                if (AudioManager.Instance != null) AudioManager.Instance.Click();
+            });
             labelText = Label(rect, label, 20, TextAnchor.MiddleCenter, TextWarm, FontStyle.Bold);
             return btn;
         }

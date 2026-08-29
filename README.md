@@ -6,7 +6,19 @@ This repository branch is a **standalone Unity project** — it is completely
 independent of the `main` branch of this repository (it shares no history and
 no files with it).
 
-Current state: **Phase 3 — the management layer.**
+Current state: **Phase 4 — the living world.**
+
+Weather now moves through the port — clear, cloudy, rain, storm, fog — and
+it isn't cosmetic: wet ground gleams, waves rise, rain streaks follow the
+camera, cranes and tractors slow down, fog halves approach speeds, and a
+storm closes the harbor entirely while ships hold at anchor. Harbor tugs
+escort every arrival onto the berth, dock workers wander the quay (in yellow
+slickers when it rains), forklifts work the yard, and the port has a voice:
+a synthesized ambience bed, ship horns on arrival and departure, a soft
+chime per delivery — all generated in code, no audio files. The first
+docking of each session is a small camera cinematic; touch anything to skip.
+
+On top of **Phase 3 — the management layer:**
 
 The port now runs **two berths in parallel**, each with its own quay crane,
 fed in strict arrival order from a three-slot offshore anchorage that
@@ -115,10 +127,12 @@ All gameplay/feel constants live in `Assets/Game/Core/Tuning.cs`
 (day length, crane speeds, tractor speed, rewards, container count per ship,
 camera limits). Change and re-enter Play mode.
 
-## Known limitations at Phase 3
+## Known limitations at Phase 4
 
 By design (see `docs/MILESTONES.md`): berths are auto-assigned in arrival
-order (player dock choice arrives with PORT AI priorities), no weather or
-audio yet (Phase 4), refrigeration is identity-only until the cold chain
-lands in Phase 5, no breakdowns/events yet. The architecture for all of
-these is specified in `docs/TDD.md`.
+order (player dock choice arrives with PORT AI priorities), refrigeration is
+identity-only until the cold chain lands in Phase 5, no breakdowns/events
+yet, haptics are a single coarse buzz until a platform plugin replaces
+`Haptics`, and audio is synthesized placeholder ambience that recorded
+sound can replace clip-for-clip. The architecture for all of these is
+specified in `docs/TDD.md`.

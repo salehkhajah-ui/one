@@ -158,6 +158,7 @@ namespace PortGame
         {
             _berthX = berthX;
             State = ShipState.Approaching;
+            if (AudioManager.Instance != null) AudioManager.Instance.Horn();
             var turn = new Vector3(55f, RootY, -38f);
             var corridor = new Vector3(berthX + 18f, RootY, -26f);
             yield return SailTowards(turn, 3f, -1f,
@@ -185,6 +186,7 @@ namespace PortGame
         public IEnumerator Depart()
         {
             State = ShipState.Departing;
+            if (AudioManager.Instance != null) AudioManager.Instance.Horn();
             float speed = 0f;
             // Pull out south of the berth line first so the other berth's
             // occupant is cleared, then out to open sea.
@@ -230,6 +232,7 @@ namespace PortGame
                 float speed = fixedSpeed > 0f
                     ? fixedSpeed
                     : Mathf.Min(Tuning.ShipCruiseSpeed, 2f + (dist + distanceAfter) * 0.09f);
+                if (WeatherManager.Instance != null) speed *= WeatherManager.Instance.ShipSpeedScale;
 
                 transform.rotation = Quaternion.Slerp(transform.rotation,
                     Quaternion.LookRotation(toTarget.normalized), 0.6f * Time.deltaTime);
@@ -240,8 +243,11 @@ namespace PortGame
 
         private void Update()
         {
-            // Gentle bob/roll on the hull child only; calmer while docked.
+            // Gentle bob/roll on the hull child only; calmer while docked,
+            // heavier as weather raises the sea.
             float calm = (State == ShipState.Docked || State == ShipState.Unloading) ? 0.45f : 1f;
+            if (WeatherManager.Instance != null)
+                calm *= Mathf.Lerp(1f, WeatherManager.Instance.SeaScale, 0.7f);
             float t = Time.time + _bobPhase;
             _hull.localPosition = new Vector3(0f, Mathf.Sin(t * 0.85f) * 0.07f * calm, 0f);
             _hull.localRotation = Quaternion.Euler(

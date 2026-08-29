@@ -27,6 +27,9 @@ namespace PortGame
         private HudController _hud;
         private DayNightCycle _dayNight;
         private Reputation _reputation;
+        private CameraRig _cameraRig;
+        private Tugboats _tugs;
+        private bool _cinematicShown;
 
         private readonly System.Random _rng = new System.Random();
         private readonly List<Berth> _berths = new List<Berth>();
@@ -42,7 +45,7 @@ namespace PortGame
         public static ShipmentDirector Build(Transform parent, CraneController craneWest,
             CraneController craneEast, VehicleDispatcher dispatcher, Warehouse warehouse,
             HudController hud, DayNightCycle dayNight, CameraRig cameraRig,
-            Reputation reputation, SaveModel save)
+            Reputation reputation, Tugboats tugs, SaveModel save)
         {
             var go = new GameObject("ShipmentDirector");
             go.transform.SetParent(parent, false);
@@ -52,6 +55,8 @@ namespace PortGame
             director._hud = hud;
             director._dayNight = dayNight;
             director._reputation = reputation;
+            director._cameraRig = cameraRig;
+            director._tugs = tugs;
             director._berths.Add(new Berth { X = Tuning.BerthWestX, Crane = craneWest });
             director._berths.Add(new Berth { X = Tuning.BerthEastX, Crane = craneEast });
 
@@ -143,17 +148,30 @@ namespace PortGame
 
             yield return ship.ApproachAnchor();
 
-            // Berths are granted strictly in arrival order.
+            // Berths are granted strictly in arrival order; a storm closes
+            // the harbor, so ships ride it out at anchor with deadlines
+            // burning.
             _berthQueue.Add(ship);
             Berth berth = null;
             while (berth == null)
             {
-                if (_berthQueue[0] == ship) berth = FreeBerth();
+                bool mayDock = WeatherManager.Instance == null || WeatherManager.Instance.ShipsMayDock;
+                if (mayDock && _berthQueue[0] == ship) berth = FreeBerth();
                 if (berth == null) yield return null;
             }
             _berthQueue.RemoveAt(0);
             berth.Ship = ship;
             _anchorSlots[anchorSlot] = false; // the anchorage spot is open again
+
+            // Tugs run out to escort her in; the session's first docking gets
+            // a cinematic camera follow (any pan/rotate input skips it).
+            if (_tugs != null) _tugs.Escort(ship);
+            if (!_cinematicShown)
+            {
+                _cinematicShown = true;
+                var focusTarget = ship.GetComponent<FocusTarget>();
+                if (focusTarget != null) _cameraRig.Focus(focusTarget);
+            }
 
             yield return ship.DockFromAnchor(berth.X);
             _hud.Banner(string.Format("{0} docked — unloading begins", shipment.ShipName), 3f);
@@ -182,6 +200,7 @@ namespace PortGame
                 _reputation.Add(Tuning.RepLate, "late delivery");
                 _hud.Banner(string.Format("{0} — delivered late", shipment.ShipName));
             }
+            Haptics.Notable();
             SaveNow();
 
             yield return new WaitForSeconds(1.5f);

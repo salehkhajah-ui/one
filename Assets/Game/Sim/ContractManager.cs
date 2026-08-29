@@ -54,6 +54,7 @@ namespace PortGame
                 _reputation.Add(Tuning.RepContractWin, "contract fulfilled");
                 _hud.Banner(_client + " — contract fulfilled");
                 _hud.SetContractText("");
+                Haptics.Notable();
             }
         }
 
@@ -73,6 +74,7 @@ namespace PortGame
                 _reputation.Add(Tuning.RepContractFail, "contract failed — " + _client);
                 _hud.Banner(_client + " — contract failed");
                 _hud.SetContractText("");
+                Haptics.Notable();
                 return;
             }
 

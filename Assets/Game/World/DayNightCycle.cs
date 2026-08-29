@@ -44,6 +44,9 @@ namespace PortGame
         /// <summary>0 at night, 1 at high noon.</summary>
         public float Daylight { get; private set; }
 
+        /// <summary>Weather's multiplier on sun intensity (1 = clear sky).</summary>
+        public float SunScale { get; set; } = 1f;
+
         public string ClockText
         {
             get
@@ -120,7 +123,7 @@ namespace PortGame
             Daylight = Mathf.Clamp01(Mathf.Sin((_dayFraction - 0.25f) * Mathf.PI * 2f));
 
             transform.rotation = Quaternion.Euler(_dayFraction * 360f - 90f, 40f, 0f);
-            _sun.intensity = Mathf.Lerp(0f, 1.2f, Mathf.Sqrt(Daylight));
+            _sun.intensity = Mathf.Lerp(0f, 1.2f, Mathf.Sqrt(Daylight)) * SunScale;
             _sun.color = Color.Lerp(SunLow, SunHigh, Mathf.Clamp01(Daylight * 2f));
 
             RenderSettings.ambientLight = Color.Lerp(AmbientNight, AmbientDay, Daylight);

@@ -224,8 +224,9 @@ namespace PortGame
                 if (dist < 0.7f) break;
 
                 // Braking profile into the segment end: v = √(v_end² + 2·a·d).
+                float weather = WeatherManager.Instance != null ? WeatherManager.Instance.TractorScale : 1f;
                 float vMax = Mathf.Min(
-                    Tuning.TractorMaxSpeed * _dispatcher.TractorSpeedMult,
+                    Tuning.TractorMaxSpeed * _dispatcher.TractorSpeedMult * weather,
                     Mathf.Sqrt(endSpeed * endSpeed + 2f * Tuning.TractorAccel * dist) * 0.9f + 0.3f);
                 _speed = Mathf.MoveTowards(_speed, vMax, Tuning.TractorAccel * Time.deltaTime);
 

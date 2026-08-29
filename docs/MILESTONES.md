@@ -49,11 +49,22 @@ Still open from the original Phase 3 sketch: per-ship dock *choice* by the
 player (docks are auto-assigned in arrival order today) — lands alongside
 the priority controls of Phase 6's PORT AI.
 
-## Phase 4 — World
+## Phase 4 — World ✅ (this branch)
 
-Weather (rain/storm/fog with gameplay modifiers), ambient workers and
-forklifts, tugboat docking assists, audio direction (ambient bed, horn
-moments, minimal music), cinematic ship-arrival sequence with skip, haptics.
+**Weather** with teeth: Clear/Cloudy/Rain/Storm/Fog profiles blending over
+smooth transitions — sun, fog, sky exposure, wave height, wet glossy ground,
+a camera-following rain-streak field (mesh-based, pipeline-proof) — and real
+gameplay modifiers: rain and fog slow cranes/tractors/approaches, and a
+storm **closes the harbor** so ships ride it out at anchor while deadlines
+burn. **Ambient life**: wandering dock workers whose vests turn
+slicker-yellow in the rain, two forklifts working the yard, and two harbor
+tugs that run out to escort every arriving ship onto the berth. **Audio**
+with zero asset files — every clip synthesized at boot (harbor-wash bed,
+rain bed, multi-partial ship horn on arrivals/departures, delivery chime,
+UI click, contract alert), levels calm, horns rate-limited. The session's
+first docking gets a **cinematic camera follow** (any pan/rotate skips it),
+and notable moments fire a light **haptic** buzz on device. Weather reads
+out beside the clock.
 
 ## Phase 5 — Strategy
 

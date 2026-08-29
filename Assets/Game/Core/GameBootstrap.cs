@@ -35,7 +35,9 @@ namespace PortGame
             var dayNight = sunGo.AddComponent<DayNightCycle>();
             if (save != null) dayNight.LoadState(save.day, save.dayFraction);
 
-            Ocean.Build(root);
+            var audio = AudioManager.Build(root);
+            var ocean = Ocean.Build(root);
+            var weather = WeatherManager.Build(root, dayNight, ocean);
             PortEnvironmentBuilder.Build(root, dayNight);
 
             var warehouse = Warehouse.Build(root, dayNight);
@@ -63,14 +65,19 @@ namespace PortGame
             dispatcher.SpawnInitialFleet(save != null ? save.tractorCount : Tuning.StartingTractors);
 
             Gulls.Build(root);
+            Workers.Build(root);
+            Forklifts.Build(root);
+            var tugs = Tugboats.Build(root);
             var cameraRig = CameraRig.Build(root);
             var reputation = Reputation.Build(root);
             if (save != null) reputation.LoadValue(save.reputation);
 
             var hud = HudController.Build(root, dayNight, economy, cameraRig, reputation);
+            hud.SetWeather(weather);
+            warehouse.OnDelivered += _ => audio.Chime();
             ContractManager.Build(root, warehouse, hud, reputation);
             ShipmentDirector.Build(root, craneWest, craneEast, dispatcher, warehouse,
-                hud, dayNight, cameraRig, reputation, save);
+                hud, dayNight, cameraRig, reputation, tugs, save);
 
             if (save != null) hud.Banner("Welcome back to your port", 3f);
         }

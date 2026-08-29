@@ -48,7 +48,9 @@ namespace PortGame
         private string _title;
         private float _homeX;
 
-        private float SpeedMult => 1f + 0.25f * SpeedLevel;
+        // Upgrades speed the crane up; bad weather slows it down.
+        private float SpeedMult => (1f + 0.25f * SpeedLevel) /
+            (WeatherManager.Instance != null ? WeatherManager.Instance.CraneDurationScale : 1f);
 
         public string FocusTitle => _title;
 

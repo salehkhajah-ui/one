@@ -16,6 +16,9 @@ namespace PortGame
         private Vector3[] _baseVerts;
         private Vector3[] _verts;
 
+        /// <summary>Wave height multiplier — weather raises it toward storm swell.</summary>
+        public float WaveScale { get; set; } = 1f;
+
         public static Ocean Build(Transform parent)
         {
             var go = new GameObject("Ocean");
@@ -74,13 +77,14 @@ namespace PortGame
         private void Update()
         {
             float time = Time.time;
+            float scale = WaveScale;
             for (int i = 0; i < _verts.Length; i++)
             {
                 Vector3 v = _baseVerts[i];
                 float wave =
                     Mathf.Sin(v.x * 0.055f + v.z * 0.035f + time * 0.9f) * 0.16f +
                     Mathf.Sin(v.x * 0.021f - v.z * 0.043f + time * 0.5f) * 0.24f;
-                v.y = wave;
+                v.y = wave * scale;
                 _verts[i] = v;
             }
             _mesh.vertices = _verts;
