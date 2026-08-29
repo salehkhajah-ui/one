@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { fromMajor } from "../../money";
-import { checkEligibility, matchCampaigns, rewardValueMinor } from "../engine";
+import { checkEligibility, matchCampaigns, rewardSpecFor, rewardValueMinor } from "../engine";
 import {
   ingestEvent,
   redeemByCode,
@@ -16,9 +16,14 @@ import {
   selectReward,
   expireSweep,
   tierFor,
+  addReferral,
+  launchCampaign,
+  referralBoostBps,
+  registerMerchant,
+  upgradeWon,
   type EventInput,
 } from "../lifecycle";
-import { institutionMetrics, merchantMetrics, platformMetrics } from "../metrics";
+import { institutionMetrics, merchantBilling, merchantMetrics, platformMetrics } from "../metrics";
 import { DEMO_INSTITUTION_ID, seedNetworkState } from "../seed";
 import type { NetworkState } from "../types";
 
@@ -285,5 +290,97 @@ describe("metrics + tiers", () => {
   it("reward value estimates are integer minor units", () => {
     expect(rewardValueMinor({ kind: "percent", valueBps: 2_000, currency: "KWD" })).toBe(fromMajor(2));
     expect(rewardValueMinor({ kind: "fixed", amountMinor: fromMajor(3), currency: "KWD" })).toBe(fromMajor(3));
+  });
+});
+
+describe("referral boost", () => {
+  it("widens percent rewards at issuance, capped at +10pp", () => {
+    let state = seedNetworkState();
+    state = addReferral(addReferral(addReferral(state, NOW), NOW), NOW); // 3 referrals
+    expect(referralBoostBps(state.consumer.referrals)).toBe(1_000); // capped at 2×500
+    const { state: s1, rewards } = throughSelection(state, "c_tropic20");
+    expect(rewards[0].boostBps).toBe(1_000);
+    const campaign = s1.campaigns.find((c) => c.id === "c_tropic20")!;
+    const spec = rewardSpecFor(campaign, rewards[0]);
+    expect(spec.kind).toBe("percent");
+    expect(spec.valueBps).toBe(3_000); // 20% + 10pp boost
+  });
+
+  it("never boosts non-percent or recipient-held rewards", () => {
+    let state = seedNetworkState();
+    state = addReferral(state, NOW);
+    const fixed = throughSelection(state, "c_diwan_voucher");
+    expect(fixed.rewards[0].boostBps).toBeUndefined();
+    const recipient = throughSelection(state, "c_sari_recipient");
+    expect(recipient.rewards[0].boostBps).toBeUndefined();
+  });
+});
+
+describe("mode D — boosted upgrade draw", () => {
+  function boostedState(): NetworkState {
+    const state = seedNetworkState();
+    return {
+      ...state,
+      institutions: state.institutions.map((i) => ({ ...i, rewardMode: "boosted" as const })),
+    };
+  }
+
+  it("serves one base reward plus a strictly-more-valuable upgrade target", () => {
+    const { state, moment } = ingestEvent(boostedState(), remit(), NOW);
+    expect(moment!.mode).toBe("boosted");
+    expect(moment!.candidateCampaignIds).toHaveLength(1);
+    expect(moment!.upgradeCampaignId).toBeDefined();
+    const valueOf = (id: string) => rewardValueMinor(state.campaigns.find((c) => c.id === id)!.reward);
+    expect(valueOf(moment!.upgradeCampaignId!)).toBeGreaterThan(valueOf(moment!.candidateCampaignIds[0]));
+  });
+
+  it("the upgrade campaign is selectable and the draw is deterministic", () => {
+    const { state: s1, moment } = ingestEvent(boostedState(), remit(), NOW);
+    expect(upgradeWon(moment!.id)).toBe(upgradeWon(moment!.id)); // stable
+    const target = upgradeWon(moment!.id) ? moment!.upgradeCampaignId! : moment!.candidateCampaignIds[0];
+    const { rewards } = selectReward(s1, moment!.id, target, NOW);
+    expect(rewards).toHaveLength(1);
+    expect(rewards[0].campaignId).toBe(target);
+  });
+});
+
+describe("merchant onboarding + billing", () => {
+  it("a registered merchant's campaign competes in the auction", () => {
+    const reg = registerMerchant(seedNetworkState(), { name: "Bayt Burger", category: "food", online: false, location: "Salmiya" });
+    expect(reg.merchant.approved).toBe(true);
+    expect(reg.merchant.demo).toBe(true);
+    const { state: s1 } = launchCampaign(
+      reg.state,
+      {
+        merchantId: reg.merchant.id,
+        name: "15% off",
+        objective: "new_customers",
+        reward: { kind: "percent", valueBps: 1_500, currency: "KWD" },
+        targeting: { audience: "everyone", eventTypes: ["remittance_completed"], market: "sender" },
+        pricing: { model: "cpr", feeMinor: fromMajor(1) },
+        budgetTotalMinor: fromMajor(100),
+        perCustomerCap: 3,
+        expiryHours: 48,
+      },
+      NOW,
+    );
+    const { state: s2 } = ingestEvent(s1, remit(), NOW);
+    const ranked = matchCampaigns(s2, s2.events[0], s2.institutions[0], NOW, 99);
+    expect(ranked.some((c) => s2.campaigns.find((x) => x.id === c.campaignId)?.merchantId === reg.merchant.id)).toBe(true);
+  });
+
+  it("billing reflects live redemptions in the upcoming invoice and statement", () => {
+    const s0 = seedNetworkState();
+    const before = merchantBilling(s0, "m_orbit", NOW);
+    const { state, rewards } = throughSelection(s0, "c_orbit_free");
+    const res = redeemByCode(state, rewards[0].code, fromMajor(5), NOW);
+    const after = merchantBilling(res.state, "m_orbit", NOW);
+    expect(after.upcomingInvoiceMinor).toBe(before.upcomingInvoiceMinor + fromMajor(1));
+    const today = NOW.toISOString().slice(0, 10);
+    const beforeToday = before.days.find((d) => d.dateISO === today)!;
+    const afterToday = after.days.find((d) => d.dateISO === today)!;
+    expect(afterToday.billedMinor).toBe(beforeToday.billedMinor + fromMajor(1));
+    expect(afterToday.outcomes).toBe(beforeToday.outcomes + 1);
+    expect(after.budgetRemainingMinor).toBe(before.budgetRemainingMinor - fromMajor(1));
   });
 });

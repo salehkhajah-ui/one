@@ -6,6 +6,8 @@
  */
 import Link from "next/link";
 import { t } from "../../../lib/i18n";
+import { rewardSpecFor } from "../../../lib/network/engine";
+import { referralBoostBps, upgradeWon } from "../../../lib/network/lifecycle";
 import type { Campaign, Moment } from "../../../lib/network/types";
 import { useNetwork } from "../../components/network/NetworkProvider";
 import { expiryLabel, MerchantMark, RewardHeadline, rewardLabel } from "../../components/network/net-ui";
@@ -57,6 +59,12 @@ function Choose({ moment }: { moment: Moment }) {
     .filter((c): c is Campaign => !!c);
   const canGift =
     !!event?.destinationCountry && (state.institutions.find((i) => i.id === event.institutionId)?.recipientRewardsAllowed ?? false);
+  const boostBps = referralBoostBps(state.consumer.referrals);
+  const upgradeCampaign =
+    moment.mode === "boosted" && moment.upgradeCampaignId
+      ? state.campaigns.find((c) => c.id === moment.upgradeCampaignId)
+      : undefined;
+  const upgradeMerchant = upgradeCampaign && state.merchants.find((m) => m.id === upgradeCampaign.merchantId);
 
   return (
     <main className="screen">
@@ -84,7 +92,14 @@ function Choose({ moment }: { moment: Moment }) {
               </span>
             </div>
             <div className="mt-4">
-              <RewardHeadline spec={campaign.reward} />
+              <RewardHeadline
+                spec={market === "recipient" ? campaign.reward : rewardSpecFor(campaign, { holder: "self", boostBps: boostBps || undefined })}
+              />
+              {boostBps > 0 && campaign.reward.kind === "percent" && market !== "recipient" ? (
+                <p className="micro mt-1" style={{ color: "var(--positive)" }}>
+                  {t("net.reveal.boostChip", { pct: boostBps / 100 })}
+                </p>
+              ) : null}
               {market === "both_win" && recipientMerchant ? (
                 <p className="subtle mt-2">
                   {t("net.reveal.plusRecipient", {
@@ -110,6 +125,22 @@ function Choose({ moment }: { moment: Moment }) {
                   {t("net.reveal.giftRecipient", { country: destination })}
                 </button>
               ) : null}
+              {upgradeCampaign && upgradeMerchant ? (
+                <>
+                  <button
+                    className="btn btn-ghost w-full"
+                    onClick={() => select(moment.id, upgradeWon(moment.id) ? upgradeCampaign.id : campaign.id)}
+                  >
+                    {t("net.reveal.tryUpgrade")}
+                  </button>
+                  <p className="micro text-center">
+                    {t("net.reveal.upgradeHint", {
+                      reward: rewardLabel(upgradeCampaign.reward),
+                      merchant: upgradeMerchant.name,
+                    })}
+                  </p>
+                </>
+              ) : null}
             </div>
           </div>
         );
@@ -129,7 +160,7 @@ function Resolved({ moment }: { moment: Moment }) {
       {rewards.map((reward) => {
         const merchant = state.merchants.find((m) => m.id === reward.merchantId);
         const campaign = state.campaigns.find((c) => c.id === reward.campaignId);
-        const spec = reward.holder === "recipient" && campaign?.recipientReward ? campaign.recipientReward : campaign?.reward;
+        const spec = campaign ? rewardSpecFor(campaign, reward) : undefined;
         if (!merchant || !spec) return null;
         return (
           <div key={reward.id} className="card reveal-card mt-4 flex items-center gap-3">

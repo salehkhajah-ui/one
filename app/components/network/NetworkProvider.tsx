@@ -7,10 +7,12 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  addReferral,
   configureInstitution,
   expireSweep,
   ingestEvent,
   launchCampaign,
+  registerMerchant,
   setMerchantApproved,
   redeemByCode,
   refundRedemption,
@@ -29,7 +31,15 @@ import {
 } from "../../../lib/network/lifecycle";
 import { clearNetworkState, loadNetworkState, saveNetworkState } from "../../../lib/network/storage";
 import { seedNetworkState, DEMO_INSTITUTION_ID } from "../../../lib/network/seed";
-import type { AmountBand, Campaign, CountryCode, Institution, MerchantCategory, NetworkState } from "../../../lib/network/types";
+import type {
+  AmountBand,
+  Campaign,
+  CountryCode,
+  Institution,
+  Merchant,
+  MerchantCategory,
+  NetworkState,
+} from "../../../lib/network/types";
 import type { Locale } from "../../../lib/i18n";
 import { useLocale } from "../LocaleProvider";
 
@@ -61,6 +71,10 @@ interface NetworkContextValue {
     patch: Partial<Pick<Institution, "rewardMode" | "recipientRewardsAllowed" | "blockedCategories">>,
   ) => void;
   approveMerchant: (merchantId: string, approved: boolean) => void;
+  /** Demo: simulate a verified referral joining through the user's invite. */
+  referral: () => void;
+  /** Merchant self-onboarding. */
+  register: (input: { name: string; category: MerchantCategory; online: boolean; location?: string }) => Merchant;
   resetDemo: () => void;
 }
 
@@ -125,6 +139,8 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
       applyReward: (campaignId, reward) => run((s) => ({ state: updateCampaignReward(s, campaignId, reward) })),
       configure: (institutionId, patch) => run((s) => ({ state: configureInstitution(s, institutionId, patch) })),
       approveMerchant: (merchantId, approved) => run((s) => ({ state: setMerchantApproved(s, merchantId, approved) })),
+      referral: () => run((s, now) => ({ state: addReferral(s, now) })),
+      register: (input) => run((s) => registerMerchant(s, input)).merchant,
       resetDemo: () => {
         clearNetworkState();
         const fresh = seedNetworkState();

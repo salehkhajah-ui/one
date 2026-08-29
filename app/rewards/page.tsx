@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { t } from "../../lib/i18n";
+import { rewardSpecFor } from "../../lib/network/engine";
 import type { AmountBand, MerchantCategory } from "../../lib/network/types";
 import { useNetwork } from "../components/network/NetworkProvider";
 import {
@@ -136,7 +137,7 @@ export default function RewardsHome() {
           {available.slice(0, 3).map((reward) => {
             const merchant = state.merchants.find((m) => m.id === reward.merchantId);
             const campaign = state.campaigns.find((c) => c.id === reward.campaignId);
-            const spec = reward.holder === "recipient" && campaign?.recipientReward ? campaign.recipientReward : campaign?.reward;
+            const spec = campaign ? rewardSpecFor(campaign, reward) : undefined;
             if (!merchant || !spec) return null;
             return (
               <Link key={reward.id} href="/rewards/wallet" className="card mb-2 flex items-center gap-3">

@@ -176,6 +176,11 @@ export interface RewardInstance {
   holder: "self" | "recipient";
   market: CountryCode;
   status: RewardStatus;
+  /**
+   * Referral boost baked in at issuance (percent rewards only, capped) —
+   * merchant-funded, granted for verified referrals, never for transfer size.
+   */
+  boostBps?: number;
   /** Single-use redemption code (regenerated per instance, dead after use). */
   code: string;
   issuedISO: string;
@@ -193,6 +198,8 @@ export interface Moment {
   mode: RewardMode;
   /** Candidate campaign ids in score order (1 for single/surprise, 3 for choice). */
   candidateCampaignIds: string[];
+  /** Mode D (boosted): the premium campaign the upgrade draw can land on. */
+  upgradeCampaignId?: string;
   revealed: boolean;
   /** Chosen reward instance id(s) once resolved. BOTH WIN resolves to two. */
   resolvedRewardIds: string[];

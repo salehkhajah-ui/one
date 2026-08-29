@@ -5,7 +5,7 @@
  * and every rejection leaves an auditable fraud signal.
  */
 import { percentOf } from "../money";
-import { matchCampaigns } from "./engine";
+import { matchCampaigns, rewardValueMinor } from "./engine";
 import type {
   AmountBand,
   Campaign,
@@ -148,8 +148,9 @@ export function ingestEvent(state0: NetworkState, input: EventInput, now: Date):
   state = ledger(state, "financial_event_received", atISO, { eventId });
 
   // Auction: mode comes from the institution's configuration (modes A–D).
+  // Boosted (mode D) also pulls runners-up so the upgrade draw has a target.
   const mode = institution.rewardMode;
-  const limit = mode === "choice" ? 3 : 1;
+  const limit = mode === "choice" || mode === "boosted" ? 3 : 1;
   const candidates = matchCampaigns(state, event, institution, now, limit);
 
   const momentCount = state.consumer.momentCount + 1;
@@ -157,12 +158,32 @@ export function ingestEvent(state0: NetworkState, input: EventInput, now: Date):
 
   if (candidates.length === 0) return { state, event };
 
+  // Mode D: base = best-scored campaign; the upgrade target is the runner-up
+  // with the highest customer value ABOVE the base (a real upgrade, or none).
+  let candidateCampaignIds = candidates.map((c) => c.campaignId);
+  let upgradeCampaignId: string | undefined;
+  if (mode === "boosted") {
+    const valueOf = (campaignId: string) => {
+      const c = state.campaigns.find((x) => x.id === campaignId);
+      return c ? rewardValueMinor(c.reward) : 0;
+    };
+    const base = candidates[0].campaignId;
+    const upgrade = candidates
+      .slice(1)
+      .map((c) => c.campaignId)
+      .filter((id) => valueOf(id) > valueOf(base))
+      .sort((a, b) => valueOf(b) - valueOf(a))[0];
+    candidateCampaignIds = [base];
+    upgradeCampaignId = upgrade;
+  }
+
   [state, seq] = nextSeq(state);
   const moment: Moment = {
     id: makeId("mom", seq),
     eventId,
     mode,
-    candidateCampaignIds: candidates.map((c) => c.campaignId),
+    candidateCampaignIds,
+    upgradeCampaignId,
     revealed: false,
     resolvedRewardIds: [],
     sentToRecipient: false,
@@ -203,7 +224,8 @@ export function selectReward(
   const atISO = now.toISOString();
   const moment = state0.moments.find((m) => m.id === momentId);
   const campaign = state0.campaigns.find((c) => c.id === campaignId);
-  if (!moment || !campaign || moment.resolvedRewardIds.length > 0 || !moment.candidateCampaignIds.includes(campaignId))
+  const selectable = moment && [...moment.candidateCampaignIds, moment.upgradeCampaignId].includes(campaignId);
+  if (!moment || !campaign || moment.resolvedRewardIds.length > 0 || !selectable)
     return { state: state0, rewards: [] };
   const event = state0.events.find((e) => e.id === moment.eventId);
   if (!event) return { state: state0, rewards: [] };
@@ -212,6 +234,7 @@ export function selectReward(
   const rewards: RewardInstance[] = [];
   const expiresISO = new Date(now.getTime() + campaign.expiryHours * 3_600_000).toISOString();
 
+  const boostBps = referralBoostBps(state0.consumer.referrals);
   const issue = (holder: "self" | "recipient", market: CountryCode, ofCampaign: Campaign, merchantId: string) => {
     let seq: number;
     [state, seq] = nextSeq(state);
@@ -223,6 +246,8 @@ export function selectReward(
       holder,
       market,
       status: "available",
+      // Referral boost only widens the sender's own percent rewards.
+      boostBps: holder === "self" && ofCampaign.reward.kind === "percent" && boostBps > 0 ? boostBps : undefined,
       code: makeCode(seq),
       issuedISO: atISO,
       expiresISO,
@@ -455,6 +480,51 @@ export function updateCampaignReward(
   reward: Campaign["reward"],
 ): NetworkState {
   return { ...state, campaigns: state.campaigns.map((c) => (c.id === campaignId ? { ...c, reward } : c)) };
+}
+
+// ------------------------------------------- referrals + upgrade draw ----
+
+/**
+ * Merchant-funded referral boost: +5pp per verified referral on percent
+ * rewards, hard-capped at +10pp so referral farming has no unbounded upside.
+ */
+export function referralBoostBps(referrals: number): number {
+  return Math.min(referrals, 2) * 500;
+}
+
+/** A verified referral joined through this user's invite. */
+export function addReferral(state: NetworkState, now: Date): NetworkState {
+  const next = { ...state, consumer: { ...state.consumer, referrals: state.consumer.referrals + 1 } };
+  return notify(next, "consumer", "net.notif.referral", now.toISOString());
+}
+
+/**
+ * Mode D upgrade draw. Deterministic from the moment id (demo build: stable
+ * across reloads, testable, no RNG) — roughly half of draws land the upgrade.
+ */
+export function upgradeWon(momentId: string): boolean {
+  let acc = 0;
+  for (let i = 0; i < momentId.length; i++) acc = (acc * 31 + momentId.charCodeAt(i)) % 997;
+  return acc % 2 === 0;
+}
+
+/** Merchant self-onboarding — approved instantly in the demo network. */
+export function registerMerchant(
+  state0: NetworkState,
+  input: { name: string; category: import("./types").MerchantCategory; online: boolean; location?: string },
+): { state: NetworkState; merchant: import("./types").Merchant } {
+  const [state, seq] = nextSeq(state0);
+  const merchant: import("./types").Merchant = {
+    id: makeId("mch", seq),
+    name: input.name,
+    category: input.category,
+    markets: ["KW"],
+    approved: true,
+    demo: true,
+    online: input.online,
+    locations: input.location ? [input.location] : [],
+  };
+  return { state: { ...state, merchants: [...state.merchants, merchant] }, merchant };
 }
 
 /** Institution configures its integration (reward mode, recipient policy, blocks). */

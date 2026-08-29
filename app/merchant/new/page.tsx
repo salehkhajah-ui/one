@@ -6,7 +6,7 @@
  * behind the review step instead of a wall of form fields.
  */
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { money, t } from "../../../lib/i18n";
 import { fromMajor } from "../../../lib/money";
 import type { CampaignDraft } from "../../../lib/network/lifecycle";
@@ -122,6 +122,19 @@ export default function NewCampaignPage() {
   const merchants = state.merchants.filter((m) => m.markets.includes("KW"));
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
+
+  // Onboarding hand-off: /merchant/join stashes the newly created merchant.
+  useEffect(() => {
+    try {
+      const preselected = sessionStorage.getItem("one.creator.merchant");
+      if (preselected) {
+        sessionStorage.removeItem("one.creator.merchant");
+        setDraft((d) => ({ ...d, merchantId: preselected }));
+      }
+    } catch {
+      /* convenience only */
+    }
+  }, []);
   const [prompt, setPrompt] = useState("");
   const [launched, setLaunched] = useState<Campaign | null>(null);
 

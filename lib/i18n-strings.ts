@@ -641,6 +641,80 @@ export const STRINGS = {
     ar: "تكامل على كيفك: تطبيق ONE، أو شاشة مدمجة، أو API كامل تحت علامتك.",
   },
   "net.pitch.instCta": { en: "Explore the integration", ar: "استكشف التكامل" },
+
+  // Mode D — upgrade draw
+  "net.reveal.boostChip": { en: "includes your +{pct}% referral boost", ar: "شاملة زيادة الدعوات +{pct}%" },
+  "net.reveal.tryUpgrade": { en: "Try the upgrade", ar: "جرّب الترقية" },
+  "net.reveal.upgradeHint": {
+    en: "This moment qualifies for an upgrade draw — it could become {reward} at {merchant}.",
+    ar: "هاللحظة مؤهلة لسحب ترقية — ممكن تصير {reward} من {merchant}.",
+  },
+
+  // Referrals
+  "net.referral.title": { en: "Invite friends, boost your rewards", ar: "عزم ربعك، وزيد مكافآتك" },
+  "net.referral.count": { en: "{count} friends joined", ar: "{count} من ربعك انضموا" },
+  "net.referral.boost": {
+    en: "Your percent rewards come +{pct}% bigger — funded by merchants.",
+    ar: "مكافآت الخصم تجيك أكبر بـ{pct}%+ — على حساب المتاجر.",
+  },
+  "net.referral.pitch": {
+    en: "Each verified friend adds +5% to your percent rewards, up to +10%.",
+    ar: "كل صديق ينضم فعلياً يزيد مكافآت الخصم +5%، لين حد +10%.",
+  },
+  "net.referral.simulate": { en: "Simulate a friend joining (demo)", ar: "جرّب انضمام صديق (تجريبي)" },
+  "net.referral.note": {
+    en: "Boosts are capped and granted only for verified actions — referral farming goes nowhere.",
+    ar: "الزيادة لها سقف وما تنحسب إلا على إجراءات موثّقة — تجميع الدعوات ما ينفع.",
+  },
+  "net.notif.referral": {
+    en: "A friend joined through your invite — your rewards got a boost.",
+    ar: "صديقك انضم عن طريقك — مكافآتك صارت أكبر.",
+  },
+
+  // Merchant billing
+  "net.billing.title": { en: "Billing", ar: "الفواتير" },
+  "net.billing.upcoming": { en: "Upcoming invoice (14d)", ar: "الفاتورة الجاية (14 يوم)" },
+  "net.billing.budgetRemaining": { en: "Budget remaining", ar: "الميزانية الباقية" },
+  "net.billing.method": { en: "Payment method", ar: "طريقة الدفع" },
+  "net.billing.methodValue": { en: "Corporate card •••• 4021 (demo)", ar: "بطاقة شركة •••• 4021 (تجريبي)" },
+  "net.billing.statement": { en: "Daily statement", ar: "كشف يومي" },
+  "net.billing.outcomes": { en: "{count} billed outcomes", ar: "{count} نتيجة مفوترة" },
+  "net.billing.note": {
+    en: "You're billed only for measurable outcomes; refunds are credited back automatically.",
+    ar: "ما تنفوتر إلا على نتائج تنقاس؛ والاسترجاعات ترد لك أوتوماتيك.",
+  },
+
+  // Merchant onboarding
+  "net.join.teaser": { en: "Not on ONE yet? Add your business in three steps.", ar: "بعدك مو في ONE؟ ضيف مشروعك بثلاث خطوات." },
+  "net.join.cta": { en: "Add your business", ar: "ضيف مشروعك" },
+  "net.join.title": { en: "Add your business", ar: "ضيف مشروعك" },
+  "net.join.aboutTitle": { en: "Tell us about your business", ar: "خبرنا عن مشروعك" },
+  "net.join.nameLabel": { en: "Business name", ar: "اسم المشروع" },
+  "net.join.namePlaceholder": { en: "Bayt Burger", ar: "بيت برجر" },
+  "net.join.categoryLabel": { en: "Category", ar: "الفئة" },
+  "net.join.locationLabel": { en: "Main location (optional)", ar: "الموقع الرئيسي (اختياري)" },
+  "net.join.locationPlaceholder": { en: "Salmiya", ar: "السالمية" },
+  "net.join.channelsTitle": { en: "How do customers buy from you?", ar: "شلون يشترون منك العملاء؟" },
+  "net.join.channel.online": { en: "Online store", ar: "متجر أونلاين" },
+  "net.join.channel.instore": { en: "In store — code scanner", ar: "بالمحل — ماسح الأكواد" },
+  "net.join.channel.pos": { en: "POS integration", ar: "ربط مع نقاط البيع" },
+  "net.join.channel.manual": { en: "Manual voucher codes", ar: "أكواد قسائم يدوية" },
+  "net.join.channelsHint": {
+    en: "Pick everything that applies — the code scanner needs zero setup.",
+    ar: "اختر كل اللي ينطبق — ماسح الأكواد ما يحتاج أي تجهيز.",
+  },
+  "net.join.reviewTitle": { en: "Review", ar: "راجع" },
+  "net.join.reviewNote": {
+    en: "Demo network: your business goes live instantly and is labeled demo data.",
+    ar: "شبكة تجريبية: مشروعك يشتغل فوراً ويظهر عليه إنه بيانات تجريبية.",
+  },
+  "net.join.create": { en: "Create my business", ar: "أنشئ مشروعي" },
+  "net.join.doneTitle": { en: "{name} is on ONE ✓", ar: "{name} صار في ONE ✓" },
+  "net.join.doneSub": {
+    en: "One step left: launch your first offer so eligible financial moments can find you.",
+    ar: "باقي خطوة وحدة: أطلق أول عرض عشان اللحظات المالية المؤهلة تلقاك.",
+  },
+  "net.join.firstCampaign": { en: "Create your first offer", ar: "سوّ أول عرض لك" },
 } as const satisfies Record<string, Entry>;
 
 export type StringKey = keyof typeof STRINGS;
