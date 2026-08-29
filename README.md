@@ -13,6 +13,26 @@ AI-powered money allocation for ordinary people: ONE converts a bank balance int
 
 Docs: [`docs/PRODUCT.md`](docs/PRODUCT.md) · [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/FINANCIAL_ENGINE.md`](docs/FINANCIAL_ENGINE.md) · [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) · [`docs/SECURITY.md`](docs/SECURITY.md) · [`docs/ROADMAP.md`](docs/ROADMAP.md) · [`docs/DECISIONS.md`](docs/DECISIONS.md)
 
+## The Financial Moment Network
+
+The repo also carries ONE's second product — a three-sided rewards network
+where verified financial transactions (remittance first) instantly unlock
+personalized, **merchant-funded** rewards. Start at **`/network`**:
+
+- **`/rewards`** — consumer app: simulate a transfer, reveal, choose (incl.
+  BOTH WIN and gift-to-recipient), wallet with single-use codes.
+- **`/merchant`** — dashboard with live ROI/attribution, 4-step campaign
+  creator (+ AI generator), code scanner (`/merchant/scan`).
+- **`/institution`** — leverage stats, event simulator (incl. duplicate/fraud
+  and reversal tests), reward-mode and recipient-policy controls.
+- **`/admin`**, **`/investor`** (unit-economics simulator), **`/pitch`**
+  (10/30/60s + merchant + institution pitches), `POST /api/financial-events`
+  sandbox.
+
+Engine in `lib/network/` (pure TS, tested), full docs in
+[`docs/NETWORK.md`](docs/NETWORK.md). Everything is seeded demo data — no real
+integrations, no real money, and ONE never holds funds.
+
 ## Local setup
 
 Requires Node 20+.

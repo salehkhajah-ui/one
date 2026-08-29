@@ -9,6 +9,7 @@ import { buildAppState, type AppState } from "../../lib/app/state";
 import { clearSetup, loadSetup, saveSetup, type StoredTransaction, type UserSetup } from "../../lib/app/storage";
 import { deleteCloudData, pickNewer, pullSetup, pushSetup } from "../../lib/app/sync";
 import { t } from "../../lib/i18n";
+import { isNetworkPath } from "../../lib/network/paths";
 import { cloudSyncConfigured, getSupabase } from "../../lib/supabase/client";
 import { useLocale } from "./LocaleProvider";
 
@@ -202,6 +203,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }),
     [setup, startDemo, completeOnboarding, acceptPlan, addTransaction, deleteTransaction, resetAll, cloudStatus, cloudEmail, signOutCloud, deleteCloud, reconcile],
   );
+
+  // Network surfaces don't depend on allocation-app setup: render immediately.
+  if (isNetworkPath(pathname)) {
+    return (
+      <ControlsContext.Provider value={controls}>
+        <StateContext.Provider value={state ?? null}>{children}</StateContext.Provider>
+      </ControlsContext.Provider>
+    );
+  }
 
   if (setup === undefined) {
     return (

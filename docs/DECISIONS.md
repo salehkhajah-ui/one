@@ -97,3 +97,33 @@ The app ships fully bilingual (en/ar) with RTL layout in Arabic. Architecture:
   intent keywords and Arabic-Indic digits, and answers via the same string
   table. Locale persists in `localStorage` (`one.locale.v1`); toggles live on
   the welcome screen and in Account.
+
+## 11. Financial Moment Network as a coexisting vertical slice (client-state demo)
+
+The rewards-network product (see `docs/NETWORK.md`) ships in the same codebase
+as a second surface rather than a rewrite: `lib/network/` is a pure-TypeScript
+engine (same rules as `lib/engine/` — integer fils, no React, English core,
+tested), and the portals/consumer app mount on their own routes.
+`lib/network/paths.ts` keeps the chrome honest: network routes skip the
+allocation app's first-run gate and bottom nav, and portals get a wide shell.
+
+Deliberate demo-milestone choices:
+
+- **State lives on-device** (`one.network.v1` in localStorage), driven by pure
+  reducers, exactly like the allocation app's Milestone 1.5 — so the whole
+  three-sided demo (event → reveal → redeem → attribution) runs end-to-end
+  with zero backend. The entity types were shaped as the future Postgres
+  schema so the reducers become service-layer transactions later.
+- **Seeded history is a separate `baseline`**, not fake rows in the entity
+  arrays — consumer-scoped logic ("new customers only", caps, wallet) only
+  ever sees the real device user, while dashboards render baseline + live.
+- **Redemption codes over QR images**: the single-use 6-char code IS the
+  credential (validated, killed on use, reuse logged as fraud); the matrix
+  next to it is decorative. Real QR arrives with the native scanner milestone.
+- **`POST /api/financial-events` is stateless**: it demonstrates the
+  integration contract (validation, privacy-minimized payload, auction
+  response) against seed data, because server routes can't reach the
+  client-side demo state. Documented as sandbox in the response itself.
+- **Auction optimizes the ecosystem, not the bid** — relevance and reward
+  attractiveness weigh as much as merchant economics; tiers grow with
+  engagement counts, never transfer size.

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { t } from "../../lib/i18n";
+import { isNetworkPath } from "../../lib/network/paths";
 import { useAppMaybe } from "./AppProvider";
 
 const ICONS = {
@@ -52,6 +53,7 @@ const TABS: Array<{ href: string; labelKey: "nav.home" | "nav.plan" | "nav.grow"
 export function BottomNav() {
   const pathname = usePathname();
   const state = useAppMaybe();
+  if (isNetworkPath(pathname)) return null;
   if (!state || pathname.startsWith("/onboarding") || pathname.startsWith("/payday") || pathname.startsWith("/privacy"))
     return null;
   return (

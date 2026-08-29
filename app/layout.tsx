@@ -13,6 +13,7 @@ import { AppProvider } from "./components/AppProvider";
 import { BottomNav } from "./components/BottomNav";
 import { LocaleProvider } from "./components/LocaleProvider";
 import { ServiceWorker } from "./components/ServiceWorker";
+import { Shell } from "./components/Shell";
 
 export const metadata: Metadata = {
   title: "ONE — Every dinar has a mind",
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ServiceWorker />
         <LocaleProvider>
           <AppProvider>
-            <div className="shell">{children}</div>
+            <Shell>{children}</Shell>
             <BottomNav />
           </AppProvider>
         </LocaleProvider>
