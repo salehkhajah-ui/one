@@ -199,10 +199,14 @@
       <span>Your crane unloads onto tractors, tractors deliver to the warehouse, and you're paid for
       every container — with a fat bonus for finishing before the deadline.</span></div></div>
     <div class="step"><div class="n">3</div><div><b>Spend to grow</b>
-      <span>Click the crane, warehouse, Trade Office, expansion sign and crew cabin to buy upgrades:
+      <span>Click the crane, warehouse, Trade Office, signposts and crew cabin to buy upgrades:
       faster cranes, more tractors, Berth&nbsp;2 to work two ships at once, richer trade routes, more workers.
       Mind the payroll — the crew is paid every dawn whether ships came or not.</span></div></div>
-    <div class="step"><div class="n">4</div><div><b>Set the pace</b>
+    <div class="step"><div class="n">4</div><div><b>Expand and export</b>
+      <span>After Berth&nbsp;2, reclaim land for the <b>Storage Yard</b>, then build the <b>Factory</b> —
+      every dispatched box becomes export goods your cranes load back onto ships for KD&nbsp;400 a unit.
+      Crown it with the <b>Refinery</b> and exports fetch KD&nbsp;800. Import, process, export, repeat.</span></div></div>
+    <div class="step"><div class="n">5</div><div><b>Set the pace</b>
       <span>A new ship arrives about every 90 seconds. Press <b>⚡ Fast</b> for one every 30 seconds,
       or unlock Harbor Schedule Control in the Shop to set the timetable yourself.</span></div></div>
     <div class="ctrl"><b>Drag</b> pan the port · <b>Scroll / pinch</b> zoom · <b>Q / E</b> or ⟲ ⟳ rotate ·
@@ -295,21 +299,29 @@ const TIERS=[
   [["Coffee Beans",380],["Textiles",340],["Building Materials",300],["Furniture",420]],
   [["Smartphones",900],["Medical Supplies",950],["Frozen Seafood",780],["Fresh Strawberries",850]],
   [["Luxury Watches",1500],["Pharmaceuticals",1300],["Sports Cars",1600]]];
-const RANKS=[["Dockhand",0],["Supervisor",25000],["Port Manager",45000],["Port Director",80000],["Port CEO",130000],["Logistics Magnate",200000]];
+const RANKS=[["Dockhand",0],["Supervisor",25000],["Port Manager",45000],["Port Director",80000],["Port CEO",130000],["Logistics Magnate",200000],["Harbor Tycoon",300000],["Trade Emperor",500000]];
 const QUAY_Y=2,BERTH_Z=-16,LAND_Z=2,TROLLEY_Y=20.5,BED_Y=3.05;
-const whCap=()=>S.prem.mega?12:9;
+const GOODS_CAP=40;
+/* Storage slot ids: 0-8 warehouse floor, 9-11 Mega Port stacked row,
+   12-20 the Storage Yard on reclaimed land. */
+function validSlots(){const v=[0,1,2,3,4,5,6,7,8];
+  if(S.prem.mega)v.push(9,10,11);
+  if(S.storage)for(let i=12;i<21;i++)v.push(i);
+  return v;}
+const whCap=()=>validSlots().length;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- persistent game state ---------- */
 const S={money:9000,rep:40,craneLv:[0,0],tractors:1,dispatchLv:0,berth2:false,
   tiers:1,invested:0,delivered:0,onTime:0,late:0,tutorial:0,helpSeen:0,
   fast:0,shipEvery:0,
+  storage:0,factory:0,refinery:0,goods:0,exported:0,
   workers:4,crewCrane:2,crewWh:1,crewDock:1,prem:{ship:0,mega:0,gold:0,sched:0}};
 try{const raw=localStorage.getItem('port-web-save');
   if(raw){const d=JSON.parse(raw);for(const k in S)if(k in d)S[k]=d[k];}}catch(e){}
 let saveTimer=0;
 function save(){try{localStorage.setItem('port-web-save',JSON.stringify(S));}catch(e){}}
-function portValue(){return Math.round(S.money)+S.invested+S.delivered*40+S.rep*120;}
+function portValue(){return Math.round(S.money)+S.invested+S.delivered*40+S.exported*80+S.rep*120;}
 function rank(){let r=RANKS[0][0];for(const [n,v] of RANKS)if(portValue()>=v)r=n;return r;}
 function addRep(d,why){const before=S.rep;S.rep=Math.max(0,Math.min(100,S.rep+d));
   if(S.rep!==before)toast('Reputation '+(d>0?'+':'−')+Math.abs(d)+' — '+why,d<0);}
@@ -411,7 +423,7 @@ function buildWarehouse(x,wall,roof,glow,cold){
   strip.position.set(0,DH+0.35,fz-0.25);g.add(strip);lampMats.push(gm);
   if(cold)for(let i=0;i<3;i++)box(g,P.steelDark,-4+i*4,H+1,1.5,2.4,1.2,2.4);
   const door=box(g,P.steelDark,0,DH/2,fz+0.28,DW-0.2,DH,0.18);
-  return {g,door,doorOpen:false,slotOcc:new Array(12).fill(null),stored:0,busy:false};}
+  return {g,door,doorOpen:false,slotOcc:new Array(21).fill(null),stored:0,busy:false};}
 const WH=buildWarehouse(30,P.whWall,P.whRoof,P.warm,false);
 buildWarehouse(52,P.cold,0x9FB3B8,0x9FDCE8,true); // cold store: scenery in the web slice
 const SLOTS=[];for(const z of[-2,1.2,4.4])for(const x of[-5,0,5])SLOTS.push([x,1.33,z]);
@@ -604,6 +616,7 @@ async function dockShip(sh){
     toast('−KD '+fmt(pen)+' — late penalty',true);addRep(-3,'late delivery');S.late++;
     banner(sh.name+' — delivered late');}
   save();
+  if(S.factory&&S.goods>0)await loadShip(berth.crane,sh);
   sh.state='departing';await wait(1.5);berth.ship=null;
   await sail(sh.root,berth.x-45,-32,4,1.1);await sail(sh.root,-160,-105,6,1.3);
   sh.state='gone';scene.remove(sh.root);ships.splice(ships.indexOf(sh),1);
@@ -689,16 +702,18 @@ async function tractorLoop(tr){
         if(tr.carrying)await wait(0.4);}}
     if(tr.idx===WH_IDX&&tr.carrying){
       tr.stopped=true;await deliver(tr);tr.stopped=false;}}}
+function slotHome(i){return i<12?{g:WH.g,p:SLOTS[i]}:{g:storageG,p:SSLOTS[i-12]};}
 async function deliver(tr){
   while(WH.stored>=whCap()){await nextFrame();}
   while(WH.busy)await nextFrame();
   WH.busy=true;
   await slideDoor(WH,true);
   const c=tr.carrying;tr.carrying=null;
-  reparentKeepWorld(c.mesh,WH.g);
-  let si=-1;for(let i=0;i<whCap();i++)if(!WH.slotOcc[i]){si=i;break;}
+  let si=-1;for(const i of validSlots())if(!WH.slotOcc[i]){si=i;break;}
   si=Math.max(0,si);
-  const slot=SLOTS[si];
+  const home=slotHome(si);
+  reparentKeepWorld(c.mesh,home.g);
+  const slot=home.p;
   const p0=c.mesh.position.clone(),q0=c.mesh.quaternion.clone(),qi=new THREE.Quaternion();
   await ease(1.0,t=>{c.mesh.position.lerpVectors(p0,new THREE.Vector3(slot[0],slot[1],slot[2]),t);
     c.mesh.quaternion.copy(q0.clone().slerp(qi,t));});
@@ -707,11 +722,20 @@ async function deliver(tr){
   earn(c.val,c.cargo+' delivered');
   await slideDoor(WH,false);
   WH.busy=false;}
+/* One truck dispatch: pays cash, and once the Factory stands every
+   dispatched box is processed into an export unit. */
+function dispatchOne(){
+  let si=-1;const v=validSlots();
+  for(let k=v.length-1;k>=0;k--)if(WH.slotOcc[v[k]]){si=v[k];break;}
+  if(si<0)return false;
+  const m=WH.slotOcc[si];WH.slotOcc[si]=null;WH.stored--;
+  ease(0.4,t=>{m.scale.setScalar(1-t*0.97);}).then(()=>{if(m.parent)m.parent.remove(m);});
+  S.money+=100;
+  if(S.factory&&S.goods<GOODS_CAP)S.goods++;
+  return true;}
 async function dispatchLoop(){while(true){
   await wait(Math.max(4,(14-2.5*S.dispatchLv)/(1+0.12*Math.max(0,S.crewWh-1))));
-  let si=-1;for(let i=WH.slotOcc.length-1;i>=0;i--)if(WH.slotOcc[i]){si=i;break;}
-  if(si>=0){const m=WH.slotOcc[si];WH.slotOcc[si]=null;WH.stored--;
-    await ease(0.4,t=>{m.scale.setScalar(1-t*0.97);});WH.g.remove(m);S.money+=100;}}}
+  dispatchOne();}}
 WH.g.userData.selId='wh';
 
 /* ---------- crew: cabin, figures, payroll ---------- */
@@ -759,6 +783,111 @@ function payroll(){
   if(S.money>=w){S.money-=w;toast('−KD '+fmt(w)+' — daily payroll ('+S.workers+' workers)',true);}
   else{addRep(-2,'missed payroll');banner('Payroll missed — the crew is not happy',3.5);}
   save();}
+
+/* ---------- expansion: reclaimed land, storage, factory, refinery ----
+   The growth ladder the whole economy points at. Buying the Storage Yard
+   physically reclaims a strip of new land behind the port; the Factory
+   turns every dispatched box into an export unit; the Refinery doubles
+   what exports are worth. Once the Factory stands, ships stop leaving
+   empty — the crane loads your goods aboard and the port starts
+   exporting, not just importing. */
+const SSLOTS=[];for(const z of[-2.6,0.2,3])for(const x of[-6,0,6])SSLOTS.push([x,1.33,z]);
+let storageG=null,factoryG=null,refineryG=null,landG=null;
+const sites={};
+function mkSite(x,z,id){
+  const g=group(scene,x,QUAY_Y,z);
+  cyl(g,P.steelDark,0,1.1,0,0.15,2.2);
+  box(g,P.lane,0,2.4,0,3.4,1.7,0.15);
+  box(g,P.hull,0,2.4,0.09,3.4,0.35,0.05);
+  g.userData.selId=id;return g;}
+function dropSite(id){if(sites[id]){scene.remove(sites[id]);sites[id]=null;}}
+function scaleIn(g){if(!g)return;g.scale.setScalar(0.01);
+  ease(1.2,t=>g.scale.setScalar(0.01+0.99*t),outCubic);}
+function buildLand(){if(landG)return;
+  landG=group(scene,0,0,0);
+  box(landG,P.concrete,0,QUAY_Y-1,54,140,2,20);
+  for(let x=-60;x<=60;x+=24)cyl(landG,P.steelDark,x,QUAY_Y+3.5,62,0.11,7);}
+function buildStorage(animate){if(storageG)return;
+  buildLand();
+  storageG=group(scene,28,QUAY_Y,53);
+  const roofH=6.2;
+  for(const cx of[-9,9])for(const cz of[-4,4])
+    box(storageG,P.steel,cx,roofH/2,cz,0.5,roofH,0.5);
+  box(storageG,P.whRoof,0,roofH+0.25,0,20,0.5,10.5);
+  box(storageG,P.hull,0,roofH+0.65,-5,20,0.3,0.4);
+  box(storageG,P.concreteDark,0,0.1,0,20,0.2,10.5);
+  storageG.userData.selId='storage';
+  if(animate){scaleIn(storageG);banner('Land reclaimed — the Storage Yard is open',4);}
+  syncSites();}
+function buildFactory(animate){if(factoryG)return;
+  factoryG=group(scene,-6,QUAY_Y,53);
+  box(factoryG,P.whWall,0,3.5,0,18,7,9);
+  box(factoryG,P.whRoof,0,7.2,0,18.6,0.5,9.6);
+  box(factoryG,P.hull,0,3.5,-4.55,18,1.1,0.1);
+  box(factoryG,P.steelDark,-5,2.3,-4.6,4.4,4.6,0.18);
+  cyl(factoryG,P.hull,6,9.5,2,0.9,5);
+  cyl(factoryG,P.steel,3.4,8.6,2,0.7,3.4);
+  factoryG.userData.selId='factory';
+  if(animate){scaleIn(factoryG);banner('Factory online — every dispatched box becomes export goods',4.5);}
+  syncSites();}
+function buildRefinery(animate){if(refineryG)return;
+  refineryG=group(scene,-38,QUAY_Y,53);
+  for(const [tx,r] of [[-6,3],[0.5,2.6],[6,3]]){
+    cyl(refineryG,P.steel,tx,3.2,0,r,6.4);
+    cyl(refineryG,P.hull,tx,6.7,0,r*0.35,0.6);}
+  box(refineryG,P.steelDark,0,1.1,4.2,15,0.35,0.8);
+  box(refineryG,P.hull,0,5.4,0,13,0.3,0.3);
+  refineryG.userData.selId='refinery';
+  if(animate){scaleIn(refineryG);banner('Refinery lit — refined exports fetch double',4.5);}
+  syncSites();}
+function syncSites(){
+  if(!S.storage&&!sites.storageSite)sites.storageSite=mkSite(28,41,'storageSite');
+  if(S.storage)dropSite('storageSite');
+  if(S.storage&&!S.factory&&!sites.factorySite)sites.factorySite=mkSite(-6,52,'factorySite');
+  if(S.factory)dropSite('factorySite');
+  if(S.factory&&!S.refinery&&!sites.refinerySite)sites.refinerySite=mkSite(-38,52,'refinerySite');
+  if(S.refinery)dropSite('refinerySite');}
+const EXPAND_COST={storage:20000,factory:45000,refinery:90000};
+function tryBuy(kind){
+  const cost=EXPAND_COST[kind];
+  if(!spend(cost,{storage:'Storage Yard + land reclamation',
+    factory:'Factory construction',refinery:'Refinery construction'}[kind]))return;
+  S[kind]=1;save();closeCard();
+  if(kind==='storage')buildStorage(true);
+  if(kind==='factory')buildFactory(true);
+  if(kind==='refinery')buildRefinery(true);}
+function applyExpansion(){
+  if(S.storage)buildStorage(false);
+  if(S.factory)buildFactory(false);
+  if(S.refinery)buildRefinery(false);
+  syncSites();}
+
+/* Export loading: after a ship is emptied, the crane loads your goods
+   aboard and the ship sails out paying export rates. */
+async function loadShip(cr,sh){
+  const n=Math.min(S.refinery?6:4,S.goods);
+  if(n<=0)return;
+  sh.state='loading';cr.busy=true;
+  banner('Loading exports — '+n+' units aboard '+sh.name,3.5);
+  const shipX=sh.root.position.x;
+  for(let i=0;i<n;i++){
+    await crGantry(cr,cr.homeX);await crTrolley(cr,LAND_Z);
+    await crCable(cr,TROLLEY_Y-7);
+    const c=makeContainer(S.refinery?0xD9A43F:0xC9CDCF);
+    cr.spreader.add(c);c.position.set(0,-1.5,0);
+    await crCable(cr,3.5);
+    const wx=shipX+(i-(n-1)/2)*4.6;
+    await crGantry(cr,wx);await crTrolley(cr,BERTH_Z);
+    await crCable(cr,TROLLEY_Y-(4.17+1.5));
+    reparentKeepWorld(c,sh.hull);
+    await settleLocal(c,0,4.17,shipX-wx);
+    await crCable(cr,3.5);
+    S.goods=Math.max(0,S.goods-1);S.exported++;}
+  await crGantry(cr,cr.homeX);await crTrolley(cr,LAND_Z);
+  cr.busy=false;
+  const v=(S.refinery?800:400)*n;
+  earn(v,'exports aboard '+sh.name);
+  addRep(1,'export shipment');save();}
 
 /* ---------- tugs & gulls ---------- */
 const tugs=[[56,-14],[63,-19]].map(([x,z],i)=>{
@@ -834,7 +963,7 @@ const HOME_YAW=Math.PI; // due south of the quay: water at the bottom of frame
 const cam={pivot:HOME.clone(),tPivot:HOME.clone(),
   yaw:HOME_YAW,tYaw:HOME_YAW,view:38,tView:38,auto:true,lastInput:-99};
 function clampPivot(v){v.x=Math.max(-80,Math.min(80,v.x));
-  v.z=Math.max(-75,Math.min(48,v.z));v.y=QUAY_Y;}
+  v.z=Math.max(-75,Math.min(S.storage?66:48,v.z));v.y=QUAY_Y;}
 function stepCam(dt,t){
   if(focusTarget){ // cinematic dolly toward the subject (both modes)
     cam.tPivot.lerp(new THREE.Vector3(focusTarget.position.x,QUAY_Y+1,focusTarget.position.z),Math.min(1,dt*1.6));
@@ -909,7 +1038,7 @@ function cardData(){
       '\nDeadline '+mmss(sh.deadlineAt-frame.t)+' — '+uWord+
       '\n'+({inbound:'Making for the anchorage',anchored:'Holding at anchor — awaiting your call',
         approaching:'Coming in with the tugs',docking:'Docking',unloading:'Unloading — '+sh.left+' left',
-        departing:'Departing'}[sh.state]||'');
+        loading:'Loading your exports',departing:'Departing'}[sh.state]||'');
     const acts=[];
     if(sh.state==='anchored'){
       const b=freeBerth();
@@ -931,10 +1060,7 @@ function cardData(){
       enabled:S.money>=cost,run:()=>{if(spend(cost,'dispatch upgrade'))S.dispatchLv++;}});
     acts.push({label:'Express dispatch — clear 3 slots now',cost:150,
       enabled:S.money>=150&&WH.stored>0,run:()=>{if(!spend(150,'express dispatch'))return;
-        for(let n=0;n<3;n++){let si=-1;
-          for(let i=WH.slotOcc.length-1;i>=0;i--)if(WH.slotOcc[i]){si=i;break;}
-          if(si<0)break;const m=WH.slotOcc[si];WH.slotOcc[si]=null;WH.stored--;
-          ease(0.4,t=>{m.scale.setScalar(1-t*0.97);}).then(()=>WH.g.remove(m));}}});
+        for(let n=0;n<3;n++)if(!dispatchOne())break;}});
     return {title:'Warehouse',lines:'Storage '+WH.stored+' of '+whCap()+
       (WH.stored>=whCap()?'  ·  FULL — tractors will wait!':'')+
       '\nDispatch truck every '+Math.max(4,(14-2.5*lv)/(1+0.12*Math.max(0,S.crewWh-1))).toFixed(1)+'s\nWarehouse crew: '+S.crewWh,acts};}
@@ -966,6 +1092,28 @@ function cardData(){
       'Workers '+S.workers+' — idle '+idle+'\nCrane crew '+S.crewCrane+' · speed ×'+crewFactor().toFixed(2)+
       '\nWarehouse crew '+S.crewWh+' · Dock crew '+S.crewDock+
       '\nPayroll KD '+fmt(wagesPerDay())+' each dawn',acts};}
+  if(s.id==='storageSite'){
+    return {title:'Reclamation Site',lines:'Zoned for land reclamation.\nNew ground behind the port,\nplus a Storage Yard: +9 cargo slots\nso tractors never wait on a full floor.'+
+      (S.berth2?'':'\n\nRequires Berth 2 first.'),
+      acts:[{label:'RECLAIM LAND + STORAGE YARD',cost:EXPAND_COST.storage,primary:true,
+        enabled:S.berth2&&S.money>=EXPAND_COST.storage,run:()=>tryBuy('storage')}]};}
+  if(s.id==='factorySite'){
+    return {title:'Factory Site',lines:'Zoned for industry.\nEvery box your trucks dispatch is\nprocessed into an export unit —\nships stop leaving empty.',
+      acts:[{label:'BUILD FACTORY',cost:EXPAND_COST.factory,primary:true,
+        enabled:S.money>=EXPAND_COST.factory,run:()=>tryBuy('factory')}]};}
+  if(s.id==='refinerySite'){
+    return {title:'Refinery Site',lines:'Zoned for heavy industry.\nRefines factory goods —\nexports fetch KD 800 a unit\ninstead of KD 400, and ships\ntake 6 units instead of 4.',
+      acts:[{label:'BUILD REFINERY',cost:EXPAND_COST.refinery,primary:true,
+        enabled:S.money>=EXPAND_COST.refinery,run:()=>tryBuy('refinery')}]};}
+  if(s.id==='storage'){
+    return {title:'Storage Yard',lines:'Overflow storage on reclaimed land.\nTotal capacity '+whCap()+' slots\nStored now: '+WH.stored,acts:[]};}
+  if(s.id==='factory'){
+    return {title:'Factory',lines:'Goods in stock: '+S.goods+' of '+GOODS_CAP+
+      '\nEvery dispatched box → 1 export unit'+
+      '\nExport value KD '+(S.refinery?800:400)+' per unit'+
+      '\nUnits exported: '+S.exported,acts:[]};}
+  if(s.id==='refinery'){
+    return {title:'Refinery',lines:'Refined exports: KD 800 per unit\nShips load 6 units per call\nUnits exported: '+S.exported,acts:[]};}
   if(s.id==='trade'){
     const acts=[];
     if(S.tiers<2)acts.push({label:'Import contracts: Electronics & Fresh',cost:3500,
@@ -1098,7 +1246,8 @@ window.__port=()=>({t:+frame.t.toFixed(1),money:Math.round(S.money),rep:S.rep,
   berth2:S.berth2,tiers:S.tiers});
 window.__act={prem:i=>unlockPremium(i),hire:()=>{S.workers++;syncWorkers();},dock:()=>{const sh=ships.find(s=>s.state==='anchored');if(sh)dockShip(sh);},
   cash:v=>{S.money+=v;},buyBerth2:()=>{S.money+=15000;S.berth2=true;setCraneVisible(cranes[1],true);
-    if(placard){scene.remove(placard);placard=null;}}};
+    if(placard){scene.remove(placard);placard=null;}},
+  expand:k=>{S.money+=EXPAND_COST[k];tryBuy(k);},goods:v=>{S.goods=Math.min(GOODS_CAP,v);}};
 
 /* ---------- main loop ---------- */
 let last=performance.now();
@@ -1116,7 +1265,8 @@ function tick(now){
   if(Math.abs(S.money-shownMoney)<1)shownMoney=S.money;
   $('money').querySelector('.val').textContent='KD '+fmt(shownMoney);
   $('money').querySelector('.sub').innerHTML=
-    'Rep '+S.rep+' · <b>'+rank()+'</b> · value KD '+fmt(portValue());
+    'Rep '+S.rep+' · <b>'+rank()+'</b> · value KD '+fmt(portValue())+
+    (S.factory?' · goods '+S.goods:'');
   saveTimer+=dt;if(saveTimer>10){saveTimer=0;save();}
   stepCam(dt,frame.t);
   renderer.render(scene,camera);}
@@ -1124,7 +1274,7 @@ requestAnimationFrame(tick);
 
 /* ---------- start ---------- */
 supplyLoop();dispatchLoop();traderLoop();
-syncWorkers();applyPremium();
+syncWorkers();applyPremium();applyExpansion();
 for(let i=0;i<S.tractors;i++)buildTractor((i*5)%RING.length);
 setTimeout(()=>{const t=$('title');t.style.opacity=0;setTimeout(()=>t.remove(),1400);
   banner('Ships pay by the box — dock them before their deadlines',4.5);},reduced?600:3000);
