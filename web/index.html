@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#0e141a">
+<meta name="theme-color" content="#F4F2ED">
 <meta name="description" content="Run your own harbor: dock ships against deadlines, manage crew and payroll, and grow from one crane to a trading empire.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -14,24 +14,25 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
   :root{
-    --ink:#F5F1E8; --ink-dim:rgba(245,241,232,.62);
-    --panel:rgba(15,17,20,.72); --panel-line:rgba(245,241,232,.12);
-    --accent:#4E8C87; --good:#7FBF7A; --bad:#CC5B52; --gold:#D9A43F;
+    --ink:#1B1C1E; --ink-dim:rgba(27,28,30,.55);
+    --panel:rgba(255,255,255,.86); --panel-line:rgba(27,28,30,.10);
+    --accent:#E0322C; --good:#2F8B5D; --bad:#C4362D; --gold:#A97B25;
     --ui:"Archivo",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
   }
   html,body{height:100%;}
-  body{margin:0;background:#0e141a;color:var(--ink);font-family:var(--ui);overflow:hidden;
+  body{margin:0;background:#F4F2ED;color:var(--ink);font-family:var(--ui);overflow:hidden;
     -webkit-user-select:none;user-select:none;}
   #stage{position:fixed;inset:0;display:block;}
   .hud{position:fixed;z-index:5;pointer-events:none;}
-  .panel{background:var(--panel);border:1px solid var(--panel-line);border-radius:10px;
+  .panel{background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;
+    box-shadow:0 6px 24px rgba(27,28,30,.08);
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
 
   #money{top:20px;left:20px;padding:12px 18px;}
   #money .label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);}
   #money .val{font-family:var(--mono);font-weight:600;font-size:26px;font-variant-numeric:tabular-nums;}
   #money .sub{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:2px;}
-  #money .sub b{color:var(--gold);font-weight:600;}
+  #money .sub b{color:var(--accent);font-weight:600;}
 
   #clock{top:20px;right:20px;padding:10px 16px;text-align:right;}
   #clock .val{font-family:var(--mono);font-weight:500;font-size:17px;font-variant-numeric:tabular-nums;}
@@ -50,10 +51,11 @@
   #cornerR{bottom:20px;right:20px;display:flex;gap:10px;pointer-events:auto;z-index:6;position:fixed;}
   .btn{background:var(--panel);border:1px solid var(--panel-line);border-radius:10px;color:var(--ink);
     font:600 12.5px var(--ui);letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;cursor:pointer;
+    box-shadow:0 4px 14px rgba(27,28,30,.08);
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
-  .btn:hover{border-color:var(--accent);color:#fff;}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
   .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  .btn[aria-pressed="true"]{border-color:var(--accent);color:#bfe3dd;}
+  .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);}
 
   /* Selection card */
   #card{position:fixed;right:20px;bottom:76px;width:330px;z-index:6;padding:18px 20px 14px;
@@ -65,36 +67,38 @@
   #card .body .urgG{color:var(--good);}
   #card .acts{display:flex;flex-direction:column;gap:8px;max-height:40vh;overflow-y:auto;}
   #card .act{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;
-    background:rgba(78,140,135,.16);border:1px solid rgba(78,140,135,.55);border-radius:9px;
+    background:rgba(224,50,44,.06);border:1px solid rgba(224,50,44,.35);border-radius:9px;
     color:var(--ink);font:600 13px var(--ui);padding:10px 14px;cursor:pointer;text-align:left;}
   #card .act .cost{font-family:var(--mono);font-size:12px;color:var(--gold);white-space:nowrap;}
-  #card .act:hover:not(:disabled){background:rgba(78,140,135,.32);}
+  #card .act:hover:not(:disabled){background:rgba(224,50,44,.14);}
   #card .act:disabled{opacity:.38;cursor:default;}
-  #card .act.primary{background:rgba(217,164,63,.18);border-color:rgba(217,164,63,.65);}
-  #card .act.primary:hover:not(:disabled){background:rgba(217,164,63,.34);}
+  #card .act.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  #card .act.primary .cost{color:rgba(255,255,255,.85);}
+  #card .act.primary:hover:not(:disabled){background:#C22823;}
   #card .close{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--ink-dim);
     font-size:16px;cursor:pointer;padding:4px 8px;}
   #card .close:hover{color:var(--ink);}
 
   /* Title card */
   #title{position:fixed;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:14px;background:radial-gradient(120% 90% at 50% 40%, rgba(14,20,26,.35), rgba(10,14,18,.88));
+    gap:14px;background:radial-gradient(120% 90% at 50% 40%, rgba(244,242,237,.55), rgba(244,242,237,.96));
     transition:opacity 1.2s ease;pointer-events:none;}
   #title h1{margin:0;font-weight:700;font-size:clamp(64px,14vw,150px);letter-spacing:.34em;text-indent:.34em;
-    color:var(--ink);text-shadow:0 4px 40px rgba(0,0,0,.5);}
+    color:var(--accent);text-shadow:0 6px 30px rgba(224,50,44,.18);}
   #title p{margin:0;font-family:var(--mono);font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-dim);}
 
   /* Credits overlay */
   #credits{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;
-    background:rgba(8,11,14,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
+    background:rgba(244,242,237,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
   #credits.open{display:flex;}
-  #credits .sheet{width:min(520px,90vw);max-height:84vh;overflow-y:auto;background:rgba(17,20,24,.96);
-    border:1px solid var(--panel-line);border-radius:14px;padding:36px 40px;}
+  #credits .sheet{width:min(520px,90vw);max-height:84vh;overflow-y:auto;background:#fff;
+    border:1px solid var(--panel-line);border-radius:16px;padding:36px 40px;
+    box-shadow:0 18px 60px rgba(27,28,30,.16);}
   #credits h2{margin:0 0 4px;font-size:34px;letter-spacing:.3em;text-indent:.3em;text-align:center;font-weight:700;}
   #credits .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--ink-dim);margin-bottom:26px;}
   #credits .role{display:flex;justify-content:space-between;gap:18px;padding:9px 0;
-    border-bottom:1px solid rgba(245,241,232,.07);font-size:14.5px;}
+    border-bottom:1px solid rgba(27,28,30,.08);font-size:14.5px;}
   #credits .role span:first-child{color:var(--ink-dim);letter-spacing:.06em;text-transform:uppercase;font-size:11.5px;
     padding-top:2px;white-space:nowrap;}
   #credits .role span:last-child{text-align:right;font-weight:600;}
@@ -104,10 +108,11 @@
 
   /* Premium shop */
   #shop{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;
-    background:rgba(8,11,14,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
+    background:rgba(244,242,237,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
   #shop.open{display:flex;}
-  #shop .sheet{width:min(560px,92vw);max-height:84vh;overflow-y:auto;background:rgba(17,20,24,.96);
-    border:1px solid var(--panel-line);border-radius:14px;padding:34px 38px;}
+  #shop .sheet{width:min(560px,92vw);max-height:84vh;overflow-y:auto;background:#fff;
+    border:1px solid var(--panel-line);border-radius:16px;padding:34px 38px;
+    box-shadow:0 18px 60px rgba(27,28,30,.16);}
   #shop h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
   #shop .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--gold);margin-bottom:24px;}
@@ -136,8 +141,10 @@
 <div id="clock" class="hud panel"><div class="val">07:30</div><div class="sub">Day 1</div></div>
 <div id="banner" class="hud panel"></div>
 <div id="toast" class="hud panel"></div>
-<div id="hint" class="hud panel"><b>Click</b> ships &amp; buildings to act · <b>drag</b> orbit · <b>scroll</b> zoom</div>
+<div id="hint" class="hud panel"><b>Click</b> ships &amp; buildings to act · <b>drag</b> to pan · <b>scroll</b> zoom · <b>Q/E</b> rotate</div>
 <div id="cornerR">
+  <button class="btn" id="rotL" aria-label="Rotate left">⟲</button>
+  <button class="btn" id="rotR" aria-label="Rotate right">⟳</button>
   <button class="btn" id="camBtn" aria-pressed="true">Auto cam</button>
   <button class="btn" id="shopBtn" style="color:var(--gold);border-color:rgba(217,164,63,.5)">Shop</button>
   <button class="btn" id="creditsBtn">Credits</button>
@@ -209,11 +216,14 @@
    buy equipment and trade routes. A browser slice of the
    Unity build, sharing its palette and layout. */
 
-const P={concrete:0xD6D2C9,concreteDark:0xB9B5AC,asphalt:0x5A5C60,lane:0xE8DFB8,
-  water:0x2E6E77,hull:0x8C4A45,shipWhite:0xEDEAE2,craneTeal:0x4E8C87,
-  yellow:0xD9A43F,steel:0x8E969C,steelDark:0x4A5055,whWall:0xC9C4BA,
-  whRoof:0x7A8388,tractor:0x5B7C99,warm:0xFFD9A0,gull:0xF2F1EC,cold:0xDCE4E6,glass:0x3D4A55,
-  containers:[0xB06A5C,0x6E8F7C,0xC2A05A,0x7C8FA6,0xA6788F,0x8A9E5F]};
+/* Toy-diorama palette: near-white world, one bold red accent,
+   charcoal details, faceted teal-green trees. */
+const P={concrete:0xE4E1DA,asphalt:0xAFABA4,concreteDark:0xA6A39D,lane:0xFFFFFF,
+  water:0x568184,hull:0xD62E27,shipWhite:0xF2F0EA,craneTeal:0xD62E27,
+  yellow:0x3A3E42,steel:0xB9BCBE,steelDark:0x3A3E42,whWall:0xF0EEE8,
+  whRoof:0x33363A,tractor:0xD62E27,warm:0xFFD9A0,gull:0xFFFFFF,cold:0xE9EDEC,glass:0x2A3034,
+  tree:0x2D7E65,trunk:0x4E3A2D,
+  containers:[0xD62E27,0xEDEBE5,0x9EA3A5,0xE2E0DA,0x777E81,0xD62E27]};
 const SHIP_NAMES=["Northern Star","Atlas Voyager","Mediterranean Pearl","Pacific Horizon","Arabian Falcon","Baltic Trader"];
 const TIERS=[
   [["Coffee Beans",380],["Textiles",340],["Building Materials",300],["Furniture",420]],
@@ -245,17 +255,24 @@ const canvas=document.getElementById('stage');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.outputEncoding=THREE.sRGBEncoding;
+/* Linear output: palette hexes land on screen as designed (no sRGB lift). */
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(42,1,0.5,900);
-function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
-addEventListener('resize',resize);resize();
-const hemi=new THREE.HemisphereLight(0xbfd4de,0x3a4048,0.55);scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff4e0,1.1);
-sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
-Object.assign(sun.shadow.camera,{left:-90,right:90,top:90,bottom:-90,near:10,far:400});
+/* Orthographic isometric camera — the toy-model, architectural look. */
+const camera=new THREE.OrthographicCamera(-1,1,1,-1,1,700);
+function resize(){renderer.setSize(innerWidth,innerHeight,false);applyFrustum();}
+let camView=46; // ortho half-height in world units (zoom)
+function applyFrustum(){const a=innerWidth/Math.max(1,innerHeight);
+  camera.left=-camView*a;camera.right=camView*a;camera.top=camView;camera.bottom=-camView;
+  camera.updateProjectionMatrix();}
+addEventListener('resize',resize);
+/* Bright soft studio light: high ambient, gentle warm sun, light shadows. */
+const hemi=new THREE.HemisphereLight(0xffffff,0xcfcabf,0.45);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff2e2,0.85);
+sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-110,right:110,top:110,bottom:-110,near:10,far:500});
+sun.shadow.bias=-0.0004;
 scene.add(sun);scene.add(sun.target);
-scene.fog=new THREE.FogExp2(0xc4d2d8,0.0016);
+scene.fog=new THREE.FogExp2(0xf4f2ed,0.0007);
 
 /* ---------- builders ---------- */
 const mats=new Map();
@@ -292,13 +309,14 @@ function toast(text,bad){const t=$('toast');t.textContent=text;t.classList.toggl
   t.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.opacity=0,2300);}
 
 /* ---------- static world ---------- */
-const oceanGeo=new THREE.PlaneGeometry(520,520,56,56);oceanGeo.rotateX(-Math.PI/2);
-const ocean=new THREE.Mesh(oceanGeo,new THREE.MeshStandardMaterial({color:P.water,roughness:0.35,metalness:0.08}));
-ocean.position.set(0,0.25,-60);ocean.receiveShadow=true;scene.add(ocean);
+/* The sea is a bounded plate so the world reads as a diorama on paper. */
+const oceanGeo=new THREE.PlaneGeometry(560,420,56,42);oceanGeo.rotateX(-Math.PI/2);
+const ocean=new THREE.Mesh(oceanGeo,new THREE.MeshStandardMaterial({color:P.water,roughness:0.95,metalness:0}));
+ocean.position.set(0,0.25,-100);ocean.receiveShadow=true;scene.add(ocean);
 const oPos=oceanGeo.attributes.position,oBase=oPos.array.slice();let waveFrame=0;
 function waveOcean(t){const a=oPos.array;
   for(let i=0;i<a.length;i+=3){const x=oBase[i],z=oBase[i+2];
-    a[i+1]=Math.sin(x*0.055+z*0.035+t*0.9)*0.16+Math.sin(x*0.021-z*0.043+t*0.5)*0.24;}
+    a[i+1]=Math.sin(x*0.055+z*0.035+t*0.9)*0.10+Math.sin(x*0.021-z*0.043+t*0.5)*0.15;}
   oPos.needsUpdate=true;if(++waveFrame%3===0)oceanGeo.computeVertexNormals();}
 
 box(scene,P.concrete,0,QUAY_Y-1,17,140,2,54);
@@ -349,6 +367,24 @@ for(const [lx,lz] of [[-50,-6],[-25,-6],[25,-6],[50,-6],[45,20],[-52,24]]){
   const head=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.35,0.5),hm);head.position.y=7.1;g.add(head);
   lampMats.push(hm);
   const pl=new THREE.PointLight(P.warm,0,20);pl.position.y=6.8;g.add(pl);nightLights.push(pl);}
+
+/* Faceted low-poly trees — scattered off the roads, toy-model greenery. */
+{const leafMat=new THREE.MeshStandardMaterial({color:P.tree,roughness:0.9,flatShading:true});
+ const trunkMat=new THREE.MeshStandardMaterial({color:P.trunk,roughness:0.9});
+ let ts=13;const trnd=()=>((ts=ts*16807%2147483647)/2147483647);
+ for(const [tx,tz] of [[-56,32],[-52,38],[-33,34],[-20,33],[-14,36],[6,34],[12,36.5],
+   [40,34],[46,36],[58,26],[60,18],[-58,20],[-60,-2],[62,-2],[14,15],[-22,13]]){
+   const g=group(scene,tx,QUAY_Y,tz);
+   const h=1.1+trnd()*0.8;
+   const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.18,h,6),trunkMat);
+   trunk.position.y=h/2;trunk.castShadow=true;g.add(trunk);
+   const blobs=1+(trnd()<0.5?1:0);
+   for(let b=0;b<blobs;b++){
+     const r=1.1+trnd()*1.1;
+     const leaf=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),leafMat);
+     leaf.position.set((trnd()-0.5)*0.8,h+r*0.75+b*1.1,(trnd()-0.5)*0.8);
+     leaf.rotation.set(trnd()*3,trnd()*3,trnd()*3);
+     leaf.castShadow=true;g.add(leaf);}}}
 
 /* ---------- cranes (B hidden until bought) ---------- */
 function buildCrane(homeX,idx){
@@ -618,7 +654,7 @@ const CREW_SPOTS={
 const workerFigs=[];
 function buildWorkerFig(){
   const g=new THREE.Group();scene.add(g);
-  const vest=new THREE.MeshStandardMaterial({color:0xD98A3F,roughness:0.8});
+  const vest=new THREE.MeshStandardMaterial({color:0xE0322C,roughness:0.8});
   box(g,P.steelDark,0,0.35,0,0.4,0.7,0.3);
   const torso=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.6,0.38),vest);
   torso.position.y=1;torso.castShadow=true;g.add(torso);
@@ -686,20 +722,23 @@ function stepGulls(t){for(const gu of gulls){
   const f=Math.sin(t*7+gu.ph)*0.45;gu.wl.rotation.z=f;gu.wr.rotation.z=-f;}}
 
 /* ---------- day/night ---------- */
+/* The clock still runs the port day (payroll at dawn), but the light stays
+   in showroom territory: bright paper daylight easing into a warm evening —
+   never a black night. */
 const DAY_LEN=110;let dayFrac=0.34,dayCount=1;
-const skyDay=new THREE.Color(0xc4d2d8),skyNight=new THREE.Color(0x141b2a);
-const sunLow=new THREE.Color(0xFFB878),sunHigh=new THREE.Color(0xFFF4E0);
+const skyDay=new THREE.Color(0xF4F2ED),skyNight=new THREE.Color(0xE7DFD4);
+const sunLow=new THREE.Color(0xFFC896),sunHigh=new THREE.Color(0xFFF2E2);
 function stepDay(dt){
   dayFrac+=dt/DAY_LEN;if(dayFrac>=1){dayFrac-=1;dayCount++;payroll();}
   const dl=Math.max(0,Math.sin((dayFrac-0.25)*Math.PI*2));
   const ang=dayFrac*Math.PI*2-Math.PI/2;
-  sun.position.set(Math.cos(0.7)*Math.cos(ang)*160,Math.sin(ang)*160,Math.sin(0.7)*Math.cos(ang)*160);
-  sun.intensity=1.2*Math.sqrt(dl);
-  sun.color.copy(sunLow).lerp(sunHigh,Math.min(1,dl*2));
-  hemi.intensity=0.15+0.45*dl;
+  sun.position.set(Math.cos(0.7)*Math.cos(ang)*160,Math.max(60,Math.abs(Math.sin(ang))*160),Math.sin(0.7)*Math.cos(ang)*160);
+  sun.intensity=0.55+0.3*dl;
+  sun.color.copy(sunLow).lerp(sunHigh,Math.min(1,0.3+dl));
+  hemi.intensity=0.35+0.1*dl;
   const sky=skyNight.clone().lerp(skyDay,dl);
   renderer.setClearColor(sky);scene.fog.color.copy(sky);
-  const night=dl<0.08,k=Math.min(1,dt*2);
+  const night=dl<0.12,k=Math.min(1,dt*2);
   for(const m of lampMats)m.emissiveIntensity+=((night?1.6:0)-m.emissiveIntensity)*k;
   for(const m of windowMats)m.emissiveIntensity+=((night?1.2:0)-m.emissiveIntensity)*k;
   for(const l of nightLights)l.intensity+=((night?1.4:0)-l.intensity)*k;
@@ -707,41 +746,66 @@ function stepDay(dt){
   $('clock').querySelector('.val').textContent=String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0');
   $('clock').querySelector('.sub').textContent='Day '+dayCount;}
 
-/* ---------- camera ---------- */
+/* ---------- camera: isometric drone on rails ----------
+   Fixed architectural pitch, yaw locked to 45° steps that glide when
+   rotated, drag pans the world like a map, scroll/pinch zooms the ortho
+   frustum, and clicking anything sends the camera on a slow cinematic
+   dolly to frame it. */
 let focusTarget=null;
-const cam={pivot:new THREE.Vector3(0,QUAY_Y,-4),yaw:0.5,pitch:0.66,dist:92,
-  tPivot:new THREE.Vector3(0,QUAY_Y,-4),tYaw:0.5,tPitch:0.66,tDist:92,auto:true,lastInput:-99};
+const ISO_PITCH=0.6155;                 // atan(1/√2): true isometric
+const CAM_DIST=280;                     // ortho: distance only sets clipping
+const HOME=new THREE.Vector3(0,QUAY_Y,-2);
+const cam={pivot:HOME.clone(),tPivot:HOME.clone(),
+  yaw:Math.PI/4,tYaw:Math.PI/4,view:46,tView:46,auto:true,lastInput:-99};
+function clampPivot(v){v.x=Math.max(-80,Math.min(80,v.x));
+  v.z=Math.max(-75,Math.min(48,v.z));v.y=QUAY_Y;}
 function stepCam(dt,t){
-  if(cam.auto){
-    if(!reduced)cam.tYaw+=dt*0.02;
-    if(focusTarget){cam.tPivot.lerp(new THREE.Vector3(focusTarget.position.x*0.7,QUAY_Y+2,focusTarget.position.z*0.7),Math.min(1,dt*0.8));
-      cam.tDist=64;}
-    else{cam.tPivot.lerp(new THREE.Vector3(0,QUAY_Y,-4),Math.min(1,dt*0.4));cam.tDist=92+Math.sin(t*0.05)*8;}}
-  if(!cam.auto&&t-cam.lastInput>12&&cam.lastInput>0){cam.auto=true;$('camBtn').setAttribute('aria-pressed','true');}
-  cam.pivot.lerp(cam.tPivot,Math.min(1,dt*3));
-  cam.yaw+=(cam.tYaw-cam.yaw)*Math.min(1,dt*5);
-  cam.pitch+=(cam.tPitch-cam.pitch)*Math.min(1,dt*5);
-  cam.dist+=(cam.tDist-cam.dist)*Math.min(1,dt*3);
-  cam.tPitch=Math.max(0.45,Math.min(0.96,cam.tPitch));
-  cam.tDist=Math.max(15,Math.min(140,cam.tDist));
-  const cp=Math.cos(cam.pitch);
-  camera.position.set(cam.pivot.x+Math.sin(cam.yaw)*cp*cam.dist,
-    cam.pivot.y+Math.sin(cam.pitch)*cam.dist,cam.pivot.z+Math.cos(cam.yaw)*cp*cam.dist);
+  if(focusTarget){ // cinematic dolly toward the subject (both modes)
+    cam.tPivot.lerp(new THREE.Vector3(focusTarget.position.x,QUAY_Y+1,focusTarget.position.z),Math.min(1,dt*1.6));
+    cam.tView+=(30-cam.tView)*Math.min(1,dt*1.6);}
+  else if(cam.auto){ // slow drone drift over the port
+    const dx=Math.sin(t*0.05)*26,dz=Math.cos(t*0.037)*10-4;
+    cam.tPivot.lerp(new THREE.Vector3(dx,QUAY_Y,dz),Math.min(1,dt*0.25));
+    cam.tView+=((46+Math.sin(t*0.043)*5)-cam.tView)*Math.min(1,dt*0.3);}
+  if(!cam.auto&&t-cam.lastInput>14&&cam.lastInput>0){cam.auto=true;$('camBtn').setAttribute('aria-pressed','true');}
+  cam.tView=Math.max(15,Math.min(72,cam.tView));
+  clampPivot(cam.tPivot);
+  cam.pivot.lerp(cam.tPivot,Math.min(1,dt*3.2));
+  cam.yaw+=(cam.tYaw-cam.yaw)*Math.min(1,dt*2.4);   // long, heavy rotation ease
+  cam.view+=(cam.tView-cam.view)*Math.min(1,dt*3);
+  camView=cam.view;applyFrustum();
+  const cp=Math.cos(ISO_PITCH);
+  camera.position.set(cam.pivot.x+Math.sin(cam.yaw)*cp*CAM_DIST,
+    cam.pivot.y+Math.sin(ISO_PITCH)*CAM_DIST,cam.pivot.z+Math.cos(cam.yaw)*cp*CAM_DIST);
   camera.lookAt(cam.pivot);}
+resize();
 let dragging=false,lx=0,ly=0,moved=0,pinch=0;
-function manual(){cam.auto=false;cam.lastInput=frame.t;$('camBtn').setAttribute('aria-pressed','false');}
+function manual(){cam.auto=false;cam.lastInput=frame.t;focusTarget=null;
+  $('camBtn').setAttribute('aria-pressed','false');}
+function panBy(dx,dy){ // map-style: the world follows the pointer
+  const wpp=2*cam.view/Math.max(1,innerHeight);
+  const sy=Math.sin(cam.tYaw),cy=Math.cos(cam.tYaw);
+  cam.tPivot.x+=-cy*dx*wpp-sy*dy*wpp;
+  cam.tPivot.z+= sy*dx*wpp-cy*dy*wpp;
+  clampPivot(cam.tPivot);}
+function rotateStep(dir){cam.lastInput=frame.t;cam.tYaw+=dir*Math.PI/4;}
 canvas.addEventListener('pointerdown',e=>{dragging=true;moved=0;lx=e.clientX;ly=e.clientY;});
 addEventListener('pointerup',e=>{if(dragging&&moved<8)pick(e.clientX,e.clientY);dragging=false;});
-addEventListener('pointermove',e=>{if(!dragging)return;
+addEventListener('pointermove',e=>{if(!dragging||pinch)return;
   moved+=Math.abs(e.clientX-lx)+Math.abs(e.clientY-ly);
-  if(moved>=8){manual();cam.tYaw+=(e.clientX-lx)*0.005;cam.tPitch+=(e.clientY-ly)*0.004;}
+  if(moved>=8){manual();panBy(e.clientX-lx,e.clientY-ly);}
   lx=e.clientX;ly=e.clientY;});
-canvas.addEventListener('wheel',e=>{e.preventDefault();manual();cam.tDist*=1+Math.sign(e.deltaY)*0.09;},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();manual();
+  cam.tView*=1+Math.sign(e.deltaY)*0.08;},{passive:false});
 canvas.addEventListener('touchmove',e=>{if(e.touches.length===2){e.preventDefault();manual();
   const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-  if(pinch)cam.tDist*=pinch/d;pinch=d;}},{passive:false});
+  if(pinch)cam.tView*=pinch/d;pinch=d;}},{passive:false});
 canvas.addEventListener('touchend',()=>pinch=0);
-$('camBtn').addEventListener('click',()=>{cam.auto=!cam.auto;
+addEventListener('keydown',e=>{if(e.key==='q'||e.key==='Q')rotateStep(1);
+  if(e.key==='e'||e.key==='E')rotateStep(-1);});
+$('rotL').addEventListener('click',()=>rotateStep(1));
+$('rotR').addEventListener('click',()=>rotateStep(-1));
+$('camBtn').addEventListener('click',()=>{cam.auto=!cam.auto;focusTarget=null;
   $('camBtn').setAttribute('aria-pressed',String(cam.auto));cam.lastInput=cam.auto?-99:frame.t+1e9;});
 
 /* ---------- selection & cards ---------- */
@@ -755,10 +819,9 @@ function pick(cx,cy){
 function select(o){
   const id=o.userData.selId;
   selected={id,obj:o,ship:o.userData.ship||null};
-  if(selected.ship)focusTarget=selected.ship.root;
-  else if(id.startsWith('crane'))focusTarget=o;
+  focusTarget=selected.ship?selected.ship.root:o; // camera glides to anything you tap
   $('card').classList.add('open');refreshCard();}
-function closeCard(){selected=null;$('card').classList.remove('open');}
+function closeCard(){selected=null;focusTarget=null;$('card').classList.remove('open');}
 $('cardClose').addEventListener('click',closeCard);
 function mmss(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 function cardData(){
