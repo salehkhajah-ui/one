@@ -63,15 +63,15 @@
       50%{box-shadow:0 8px 34px rgba(224,50,44,.75);}}
   }
 
-  /* How to play */
-  #help{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
+  /* How to play + Price book */
+  #help,#prices{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
     background:rgba(244,242,237,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
-  #help.open{display:flex;}
-  #help .sheet{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:#fff;
+  #help.open,#prices.open{display:flex;}
+  #help .sheet,#prices .sheet{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:#fff;
     border:1px solid var(--panel-line);border-radius:16px;padding:34px 38px;
     box-shadow:0 18px 60px rgba(27,28,30,.16);}
-  #help h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
-  #help .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+  #help h2,#prices h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
+  #help .tag,#prices .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--ink-dim);margin-bottom:22px;}
   #help .step{display:flex;gap:14px;margin-bottom:16px;}
   #help .step .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
@@ -83,6 +83,37 @@
     border-top:1px solid var(--panel-line);margin-top:18px;padding-top:14px;}
   #help .ctrl b{color:var(--ink);}
   #help .row{display:flex;justify-content:center;margin-top:22px;}
+  #prices h3{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:20px 0 8px;}
+  #prices table{border-collapse:collapse;width:100%;font-size:12.5px;}
+  #prices td{padding:6px 8px 6px 0;border-bottom:1px solid rgba(27,28,30,.07);vertical-align:top;}
+  #prices tr:last-child td{border-bottom:none;}
+  #prices td.pr{font:600 12px var(--mono);color:var(--gold);white-space:nowrap;text-align:right;
+    font-variant-numeric:tabular-nums;padding-left:10px;}
+  #prices td.it{font-weight:600;white-space:nowrap;padding-right:12px;}
+  #prices td.ds{color:var(--ink-dim);}
+  #prices .row{display:flex;justify-content:center;margin-top:20px;}
+
+  /* Buy suggestion (non-blocking) */
+  #suggest{position:fixed;left:20px;top:110px;z-index:6;width:280px;background:var(--panel);
+    border:1px solid var(--panel-line);border-left:4px solid var(--accent);border-radius:12px;
+    box-shadow:0 10px 32px rgba(27,28,30,.14);padding:14px 16px;display:none;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  #suggest.on{display:block;}
+  #suggest .sl{font:600 10.5px var(--ui);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:4px;}
+  #suggest .st{font-size:14px;font-weight:600;margin-bottom:2px;}
+  #suggest .sp{font:600 12.5px var(--mono);color:var(--gold);margin-bottom:10px;}
+  #suggest .sb{display:flex;gap:8px;}
+  #suggest .sb .go{background:var(--accent);color:#fff;border:none;border-radius:8px;
+    font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;cursor:pointer;}
+  #suggest .sb .later{background:none;border:1px solid var(--panel-line);border-radius:8px;
+    color:var(--ink-dim);font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;
+    padding:8px 12px;cursor:pointer;}
+  @media (prefers-reduced-motion: no-preference){
+    #suggest.on{animation:sugIn .45s cubic-bezier(.2,.9,.3,1);}
+    @keyframes sugIn{from{opacity:0;transform:translateX(-16px);}to{opacity:1;transform:none;}}
+  }
   .btn{background:var(--panel);border:1px solid var(--panel-line);border-radius:10px;color:var(--ink);
     font:600 12.5px var(--ui);letter-spacing:.08em;text-transform:uppercase;padding:10px 13px;cursor:pointer;
     box-shadow:0 4px 14px rgba(27,28,30,.08);
@@ -182,6 +213,7 @@
   <button class="btn" id="rotR" aria-label="Rotate right">⟳</button>
   <button class="btn" id="camBtn" aria-pressed="true">Auto cam</button>
   <button class="btn" id="fastBtn" aria-pressed="false">⚡ Fast</button>
+  <button class="btn" id="pricesBtn">Prices</button>
   <button class="btn" id="helpBtn">How to play</button>
   <button class="btn" id="shopBtn" style="color:var(--gold);border-color:rgba(217,164,63,.5)">Shop</button>
   <button class="btn" id="creditsBtn">Credits</button>
@@ -212,6 +244,56 @@
     <div class="ctrl"><b>Drag</b> pan the port · <b>Scroll / pinch</b> zoom · <b>Q / E</b> or ⟲ ⟳ rotate ·
       <b>Click</b> anything to inspect it · <b>Esc</b> close panels</div>
     <div class="row"><button class="btn" id="helpClose" style="color:var(--accent);border-color:var(--accent)">Start managing</button></div>
+  </div>
+</div>
+
+<div id="suggest" role="status">
+  <div class="sl">You can afford this</div>
+  <div class="st"></div>
+  <div class="sp"></div>
+  <div class="sb">
+    <button class="go">Show me</button>
+    <button class="later">Later</button>
+  </div>
+</div>
+
+<div id="prices" role="dialog" aria-modal="true" aria-label="Price book">
+  <div class="sheet">
+    <h2>PRICE BOOK</h2>
+    <div class="tag">Everything a captain can buy</div>
+    <h3>Equipment &amp; operations</h3>
+    <table>
+      <tr><td class="it">Crane speed Lv 1/2/3</td><td class="ds">+25% crane speed per level — click a crane</td><td class="pr">2,500 / 5,000 / 10,000</td></tr>
+      <tr><td class="it">Tractor #2</td><td class="ds">Second truck — the best first buy</td><td class="pr">6,000</td></tr>
+      <tr><td class="it">Tractor #3</td><td class="ds">Third truck for the two-berth rush</td><td class="pr">12,000</td></tr>
+      <tr><td class="it">Faster dispatch Lv 1/2/3</td><td class="ds">Trucks clear storage faster — click the warehouse</td><td class="pr">2,000 / 4,000 / 8,000</td></tr>
+      <tr><td class="it">Express dispatch</td><td class="ds">Instantly clear 3 storage slots</td><td class="pr">150</td></tr>
+      <tr><td class="it">Charter a ship</td><td class="ds">A ship arrives immediately — Trade Office</td><td class="pr">1,200</td></tr>
+      <tr><td class="it">Trade routes tier 2</td><td class="ds">Electronics &amp; fresh cargo, KD 780–950 a box</td><td class="pr">3,500</td></tr>
+      <tr><td class="it">Trade routes tier 3</td><td class="ds">Luxury cargo, KD 1,300–1,600 a box</td><td class="pr">8,000</td></tr>
+    </table>
+    <h3>Manpower — Crew Cabin</h3>
+    <table>
+      <tr><td class="it">Hire worker</td><td class="ds">Max 12 · wages KD 60 each per day at dawn</td><td class="pr">800</td></tr>
+      <tr><td class="it">Crane crew +1</td><td class="ds">+8% crane speed per worker</td><td class="pr">free</td></tr>
+      <tr><td class="it">Warehouse crew +1</td><td class="ds">+12% dispatch rate per worker</td><td class="pr">free</td></tr>
+      <tr><td class="it">Dock crew +1</td><td class="ds">+15% faster docking per worker</td><td class="pr">free</td></tr>
+    </table>
+    <h3>Expansion — the port grows</h3>
+    <table>
+      <tr><td class="it">Berth 2 + Crane 2</td><td class="ds">Work two ships at once</td><td class="pr">15,000</td></tr>
+      <tr><td class="it">Land + Storage Yard</td><td class="ds">Reclaims new land · +9 cargo slots · needs Berth 2</td><td class="pr">20,000</td></tr>
+      <tr><td class="it">Factory</td><td class="ds">Every dispatched box → export unit worth KD 400 · needs Storage</td><td class="pr">45,000</td></tr>
+      <tr><td class="it">Refinery</td><td class="ds">Exports worth KD 800, ships load 6 · needs Factory</td><td class="pr">90,000</td></tr>
+    </table>
+    <h3>Premium — Harbor Shop</h3>
+    <table>
+      <tr><td class="it">⭐ Falcon of Kuwait</td><td class="ds">Your flagship: 1.35× cargo, never penalizes</td><td class="pr">$6.99</td></tr>
+      <tr><td class="it">Mega Port</td><td class="ds">4th anchorage + 3 stacked slots</td><td class="pr">$4.99</td></tr>
+      <tr><td class="it">Schedule Control</td><td class="ds">Set the ship timetable, 15–180s</td><td class="pr">$2.99</td></tr>
+      <tr><td class="it">Golden Cranes</td><td class="ds">Pure prestige</td><td class="pr">$1.99</td></tr>
+    </table>
+    <div class="row"><button class="btn" id="pricesClose">Close</button></div>
   </div>
 </div>
 
@@ -315,7 +397,7 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const S={money:9000,rep:40,craneLv:[0,0],tractors:1,dispatchLv:0,berth2:false,
   tiers:1,invested:0,delivered:0,onTime:0,late:0,tutorial:0,helpSeen:0,
   fast:0,shipEvery:0,
-  storage:0,factory:0,refinery:0,goods:0,exported:0,
+  storage:0,factory:0,refinery:0,goods:0,exported:0,sug:{},
   workers:4,crewCrane:2,crewWh:1,crewDock:1,prem:{ship:0,mega:0,gold:0,sched:0}};
 try{const raw=localStorage.getItem('port-web-save');
   if(raw){const d=JSON.parse(raw);for(const k in S)if(k in d)S[k]=d[k];}}catch(e){}
@@ -562,13 +644,7 @@ function spawnShip(chartered){
   sh.root.rotation.y=Math.atan2(ax-sh.root.position.x,az-sh.root.position.z);
   banner(sh.name+' inbound — '+sh.cargo+', '+count+' boxes');
   (async()=>{sh.state='inbound';await sail(sh.root,ax,az,3,1);sh.state='anchored';
-    if(S.tutorial<1){S.tutorial=1;banner('Click the ship, then press DOCK SHIP',6);}
-    // In auto-cam with nothing selected, glide out to greet the arrival so
-    // a waiting ship is never off-screen and unnoticed.
-    if(cam.auto&&!selected&&!focusTarget){
-      focusTarget=sh.root;
-      await wait(6);
-      if(focusTarget===sh.root&&!selected)focusTarget=null;}})();
+    if(S.tutorial<1){S.tutorial=1;banner('Click the ship, then press DOCK SHIP',6);}})();
   return true;}
 async function sail(root,tx,tz,arrive,sc){
   while(true){const dx=tx-root.position.x,dz=tz-root.position.z,d=Math.hypot(dx,dz);
@@ -595,7 +671,7 @@ const berths=[{x:-27,ship:null,crane:cranes[0]},{x:27,ship:null,crane:cranes[1]}
 function freeBerth(){return berths.find(b=>b.ship===null&&(b.x<0||S.berth2))||null;}
 async function dockShip(sh){
   const berth=freeBerth();if(!berth||sh.state!=='anchored')return;
-  berth.ship=sh;sh.state='approaching';anchorFree[sh.slot]=true;focusTarget=sh.root;
+  berth.ship=sh;sh.state='approaching';anchorFree[sh.slot]=true;
   for(const tug of tugs)if(!tug.escort)tug.escort=sh;
   await sail(sh.root,55,-38,3,1);
   await sail(sh.root,berth.x+18,-26,2,1);
@@ -965,13 +1041,15 @@ const cam={pivot:HOME.clone(),tPivot:HOME.clone(),
 function clampPivot(v){v.x=Math.max(-80,Math.min(80,v.x));
   v.z=Math.max(-75,Math.min(S.storage?66:48,v.z));v.y=QUAY_Y;}
 function stepCam(dt,t){
-  if(focusTarget){ // cinematic dolly toward the subject (both modes)
+  /* Zoom only ever changes on a user action: a click on something (the
+     dolly below), the wheel, or a pinch. Auto mode drifts the pan gently
+     but never touches the zoom. */
+  if(focusTarget){ // dolly toward what the player clicked
     cam.tPivot.lerp(new THREE.Vector3(focusTarget.position.x,QUAY_Y+1,focusTarget.position.z),Math.min(1,dt*1.6));
-    cam.tView+=(30-cam.tView)*Math.min(1,dt*1.6);}
-  else if(cam.auto){ // slow drone drift over the port
+    cam.tView+=(Math.min(cam.tView,30)-cam.tView)*Math.min(1,dt*1.6);}
+  else if(cam.auto){ // slow drone drift over the port (pan only)
     const dx=HOME.x+Math.sin(t*0.05)*24,dz=HOME.z+Math.cos(t*0.037)*8;
-    cam.tPivot.lerp(new THREE.Vector3(dx,QUAY_Y,dz),Math.min(1,dt*0.25));
-    cam.tView+=((38+Math.sin(t*0.043)*4)-cam.tView)*Math.min(1,dt*0.3);}
+    cam.tPivot.lerp(new THREE.Vector3(dx,QUAY_Y,dz),Math.min(1,dt*0.25));}
   if(!cam.auto&&t-cam.lastInput>14&&cam.lastInput>0){cam.auto=true;$('camBtn').setAttribute('aria-pressed','true');}
   cam.tView=Math.max(15,Math.min(72,cam.tView));
   clampPivot(cam.tPivot);
@@ -1230,13 +1308,58 @@ $('shipAlert').addEventListener('click',()=>{
 $('helpBtn').addEventListener('click',()=>$('help').classList.add('open'));
 $('helpClose').addEventListener('click',()=>$('help').classList.remove('open'));
 $('help').addEventListener('click',e=>{if(e.target.id==='help')$('help').classList.remove('open');});
+$('pricesBtn').addEventListener('click',()=>$('prices').classList.add('open'));
+$('pricesClose').addEventListener('click',()=>$('prices').classList.remove('open'));
+$('prices').addEventListener('click',e=>{if(e.target.id==='prices')$('prices').classList.remove('open');});
+
+/* ---------- buy suggestions (non-blocking) ----------
+   When the balance first crosses the price of the recommended next
+   purchase, a small card slides in beside the balance panel. The game
+   never pauses; the card waits quietly and leaves on its own. Each
+   suggestion fires once per save. */
+const SUGGESTIONS=[
+  {key:'tractor2',title:'Tractor #2 — double your throughput',cost:6000,
+    when:()=>S.tractors<2,target:()=>adminGroup},
+  {key:'tier2',title:'Tier 2 trade routes — richer cargo',cost:3500,
+    when:()=>S.tiers<2,target:()=>adminGroup},
+  {key:'berth2',title:'Berth 2 + Crane — two ships at once',cost:15000,
+    when:()=>!S.berth2,target:()=>placard},
+  {key:'storage',title:'Reclaim land + Storage Yard',cost:20000,
+    when:()=>S.berth2&&!S.storage,target:()=>sites.storageSite},
+  {key:'tier3',title:'Tier 3 trade routes — luxury cargo',cost:8000,
+    when:()=>S.tiers===2,target:()=>adminGroup},
+  {key:'factory',title:'Factory — start exporting',cost:45000,
+    when:()=>S.storage&&!S.factory,target:()=>sites.factorySite},
+  {key:'refinery',title:'Refinery — exports pay double',cost:90000,
+    when:()=>S.factory&&!S.refinery,target:()=>sites.refinerySite},
+];
+let sugTimer=null,sugTarget=null;
+function hideSuggest(){$('suggest').classList.remove('on');clearTimeout(sugTimer);sugTarget=null;}
+function showSuggest(s){
+  const el=$('suggest');
+  el.querySelector('.st').textContent=s.title;
+  el.querySelector('.sp').textContent='KD '+fmt(s.cost)+' — you have KD '+fmt(S.money);
+  sugTarget=s.target;
+  el.classList.add('on');
+  clearTimeout(sugTimer);sugTimer=setTimeout(hideSuggest,14000);}
+$('suggest').querySelector('.go').addEventListener('click',()=>{
+  const t=sugTarget?sugTarget():null;hideSuggest();if(t)select(t);});
+$('suggest').querySelector('.later').addEventListener('click',hideSuggest);
+setInterval(()=>{
+  if($('suggest').classList.contains('on'))return;
+  if(document.querySelector('#help.open,#prices.open,#shop.open,#credits.open'))return;
+  for(const s of SUGGESTIONS){
+    if(S.sug[s.key])continue;
+    if(s.when()&&S.money>=s.cost){
+      S.sug[s.key]=1;save();showSuggest(s);break;}}},2500);
 
 /* ---------- credits / reset ---------- */
 $('creditsBtn').addEventListener('click',()=>$('credits').classList.add('open'));
 $('creditsClose').addEventListener('click',()=>$('credits').classList.remove('open'));
 $('credits').addEventListener('click',e=>{if(e.target.id==='credits')$('credits').classList.remove('open');});
 addEventListener('keydown',e=>{if(e.key==='Escape'){$('credits').classList.remove('open');
-  $('shop').classList.remove('open');$('help').classList.remove('open');closeCard();}});
+  $('shop').classList.remove('open');$('help').classList.remove('open');
+  $('prices').classList.remove('open');closeCard();}});
 $('resetSave').addEventListener('click',()=>{try{localStorage.removeItem('port-web-save');}catch(e){}
   location.reload();});
 
