@@ -45,12 +45,46 @@
     color:var(--good);padding:8px 18px;opacity:0;transition:opacity .35s ease;white-space:nowrap;}
   #toast.bad{color:var(--bad);}
 
-  #hint{bottom:20px;left:20px;font-size:12.5px;color:var(--ink-dim);padding:8px 14px;max-width:44vw;}
+  #hint{bottom:20px;left:20px;font-size:12.5px;color:var(--ink-dim);padding:8px 14px;max-width:30vw;}
   #hint b{color:var(--ink);font-weight:600;}
 
-  #cornerR{bottom:20px;right:20px;display:flex;gap:10px;pointer-events:auto;z-index:6;position:fixed;}
+  #cornerR{bottom:20px;right:20px;display:flex;gap:10px;pointer-events:auto;z-index:6;position:fixed;
+    flex-wrap:wrap;justify-content:flex-end;max-width:76vw;}
+
+  /* Anchored-ship alert */
+  #shipAlert{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:6;display:none;
+    align-items:center;gap:8px;background:var(--accent);color:#fff;border:none;border-radius:999px;
+    font:600 13px var(--ui);letter-spacing:.06em;text-transform:uppercase;padding:11px 20px;cursor:pointer;
+    box-shadow:0 8px 26px rgba(224,50,44,.35);}
+  #shipAlert.on{display:flex;}
+  @media (prefers-reduced-motion: no-preference){
+    #shipAlert.on{animation:shipPulse 1.5s ease-in-out infinite;}
+    @keyframes shipPulse{0%,100%{box-shadow:0 8px 26px rgba(224,50,44,.35);}
+      50%{box-shadow:0 8px 34px rgba(224,50,44,.75);}}
+  }
+
+  /* How to play */
+  #help{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
+    background:rgba(244,242,237,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
+  #help.open{display:flex;}
+  #help .sheet{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:#fff;
+    border:1px solid var(--panel-line);border-radius:16px;padding:34px 38px;
+    box-shadow:0 18px 60px rgba(27,28,30,.16);}
+  #help h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
+  #help .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-dim);margin-bottom:22px;}
+  #help .step{display:flex;gap:14px;margin-bottom:16px;}
+  #help .step .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;font:700 15px var(--ui);}
+  #help .step b{display:block;font-size:15px;margin-bottom:2px;}
+  #help .step span{font-size:13px;line-height:1.55;color:var(--ink-dim);}
+  #help .step span b{display:inline;font-size:inherit;margin:0;color:var(--ink);}
+  #help .ctrl{font-family:var(--mono);font-size:12.5px;line-height:1.9;color:var(--ink-dim);
+    border-top:1px solid var(--panel-line);margin-top:18px;padding-top:14px;}
+  #help .ctrl b{color:var(--ink);}
+  #help .row{display:flex;justify-content:center;margin-top:22px;}
   .btn{background:var(--panel);border:1px solid var(--panel-line);border-radius:10px;color:var(--ink);
-    font:600 12.5px var(--ui);letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;cursor:pointer;
+    font:600 12.5px var(--ui);letter-spacing:.08em;text-transform:uppercase;padding:10px 13px;cursor:pointer;
     box-shadow:0 4px 14px rgba(27,28,30,.08);
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
   .btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -142,12 +176,39 @@
 <div id="banner" class="hud panel"></div>
 <div id="toast" class="hud panel"></div>
 <div id="hint" class="hud panel"><b>Click</b> ships &amp; buildings to act · <b>drag</b> to pan · <b>scroll</b> zoom · <b>Q/E</b> rotate</div>
+<button id="shipAlert">⚓ Ship waiting — click to view</button>
 <div id="cornerR">
   <button class="btn" id="rotL" aria-label="Rotate left">⟲</button>
   <button class="btn" id="rotR" aria-label="Rotate right">⟳</button>
   <button class="btn" id="camBtn" aria-pressed="true">Auto cam</button>
+  <button class="btn" id="fastBtn" aria-pressed="false">⚡ Fast</button>
+  <button class="btn" id="helpBtn">How to play</button>
   <button class="btn" id="shopBtn" style="color:var(--gold);border-color:rgba(217,164,63,.5)">Shop</button>
   <button class="btn" id="creditsBtn">Credits</button>
+</div>
+
+<div id="help" role="dialog" aria-modal="true" aria-label="How to play">
+  <div class="sheet">
+    <h2>WELCOME, CAPTAIN</h2>
+    <div class="tag">How to run your port</div>
+    <div class="step"><div class="n">1</div><div><b>Dock the ships</b>
+      <span>Ships arrive and wait offshore — a red <b>⚓ Ship waiting</b> button appears at the top.
+      Click it (or the ship itself), then press <b>DOCK SHIP</b>. The beacon above each ship is its
+      deadline: green means relaxed, red means it's about to cost you. Ships left too long give up and leave.</span></div></div>
+    <div class="step"><div class="n">2</div><div><b>Earn per box</b>
+      <span>Your crane unloads onto tractors, tractors deliver to the warehouse, and you're paid for
+      every container — with a fat bonus for finishing before the deadline.</span></div></div>
+    <div class="step"><div class="n">3</div><div><b>Spend to grow</b>
+      <span>Click the crane, warehouse, Trade Office, expansion sign and crew cabin to buy upgrades:
+      faster cranes, more tractors, Berth&nbsp;2 to work two ships at once, richer trade routes, more workers.
+      Mind the payroll — the crew is paid every dawn whether ships came or not.</span></div></div>
+    <div class="step"><div class="n">4</div><div><b>Set the pace</b>
+      <span>A new ship arrives about every 90 seconds. Press <b>⚡ Fast</b> for one every 30 seconds,
+      or unlock Harbor Schedule Control in the Shop to set the timetable yourself.</span></div></div>
+    <div class="ctrl"><b>Drag</b> pan the port · <b>Scroll / pinch</b> zoom · <b>Q / E</b> or ⟲ ⟳ rotate ·
+      <b>Click</b> anything to inspect it · <b>Esc</b> close panels</div>
+    <div class="row"><button class="btn" id="helpClose" style="color:var(--accent);border-color:var(--accent)">Start managing</button></div>
+  </div>
 </div>
 
 <div id="shop" role="dialog" aria-modal="true" aria-label="Premium shop">
@@ -163,6 +224,11 @@
       <div class="info"><b>Mega Port Expansion</b>
         <span>A bigger port: a fourth anchorage berth offshore and a double-stacked warehouse floor (12 slots) to keep cargo flowing through the rush.</span></div>
       <div class="buy"><span class="price">$4.99</span><button class="btn">Unlock</button></div>
+    </div>
+    <div class="shopItem" data-item="sched">
+      <div class="info"><b>Harbor Schedule Control</b>
+        <span>You run the timetable. Choose exactly how often ships call at your port — from a calm cruise to a 15-second rush hour.</span></div>
+      <div class="buy"><span class="price">$2.99</span><button class="btn">Unlock</button></div>
     </div>
     <div class="shopItem" data-item="gold">
       <div class="info"><b>Golden Crane Livery</b>
@@ -236,8 +302,9 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- persistent game state ---------- */
 const S={money:9000,rep:40,craneLv:[0,0],tractors:1,dispatchLv:0,berth2:false,
-  tiers:1,invested:0,delivered:0,onTime:0,late:0,tutorial:0,
-  workers:4,crewCrane:2,crewWh:1,crewDock:1,prem:{ship:0,mega:0,gold:0}};
+  tiers:1,invested:0,delivered:0,onTime:0,late:0,tutorial:0,helpSeen:0,
+  fast:0,shipEvery:0,
+  workers:4,crewCrane:2,crewWh:1,crewDock:1,prem:{ship:0,mega:0,gold:0,sched:0}};
 try{const raw=localStorage.getItem('port-web-save');
   if(raw){const d=JSON.parse(raw);for(const k in S)if(k in d)S[k]=d[k];}}catch(e){}
 let saveTimer=0;
@@ -483,7 +550,13 @@ function spawnShip(chartered){
   sh.root.rotation.y=Math.atan2(ax-sh.root.position.x,az-sh.root.position.z);
   banner(sh.name+' inbound — '+sh.cargo+', '+count+' boxes');
   (async()=>{sh.state='inbound';await sail(sh.root,ax,az,3,1);sh.state='anchored';
-    if(S.tutorial<1){S.tutorial=1;banner('Click the ship, then press DOCK SHIP',6);}})();
+    if(S.tutorial<1){S.tutorial=1;banner('Click the ship, then press DOCK SHIP',6);}
+    // In auto-cam with nothing selected, glide out to greet the arrival so
+    // a waiting ship is never off-screen and unnoticed.
+    if(cam.auto&&!selected&&!focusTarget){
+      focusTarget=sh.root;
+      await wait(6);
+      if(focusTarget===sh.root&&!selected)focusTarget=null;}})();
   return true;}
 async function sail(root,tx,tz,arrive,sc){
   while(true){const dx=tx-root.position.x,dz=tz-root.position.z,d=Math.hypot(dx,dz);
@@ -754,9 +827,12 @@ function stepDay(dt){
 let focusTarget=null;
 const ISO_PITCH=0.6155;                 // atan(1/√2): true isometric
 const CAM_DIST=280;                     // ortho: distance only sets clipping
-const HOME=new THREE.Vector3(0,QUAY_Y,-2);
+/* Default view: from the sea looking onto the quay — water at the bottom,
+   warehouses behind, the crane front and center. */
+const HOME=new THREE.Vector3(-4,QUAY_Y,12);
+const HOME_YAW=Math.PI; // due south of the quay: water at the bottom of frame
 const cam={pivot:HOME.clone(),tPivot:HOME.clone(),
-  yaw:Math.PI/4,tYaw:Math.PI/4,view:46,tView:46,auto:true,lastInput:-99};
+  yaw:HOME_YAW,tYaw:HOME_YAW,view:38,tView:38,auto:true,lastInput:-99};
 function clampPivot(v){v.x=Math.max(-80,Math.min(80,v.x));
   v.z=Math.max(-75,Math.min(48,v.z));v.y=QUAY_Y;}
 function stepCam(dt,t){
@@ -764,9 +840,9 @@ function stepCam(dt,t){
     cam.tPivot.lerp(new THREE.Vector3(focusTarget.position.x,QUAY_Y+1,focusTarget.position.z),Math.min(1,dt*1.6));
     cam.tView+=(30-cam.tView)*Math.min(1,dt*1.6);}
   else if(cam.auto){ // slow drone drift over the port
-    const dx=Math.sin(t*0.05)*26,dz=Math.cos(t*0.037)*10-4;
+    const dx=HOME.x+Math.sin(t*0.05)*24,dz=HOME.z+Math.cos(t*0.037)*8;
     cam.tPivot.lerp(new THREE.Vector3(dx,QUAY_Y,dz),Math.min(1,dt*0.25));
-    cam.tView+=((46+Math.sin(t*0.043)*5)-cam.tView)*Math.min(1,dt*0.3);}
+    cam.tView+=((38+Math.sin(t*0.043)*4)-cam.tView)*Math.min(1,dt*0.3);}
   if(!cam.auto&&t-cam.lastInput>14&&cam.lastInput>0){cam.auto=true;$('camBtn').setAttribute('aria-pressed','true');}
   cam.tView=Math.max(15,Math.min(72,cam.tView));
   clampPivot(cam.tPivot);
@@ -906,6 +982,7 @@ function cardData(){
       run:()=>{const c=S.tractors===1?6000:12000;
         if(spend(c,'tractor '+(S.tractors+1))){S.tractors++;buildTractor(0);save();}}});
     return {title:'Trade Office',lines:'Cargo tiers unlocked: '+S.tiers+' of 3\nTractor fleet: '+S.tractors+
+      '\nNext ship due every ~'+shipInterval()+'s'+
       '\nShips served on time: '+S.onTime+' · late: '+S.late,acts};}
   return null;}
 function refreshCard(){
@@ -944,13 +1021,18 @@ async function traderLoop(){
     await until(()=>!ships.includes(sh));
     await wait(70);}}
 
-/* ---------- ship supply ---------- */
+/* ---------- ship supply ----------
+   The timetable is explicit: one ship every 90s, every 30s in Fast mode,
+   or exactly what the player set with Harbor Schedule Control. */
+function shipInterval(){
+  if(S.prem.sched&&S.shipEvery)return S.shipEvery;
+  return S.fast?30:90;}
 async function supplyLoop(){
   await wait(3);spawnShip();
   while(true){
-    const base=48+Math.random()*10-(S.rep/100)*18;await wait(S.berth2?base:base*1.4);
-    const active=ships.length;
-    if(active<4&&anchorFree.includes(true))spawnShip();}}
+    await wait(shipInterval());
+    await until(()=>ships.length<4&&anchorFree.includes(true));
+    spawnShip();}}
 
 /* ---------- premium shop ---------- */
 function applyPremium(){
@@ -963,23 +1045,50 @@ function unlockPremium(item){
   if(item==='mega'){if(anchorFree.length<4)anchorFree.push(true);
     banner('Mega Port — a 4th anchorage and a double-stacked warehouse');}
   if(item==='ship')banner('⭐ The Falcon of Kuwait flies your flag — first call soon');
+  if(item==='sched'){S.shipEvery=S.shipEvery||30;save();
+    banner('Harbor Schedule Control — pick your timetable in the Shop');}
   refreshShop();}
 function refreshShop(){
   document.querySelectorAll('.shopItem').forEach(el=>{
     const item=el.dataset.item,buy=el.querySelector('.buy');
-    if(S.prem[item])buy.innerHTML='<span class="owned">Owned ✓</span>';
+    if(S.prem[item]){
+      if(item==='sched'){
+        if(!buy.querySelector('select')){
+          buy.innerHTML='<span class="owned">Owned ✓</span>'+
+            '<select style="font:600 12px var(--ui);padding:6px 8px;border-radius:8px;'+
+            'border:1px solid var(--panel-line);background:#fff;color:var(--ink);cursor:pointer"></select>';
+          const sel=buy.querySelector('select');
+          for(const v of [15,30,45,60,90,120,180]){
+            const o=document.createElement('option');o.value=v;o.textContent='every '+v+'s';sel.appendChild(o);}
+          sel.value=String(S.shipEvery||30);
+          sel.addEventListener('change',()=>{S.shipEvery=+sel.value;save();
+            toast('Timetable set — a ship every '+S.shipEvery+'s');});}}
+      else buy.innerHTML='<span class="owned">Owned ✓</span>';}
     else{const b=buy.querySelector('button');if(b&&!b.dataset.wired){b.dataset.wired=1;
       b.addEventListener('click',()=>unlockPremium(item));}}});}
 $('shopBtn').addEventListener('click',()=>{$('shop').classList.add('open');refreshShop();});
 $('shopClose').addEventListener('click',()=>$('shop').classList.remove('open'));
 $('shop').addEventListener('click',e=>{if(e.target.id==='shop')$('shop').classList.remove('open');});
 
+/* ---------- fast mode / ship alert / how-to-play ---------- */
+const fastBtn=$('fastBtn');
+function syncFast(){fastBtn.setAttribute('aria-pressed',String(!!S.fast));}
+fastBtn.addEventListener('click',()=>{S.fast=S.fast?0:1;save();syncFast();
+  if(S.prem.sched&&S.shipEvery)toast('Schedule Control is active — ships every '+S.shipEvery+'s');
+  else toast(S.fast?'⚡ Fast mode — a new ship every 30 seconds':'Normal pace — a new ship every 90 seconds');});
+syncFast();
+$('shipAlert').addEventListener('click',()=>{
+  const sh=ships.find(s=>s.state==='anchored');if(sh)select(sh.root);});
+$('helpBtn').addEventListener('click',()=>$('help').classList.add('open'));
+$('helpClose').addEventListener('click',()=>$('help').classList.remove('open'));
+$('help').addEventListener('click',e=>{if(e.target.id==='help')$('help').classList.remove('open');});
+
 /* ---------- credits / reset ---------- */
 $('creditsBtn').addEventListener('click',()=>$('credits').classList.add('open'));
 $('creditsClose').addEventListener('click',()=>$('credits').classList.remove('open'));
 $('credits').addEventListener('click',e=>{if(e.target.id==='credits')$('credits').classList.remove('open');});
 addEventListener('keydown',e=>{if(e.key==='Escape'){$('credits').classList.remove('open');
-  $('shop').classList.remove('open');closeCard();}});
+  $('shop').classList.remove('open');$('help').classList.remove('open');closeCard();}});
 $('resetSave').addEventListener('click',()=>{try{localStorage.removeItem('port-web-save');}catch(e){}
   location.reload();});
 
@@ -1002,6 +1111,7 @@ function tick(now){
   waveOcean(frame.t);stepDay(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);
   for(const sh of ships)shipBob(sh,frame.t);
   stepShipPatience();updateCables();
+  $('shipAlert').classList.toggle('on',ships.some(s=>s.state==='anchored'));
   shownMoney+=(S.money-shownMoney)*Math.min(1,dt*4);
   if(Math.abs(S.money-shownMoney)<1)shownMoney=S.money;
   $('money').querySelector('.val').textContent='KD '+fmt(shownMoney);
@@ -1018,6 +1128,9 @@ syncWorkers();applyPremium();
 for(let i=0;i<S.tractors;i++)buildTractor((i*5)%RING.length);
 setTimeout(()=>{const t=$('title');t.style.opacity=0;setTimeout(()=>t.remove(),1400);
   banner('Ships pay by the box — dock them before their deadlines',4.5);},reduced?600:3000);
+/* First launch: open the captain's guide once the title clears. */
+if(!S.helpSeen){S.helpSeen=1;save();
+  setTimeout(()=>$('help').classList.add('open'),reduced?900:3600);}
 </script>
 
 <script>
