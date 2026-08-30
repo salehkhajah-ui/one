@@ -70,11 +70,21 @@
     font:600 13px var(--ui);letter-spacing:.06em;text-transform:uppercase;padding:11px 20px;cursor:pointer;
     box-shadow:0 8px 26px rgba(224,50,44,.35);}
   #shipAlert.on{display:flex;}
+  #shipAlert.hot{background:#A31E19;}
   @media (prefers-reduced-motion: no-preference){
     #shipAlert.on{animation:shipPulse 1.5s ease-in-out infinite;}
     @keyframes shipPulse{0%,100%{box-shadow:0 8px 26px rgba(224,50,44,.35);}
       50%{box-shadow:0 8px 34px rgba(224,50,44,.75);}}
+    #shipAlert.hot{animation-duration:.7s;}
   }
+
+  /* Live event chip — storms, rush contracts, breakdowns */
+  #eventChip{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:6;display:none;
+    align-items:center;gap:8px;background:#33363A;color:#fff;border:none;border-radius:999px;
+    font:600 12.5px var(--ui);letter-spacing:.05em;text-transform:uppercase;padding:10px 18px;cursor:pointer;
+    box-shadow:0 8px 24px rgba(27,28,30,.35);white-space:nowrap;max-width:92vw;
+    overflow:hidden;text-overflow:ellipsis;}
+  #eventChip.on{display:flex;}
 
   /* How to play + Price book + Performance report */
   #help,#prices,#report{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
@@ -230,6 +240,7 @@
     #helpBtn .wide{display:none;} #helpBtn .narrow{display:inline;}
     /* Keep alerts and cards clear of the HUD (top) and the dock (bottom). */
     #shipAlert{top:124px;font-size:12px;padding:10px 16px;max-width:92vw;}
+    #eventChip{top:172px;font-size:11px;padding:9px 14px;}
     #util{top:84px;font-size:11px;padding:6px 10px;}
     #help .sheet,#prices .sheet,#report .sheet{padding:24px 18px;max-height:82vh;}
     #help h2,#prices h2,#report h2{font-size:24px;}
@@ -253,6 +264,7 @@
 <div id="toast" class="hud panel"></div>
 <div id="hint" class="hud panel"><b>Click</b> ships &amp; buildings to act · <b>drag</b> to pan · <b>scroll</b> zoom · <b>Q/E</b> rotate</div>
 <button id="shipAlert">⚓ Ship waiting — click to view</button>
+<button id="eventChip"></button>
 <div id="cornerR">
   <button class="btn" id="rotL" aria-label="Rotate left">⟲</button>
   <button class="btn" id="rotR" aria-label="Rotate right">⟳</button>
@@ -328,7 +340,7 @@
       <tr><td class="it">Charter a ship</td><td class="ds">A ship arrives immediately — Trade Office</td><td class="pr">1,200</td></tr>
       <tr><td class="it">Trade routes tier 2</td><td class="ds">Electronics &amp; fresh cargo, KD 780–950 a box</td><td class="pr">3,500</td></tr>
       <tr><td class="it">Trade routes tier 3</td><td class="ds">Luxury cargo, KD 1,300–1,600 a box</td><td class="pr">8,000</td></tr>
-      <tr><td class="it">Delivery van #2–#5</td><td class="ds">Each van runs boxes to the City Depot — KD 100 a trip · buy at the depot</td><td class="pr">4,000–12,000</td></tr>
+      <tr><td class="it">Delivery van #2–#5</td><td class="ds">Each van runs boxes to the City Depot — KD 150 a trip · buy at the depot</td><td class="pr">4,000–12,000</td></tr>
     </table>
     <h3>Utilities — Substation</h3>
     <table>
@@ -344,7 +356,7 @@
     </table>
     <h3>Expansion — the port grows</h3>
     <table>
-      <tr><td class="it">Berth 2 + Crane 2</td><td class="ds">Work two ships at once</td><td class="pr">15,000</td></tr>
+      <tr><td class="it">Berth 2 + Crane 2</td><td class="ds">Work two ships at once</td><td class="pr">12,000</td></tr>
       <tr><td class="it">Land + Storage Yard</td><td class="ds">Reclaims new land · +9 cargo slots · needs Berth 2</td><td class="pr">20,000</td></tr>
       <tr><td class="it">Factory</td><td class="ds">Every delivered box → export unit worth KD 400 · needs Storage</td><td class="pr">45,000</td></tr>
       <tr><td class="it">Power Plant</td><td class="ds">Generates all the port's electricity — power bills end · needs Storage</td><td class="pr">60,000</td></tr>
@@ -463,7 +475,7 @@ const S={money:9000,rep:40,craneLv:[0,0],tractors:1,dispatchLv:0,berth2:false,
   fast:0,shipEvery:0,
   storage:0,factory:0,refinery:0,goods:0,exported:0,sug:{},
   vans:1,elec:100,oil:100,powerPlant:0,
-  lost:0,payrollMiss:0,earnToday:0,earnPrev:0,
+  lost:0,payrollMiss:0,earnToday:0,earnPrev:0,streak:0,bestStreak:0,
   workers:4,crewCrane:2,crewWh:1,crewDock:1,prem:{ship:0,mega:0,gold:0,sched:0}};
 try{const raw=localStorage.getItem('port-web-save');
   if(raw){const d=JSON.parse(raw);for(const k in S)if(k in d)S[k]=d[k];}}catch(e){}
@@ -471,6 +483,9 @@ let saveTimer=0;
 function save(){try{localStorage.setItem('port-web-save',JSON.stringify(S));}catch(e){}}
 function portValue(){return Math.round(S.money)+S.invested+S.delivered*40+S.exported*80+S.rep*120;}
 function rank(){let r=RANKS[0][0];for(const [n,v] of RANKS)if(portValue()>=v)r=n;return r;}
+function rankIdx(){let i=0;for(let k=0;k<RANKS.length;k++)if(portValue()>=RANKS[k][1])i=k;return i;}
+/* Ships get less patient as your reputation as a big port grows. */
+function patience(){return Math.max(0.6,1-0.05*rankIdx());}
 function addRep(d,why){const before=S.rep;S.rep=Math.max(0,Math.min(100,S.rep+d));
   if(S.rep!==before)toast('Reputation '+(d>0?'+':'−')+Math.abs(d)+' — '+why,d<0);}
 function spend(cost,what){if(S.money<cost){toast('Not enough KD for '+what,true);return false;}
@@ -483,8 +498,8 @@ function earn(v,why){S.money+=v;S.earnToday+=v;toast('+KD '+fmt(v)+' — '+why);
    and the Refinery (fuel) make the port self-sufficient. Running dry
    doesn't stop the port — it slows every machine to half speed. */
 const ELEC_PRICE=800,OIL_PRICE=600,UTIL_CAP=100;
-function elecPerDay(){return 26+(S.berth2?10:0)+3*S.vans;}
-function oilPerDay(){return 16+5*S.tractors+4*S.vans;}
+function elecPerDay(){return 18+(S.berth2?8:0)+2*S.vans;}
+function oilPerDay(){return 12+4*S.tractors+3*S.vans;}
 function powerFactor(){return (S.powerPlant||S.elec>0)?1:0.45;}
 function fuelFactor(){return (S.refinery||S.oil>0)?1:0.45;}
 function stepUtil(dt){
@@ -505,6 +520,13 @@ function buyUtil(key){
   const price=key==='elec'?ELEC_PRICE:OIL_PRICE;
   if(!spend(price,key==='elec'?'electricity':'oil'))return;
   S[key]=Math.min(UTIL_CAP,S[key]+100);save();}
+
+/* ---------- live events: keep the captain on their toes ----------
+   Every couple of minutes something demands attention: a storm that
+   closes the anchorage (dock ships BEFORE it hits), a rush contract at
+   double rates on a tight window, or a crane breakdown to repair. */
+const EV={active:null,until:0,nextAt:99999,stormClosed:false,jamIdx:-1};
+let dayShips=0;
 
 /* ---------- renderer / scene ---------- */
 const canvas=document.getElementById('stage');
@@ -570,9 +592,10 @@ const oceanGeo=new THREE.PlaneGeometry(560,420,56,42);oceanGeo.rotateX(-Math.PI/
 const ocean=new THREE.Mesh(oceanGeo,new THREE.MeshStandardMaterial({color:P.water,roughness:0.95,metalness:0}));
 ocean.position.set(0,0.25,-100);ocean.receiveShadow=true;scene.add(ocean);
 const oPos=oceanGeo.attributes.position,oBase=oPos.array.slice();let waveFrame=0;
+let seaState=1; // 1 calm … ~2.4 in a storm (eased in stepEvents)
 function waveOcean(t){const a=oPos.array;
   for(let i=0;i<a.length;i+=3){const x=oBase[i],z=oBase[i+2];
-    a[i+1]=Math.sin(x*0.055+z*0.035+t*0.9)*0.10+Math.sin(x*0.021-z*0.043+t*0.5)*0.15;}
+    a[i+1]=(Math.sin(x*0.055+z*0.035+t*0.9)*0.10+Math.sin(x*0.021-z*0.043+t*0.5)*0.15)*seaState;}
   oPos.needsUpdate=true;if(++waveFrame%3===0)oceanGeo.computeVertexNormals();}
 
 box(scene,P.concrete,0,QUAY_Y-1,17,140,2,54);
@@ -661,7 +684,8 @@ const cranes=[buildCrane(-27,0),buildCrane(27,1)];
 function setCraneVisible(cr,v){cr.g.visible=v;for(const c of cr.cables)c.line.visible=v;}
 setCraneVisible(cranes[1],S.berth2);
 function crewFactor(){return 1+0.08*(S.crewCrane-2);}
-function craneSpd(cr){return (1+0.25*S.craneLv[cr.idx])*crewFactor()*powerFactor();}
+function craneSpd(cr){return (1+0.25*S.craneLv[cr.idx])*crewFactor()*powerFactor()
+  *(EV.jamIdx===cr.idx?0.25:1);}
 function applyGoldCranes(){mat(P.craneTeal,0.85,0).color.setHex(0xC9A227);}
 function updateCables(){for(const cr of cranes){if(!cr.g.visible)continue;
   const tp=new THREE.Vector3(),sp=new THREE.Vector3();
@@ -669,11 +693,11 @@ function updateCables(){for(const cr of cranes){if(!cr.g.visible)continue;
   for(const c of cr.cables){const a=c.geo.attributes.position.array;
     a[0]=tp.x+c.a;a[1]=tp.y-0.5;a[2]=tp.z;a[3]=sp.x+c.b;a[4]=sp.y+0.25;a[5]=sp.z;
     c.geo.attributes.position.needsUpdate=true;}}}
-async function crGantry(cr,x){const f=cr.g.position.x,d=(Math.abs(x-f)/6.5+0.25)/craneSpd(cr);
+async function crGantry(cr,x){const f=cr.g.position.x,d=(Math.abs(x-f)/8.2+0.2)/craneSpd(cr);
   await ease(d,t=>{cr.g.position.x=f+(x-f)*t;});}
-async function crTrolley(cr,z){const f=cr.trolley.position.z,d=(Math.abs(z-f)/7+0.25)/craneSpd(cr);
+async function crTrolley(cr,z){const f=cr.trolley.position.z,d=(Math.abs(z-f)/8.8+0.2)/craneSpd(cr);
   await ease(d,t=>{cr.trolley.position.z=f+(z-f)*t;});}
-async function crCable(cr,len){const f=cr.cable,d=(Math.abs(len-f)/7.5+0.2)/craneSpd(cr);
+async function crCable(cr,len){const f=cr.cable,d=(Math.abs(len-f)/9.4+0.16)/craneSpd(cr);
   await ease(d,t=>{cr.cable=f+(len-f)*t;cr.spreader.position.y=-cr.cable;});}
 
 /* expansion placard at berth B while closed */
@@ -724,20 +748,26 @@ function buildShip(spec,slot){
   const sh={root,hull,boxes,beacon:bMat,beaconMesh:beacon,slot,phase:Math.random()*10,
     state:'inbound',...spec,left:spec.count};
   root.userData.ship=sh;ships.push(sh);return sh;}
-function spawnShip(chartered){
+function spawnShip(chartered,rush){
   const slot=anchorFree.indexOf(true);if(slot<0)return false;
   anchorFree[slot]=false;
   const tierPool=[];for(let t=0;t<S.tiers;t++)for(const c of TIERS[t])tierPool.push([...c,t]);
   const pick=tierPool[Math.floor(Math.random()*tierPool.length)];
-  const count=5+Math.floor(Math.random()*4);
-  const spec={name:SHIP_NAMES[shipCounter%SHIP_NAMES.length],cargo:pick[0],val:pick[1],
-    count,deadlineTotal:140+26*count,deadlineAt:frame.t+140+26*count,chartered:!!chartered};
+  /* The very first ship is small: a quick first win instead of a long wait. */
+  const count=shipCounter===0?5:5+Math.floor(Math.random()*4);
+  let dl=(140+26*count)*patience();
+  let val=pick[1];
+  if(rush){val*=2;dl*=0.55;} // double rates, tight window
+  const spec={name:SHIP_NAMES[shipCounter%SHIP_NAMES.length],cargo:pick[0],val,
+    count,deadlineTotal:dl,deadlineAt:frame.t+dl,chartered:!!chartered,rush:!!rush,
+    shipColor:rush?0xD9A43F:undefined};
   shipCounter++;
   const sh=buildShip(spec,slot);
   sh.root.position.set(150+slot*14,0.15,-95-slot*10);
   const ax=95+slot*16,az=-62-slot*13;
   sh.root.rotation.y=Math.atan2(ax-sh.root.position.x,az-sh.root.position.z);
-  banner(sh.name+' inbound — '+sh.cargo+', '+count+' boxes');
+  banner(rush?'🔥 RUSH CONTRACT — '+sh.cargo+' at DOUBLE rates, tight deadline!':
+    sh.name+' inbound — '+sh.cargo+', '+count+' boxes',rush?5:3.8);
   (async()=>{sh.state='inbound';await sail(sh.root,ax,az,3,1);sh.state='anchored';
     if(S.tutorial<1){S.tutorial=1;banner('Click the ship, then press DOCK SHIP',6);}})();
   return true;}
@@ -765,6 +795,8 @@ function shipBob(sh,t){const calm=(sh.state==='docked'||sh.state==='unloading')?
 const berths=[{x:-27,ship:null,crane:cranes[0]},{x:27,ship:null,crane:cranes[1]}];
 function freeBerth(){return berths.find(b=>b.ship===null&&(b.x<0||S.berth2))||null;}
 async function dockShip(sh){
+  if(EV.stormClosed&&sh.state==='anchored'){
+    toast('⛈ Anchorage closed — wait for the storm to pass',true);return;}
   const berth=freeBerth();if(!berth||sh.state!=='anchored')return;
   berth.ship=sh;sh.state='approaching';anchorFree[sh.slot]=true;
   for(const tug of tugs)if(!tug.escort)tug.escort=sh;
@@ -781,11 +813,19 @@ async function dockShip(sh){
   await unloadShip(berth.crane,sh);
   await until(()=>sh.left<=0);
   const onTime=frame.t<=sh.deadlineAt;
-  if(onTime){const bonus=Math.round(sh.count*sh.val*0.25);earn(bonus,'on-time bonus — '+sh.name);
-    addRep(2,'on-time delivery');S.onTime++;banner(sh.name+' — delivered on time');}
+  if(onTime){
+    S.streak++;S.bestStreak=Math.max(S.bestStreak,S.streak);
+    const mult=1+0.1*Math.min(S.streak,5); // streak sweetens the bonus, up to +50%
+    const bonus=Math.round(sh.count*sh.val*0.3*mult);
+    earn(bonus,'on-time bonus — '+sh.name+(S.streak>=2?' 🔥×'+S.streak:''));
+    addRep(2,'on-time delivery');S.onTime++;
+    banner(sh.name+' — delivered on time'+(S.streak>=2?'  ·  🔥 streak ×'+S.streak:''));}
   else{const pen=Math.round(sh.count*sh.val*0.2);S.money=Math.max(0,S.money-pen);
     toast('−KD '+fmt(pen)+' — late penalty',true);addRep(-3,'late delivery');S.late++;
+    if(S.streak>=2)toast('🔥 Streak broken — '+S.streak+' on-time run ends',true);
+    S.streak=0;
     banner(sh.name+' — delivered late');}
+  dayShips++;
   save();
   if(S.factory&&S.goods>0)await loadShip(berth.crane,sh);
   sh.state='departing';await wait(1.5);berth.ship=null;
@@ -797,6 +837,8 @@ async function dockShip(sh){
 function stepShipPatience(){for(const sh of [...ships]){
   if(sh.state==='anchored'&&!sh.owned&&frame.t>sh.deadlineAt+150){
     sh.state='departing';anchorFree[sh.slot]=true;S.lost++;
+    if(S.streak>=2)toast('🔥 Streak broken — a ship left unserved',true);
+    S.streak=0;
     addRep(-5,sh.name+' left unserved');banner(sh.name+' gave up waiting and left',4);
     (async()=>{await sail(sh.root,150,-120,6,1.3);scene.remove(sh.root);
       ships.splice(ships.indexOf(sh),1);})();}}}
@@ -839,7 +881,7 @@ function buildTractor(startIdx){
   tractors.push(tr);tractorLoop(tr);return tr;}
 async function driveTo(tr,tx,tz){
   while(true){const dx=tx-tr.g.position.x,dz=tz-tr.g.position.z,d=Math.hypot(dx,dz);
-    if(d<0.8)break;
+    if(d<1.2)break;
     // hold behind a stopped tractor ahead
     let blocked=false;
     for(const o of tractors){if(o===tr||!o.stopped)continue;
@@ -849,9 +891,9 @@ async function driveTo(tr,tx,tz){
     if(blocked){await nextFrame();continue;}
     const want=Math.atan2(dx,dz);
     let diff=((want-tr.g.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const mt=2.6*frame.dt;
+    const mt=3.4*frame.dt;
     tr.g.rotation.y+=Math.abs(diff)<mt?diff:Math.sign(diff)*mt;
-    const spd=Math.min(10,Math.sqrt(2*5*d)*0.9+0.5)*fuelFactor();
+    const spd=Math.min(15,Math.sqrt(2*8*d)*1.1+0.9)*fuelFactor();
     tr.g.position.x+=Math.sin(tr.g.rotation.y)*spd*frame.dt;
     tr.g.position.z+=Math.cos(tr.g.rotation.y)*spd*frame.dt;
     await nextFrame();}}
@@ -901,7 +943,7 @@ function dispatchOne(){
   if(si<0)return false;
   const m=WH.slotOcc[si];WH.slotOcc[si]=null;WH.stored--;
   ease(0.4,t=>{m.scale.setScalar(1-t*0.97);}).then(()=>{if(m.parent)m.parent.remove(m);});
-  S.money+=100;S.earnToday+=100;
+  S.money+=150;S.earnToday+=150;
   if(S.factory&&S.goods<GOODS_CAP)S.goods++;
   return true;}
 WH.g.userData.selId='wh';
@@ -968,7 +1010,7 @@ async function vanLoop(v){
     await vanGo(v,44,8);await vanGo(v,60,8.5);await vanGo(v,64,13);
     await ease(0.5,t=>m.scale.setScalar(0.6*(1-t*0.97)));
     if(m.parent)m.parent.remove(m);
-    S.money+=100;S.earnToday+=100;
+    S.money+=150;S.earnToday+=150;
     if(S.factory&&S.goods<GOODS_CAP)S.goods++;
     v.busy=false;
     await vanGo(v,v.park.x,v.park.z);}}
@@ -1184,7 +1226,11 @@ const skyDay=new THREE.Color(0xF4F2ED),skyNight=new THREE.Color(0xE7DFD4);
 const sunLow=new THREE.Color(0xFFC896),sunHigh=new THREE.Color(0xFFF2E2);
 function stepDay(dt){
   dayFrac+=dt/DAY_LEN;if(dayFrac>=1){dayFrac-=1;dayCount++;payroll();
-    S.earnPrev=S.earnToday;S.earnToday=0;}
+    if(dayShips>0){const msg='Day '+(dayCount-1)+' closed — KD '+fmt(S.earnToday)+
+      ' earned · '+dayShips+' ship'+(dayShips>1?'s':'')+' served'+
+      (S.streak>=2?' · 🔥 streak ×'+S.streak:'');
+      setTimeout(()=>banner(msg,5),1800);}
+    S.earnPrev=S.earnToday;S.earnToday=0;dayShips=0;}
   const dl=Math.max(0,Math.sin((dayFrac-0.25)*Math.PI*2));
   const ang=dayFrac*Math.PI*2-Math.PI/2;
   sun.position.set(Math.cos(0.7)*Math.cos(ang)*160,Math.max(60,Math.abs(Math.sin(ang))*160),Math.sin(0.7)*Math.cos(ang)*160);
@@ -1310,13 +1356,17 @@ function cardData(){
         run:()=>{dockShip(sh);closeCard();}});
       if(!b)acts.push({label:S.berth2?'All berths busy — finish a ship first':'Berth busy — open Berth 2 to dock two at once',
         cost:0,enabled:false,run:()=>{}});}
-    return {title:(sh.owned?'⭐ ':'')+sh.name,lines,acts};}
+    return {title:(sh.owned?'⭐ ':sh.rush?'🔥 ':'')+sh.name,lines,acts};}
   if(s.id==='crane0'||s.id==='crane1'){const i=+s.id.slice(5);
     const lv=S.craneLv[i],cost=[2500,5000,10000][lv];
     const acts=[];
+    if(EV.jamIdx===i)acts.push({label:'🔧 EMERGENCY REPAIR — full speed now',cost:300,primary:true,
+      enabled:S.money>=300,run:()=>{if(spend(300,'emergency crane repair'))fixJam();}});
     if(lv<3)acts.push({label:'Upgrade speed +25% (Lv '+lv+'→'+(lv+1)+')',cost,
       enabled:S.money>=cost,run:()=>{if(spend(cost,'crane upgrade'))S.craneLv[i]++;}});
-    return {title:'Quay Crane '+(i+1),lines:'Speed level '+lv+' of 3\n'+
+    return {title:'Quay Crane '+(i+1),lines:
+      (EV.jamIdx===i?'🔧 JAMMED — running at 25% speed\n':'')+
+      'Speed level '+lv+' of 3\n'+
       (cranes[i].busy?'Working a ship':'Standing by'),acts};}
   if(s.id==='wh'){const lv=S.dispatchLv,cost=[2000,4000,8000][lv];
     const acts=[];
@@ -1336,7 +1386,7 @@ function cardData(){
         enabled:S.money>=cost,run:()=>{if(spend(cost,'delivery van #'+(S.vans+1))){
           S.vans++;buildVan();save();}}});}
     const idle=vans.filter(v=>!v.busy).length;
-    return {title:'City Depot',lines:'Every box your vans hand over here\npays KD 100 (and feeds the Factory).'+
+    return {title:'City Depot',lines:'Every box your vans hand over here\npays KD 150 (and feeds the Factory).'+
       '\nFleet: '+S.vans+' van'+(S.vans>1?'s':'')+' · idle now: '+idle+
       (WH.stored>=whCap()?'\nWarehouse FULL — the fleet is behind!':''),acts};}
   if(s.id==='util'){
@@ -1358,8 +1408,8 @@ function cardData(){
     return {title:'Power Plant',lines:'Generating '+Math.round(elecPerDay())+' units/day —\nexactly what the port needs.\nElectricity bills: KD 0.',acts:[]};}
   if(s.id==='berth2'){
     return {title:'Expansion Site',lines:'Zoned for a second berth.\nA second berth and crane\nlets you work two ships at once.',
-      acts:[{label:'OPEN BERTH 2 + CRANE',cost:15000,primary:true,enabled:S.money>=15000,
-        run:()=>{if(!spend(15000,'Berth 2 construction'))return;
+      acts:[{label:'OPEN BERTH 2 + CRANE',cost:12000,primary:true,enabled:S.money>=12000,
+        run:()=>{if(!spend(12000,'Berth 2 construction'))return;
           S.berth2=true;setCraneVisible(cranes[1],true);
           if(placard){scene.remove(placard);placard=null;}
           cranes[1].g.scale.setScalar(0.01);
@@ -1409,6 +1459,10 @@ function cardData(){
       '\nFuels the whole port — oil bills: KD 0.',acts:[]};}
   if(s.id==='trade'){
     const acts=[];
+    if(S.tractors<3)acts.push({label:'Hire tractor '+(S.tractors+1),cost:S.tractors===1?6000:12000,
+      enabled:S.money>=(S.tractors===1?6000:12000),
+      run:()=>{const c=S.tractors===1?6000:12000;
+        if(spend(c,'tractor '+(S.tractors+1))){S.tractors++;buildTractor(0);save();}}});
     if(S.tiers<2)acts.push({label:'Import contracts: Electronics & Fresh',cost:3500,
       enabled:S.money>=3500,run:()=>{if(spend(3500,'tier 2 trade routes')){S.tiers=2;
         banner('New trade routes — richer cargo inbound');}}});
@@ -1418,10 +1472,6 @@ function cardData(){
     acts.push({label:'Charter a ship — arrives now',cost:1200,
       enabled:S.money>=1200&&anchorFree.includes(true),
       run:()=>{if(spend(1200,'ship charter'))spawnShip(true);}});
-    if(S.tractors<3)acts.push({label:'Hire tractor '+(S.tractors+1),cost:S.tractors===1?6000:12000,
-      enabled:S.money>=(S.tractors===1?6000:12000),
-      run:()=>{const c=S.tractors===1?6000:12000;
-        if(spend(c,'tractor '+(S.tractors+1))){S.tractors++;buildTractor(0);save();}}});
     return {title:'Trade Office',lines:'Cargo tiers unlocked: '+S.tiers+' of 3\nTractor fleet: '+S.tractors+
       '\nNext ship due every ~'+shipInterval()+'s'+
       '\nShips served on time: '+S.onTime+' · late: '+S.late,acts};}
@@ -1461,6 +1511,57 @@ async function traderLoop(){
     (async()=>{sh.state='inbound';await sail(sh.root,ax,az,3,1);sh.state='anchored';})();
     await until(()=>!ships.includes(sh));
     await wait(70);}}
+
+/* ---------- event engine ---------- */
+function evChip(txt){const c=$('eventChip');
+  if(!txt){c.classList.remove('on');return;}
+  if(c.textContent!==txt)c.textContent=txt;c.classList.add('on');}
+function scheduleEvent(first){EV.nextAt=frame.t+(first?120:105)+Math.random()*75;}
+function startEvent(){
+  const pool=['storm','rush','jam'];
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  if(pick==='storm'){
+    EV.active='stormWarn';EV.until=frame.t+20;
+    banner('⛈ Storm inbound — the anchorage closes in 20 seconds. Dock now!',5);}
+  else if(pick==='rush'){
+    if(!anchorFree.includes(true)||ships.length>=4){scheduleEvent();return;}
+    spawnShip(false,true);
+    EV.active='rush';EV.until=frame.t+18; // chip flash; the ship itself is the event
+  }
+  else{ // crane jam — prefer a crane that's actually working
+    const c=cranes.filter(c=>c.g.visible);
+    const busy=c.filter(x=>x.busy);
+    const cr=(busy.length?busy:c)[Math.floor(Math.random()*(busy.length?busy.length:c.length))];
+    EV.jamIdx=cr.idx;EV.active='jam';EV.until=frame.t+45;
+    banner('🔧 Crane '+(cr.idx+1)+' jammed — tap it for an emergency repair (KD 300)',5);}}
+function stepEvents(t,dt){
+  // sea eases toward stormy or calm
+  const target=(EV.active==='storm'||EV.active==='stormWarn')?2.4:1;
+  seaState+=(target-seaState)*Math.min(1,dt*0.8);
+  if(EV.active===null&&t>EV.nextAt){startEvent();return;}
+  if(EV.active===null){evChip(null);return;}
+  const left=Math.max(0,Math.ceil(EV.until-t));
+  if(EV.active==='stormWarn'){
+    evChip('⛈ Storm — anchorage closes in '+left+'s');
+    if(t>=EV.until){EV.active='storm';EV.until=t+30;EV.stormClosed=true;
+      banner('⛈ The storm is here — no docking until it passes',4);}}
+  else if(EV.active==='storm'){
+    evChip('⛈ Storm over the anchorage — '+left+'s');
+    if(t>=EV.until){EV.active=null;EV.stormClosed=false;evChip(null);
+      banner('The storm has passed — anchorage open',3.5);scheduleEvent();}}
+  else if(EV.active==='rush'){
+    evChip('🔥 Rush contract at anchor — double rates');
+    if(t>=EV.until){EV.active=null;evChip(null);scheduleEvent();}}
+  else if(EV.active==='jam'){
+    evChip('🔧 Crane '+(EV.jamIdx+1)+' jammed — '+left+'s');
+    if(t>=EV.until){EV.jamIdx=-1;EV.active=null;evChip(null);
+      banner('Crane back online',3);scheduleEvent();}}}
+function fixJam(){EV.jamIdx=-1;EV.active=null;EV.until=0;evChip(null);
+  banner('Crane repaired — back to full speed',3);scheduleEvent();}
+$('eventChip').addEventListener('click',()=>{
+  if(EV.active==='jam'){const cr=cranes[EV.jamIdx];if(cr)select(cr.g);}
+  else if(EV.active==='rush'){const sh=ships.find(s=>s.rush&&s.state==='anchored');if(sh)select(sh.root);}});
+scheduleEvent(true);
 
 /* ---------- ship supply ----------
    The timetable is explicit: one ship every 90s, every 30s in Fast mode,
@@ -1516,6 +1617,7 @@ const fastBtn=$('fastBtn');
 function syncFast(){fastBtn.setAttribute('aria-pressed',String(!!S.fast));}
 fastBtn.addEventListener('click',()=>{S.fast=S.fast?0:1;save();syncFast();
   if(S.prem.sched&&S.shipEvery)toast('Schedule Control is active — ships every '+S.shipEvery+'s');
+  else if(S.fast&&!S.berth2)banner('⚡ Fast mode — a ship every 30s. One berth may not keep up!',4.5);
   else toast(S.fast?'⚡ Fast mode — a new ship every 30 seconds':'Normal pace — a new ship every 90 seconds');});
 syncFast();
 $('shipAlert').addEventListener('click',()=>{
@@ -1536,7 +1638,7 @@ function sectorRows(){
   // Berthing
   const tot=S.onTime+S.late,rate=tot?Math.round(100*S.onTime/tot):null;
   if(tot===0)add('Berthing & docking','No ships served yet','o',
-    'Dock your first ship the moment the red chip appears — the on-time bonus is 25% of the whole manifest.');
+    'Dock your first ship the moment the red chip appears — the on-time bonus is 30% of the whole manifest.');
   else if(rate<60||S.lost>=3)add('Berthing & docking',rate+'% on time · '+S.lost+' ships lost','p',
     'Ships are running late or leaving unserved. Dock the moment the red chip appears, open Berth 2 to work two ships at once, and assign dock crew to cut docking time.');
   else if(rate<85||S.lost>0)add('Berthing & docking',rate+'% on time · '+S.lost+' lost','o',
@@ -1612,7 +1714,7 @@ const SUGGESTIONS=[
     when:()=>S.tractors<2,target:()=>adminGroup},
   {key:'tier2',title:'Tier 2 trade routes — richer cargo',cost:3500,
     when:()=>S.tiers<2,target:()=>adminGroup},
-  {key:'berth2',title:'Berth 2 + Crane — two ships at once',cost:15000,
+  {key:'berth2',title:'Berth 2 + Crane — two ships at once',cost:12000,
     when:()=>!S.berth2,target:()=>placard},
   {key:'storage',title:'Reclaim land + Storage Yard',cost:20000,
     when:()=>S.berth2&&!S.storage,target:()=>sites.storageSite},
@@ -1657,8 +1759,6 @@ setInterval(()=>{
 /* ---------- credits / reset ---------- */
 $('creditsLink').addEventListener('click',e=>{e.preventDefault();
   $('help').classList.remove('open');$('credits').classList.add('open');});
-if(matchMedia('(pointer:coarse)').matches)
-  $('shipAlert').textContent='⚓ Ship waiting — tap to view';
 $('creditsClose').addEventListener('click',()=>$('credits').classList.remove('open'));
 $('credits').addEventListener('click',e=>{if(e.target.id==='credits')$('credits').classList.remove('open');});
 addEventListener('keydown',e=>{if(e.key==='Escape'){$('credits').classList.remove('open');
@@ -1678,10 +1778,16 @@ window.__cam=(v,x,z)=>{if(v!==undefined){cam.tView=v;cam.view=v;}
 window.__port=()=>({t:+frame.t.toFixed(1),money:Math.round(S.money),rep:S.rep,
   ships:ships.map(s=>s.name+':'+s.state+':'+s.left),wh:WH.stored,tractors:tractors.length,
   berth2:S.berth2,tiers:S.tiers,vans:S.vans,elec:+S.elec.toFixed(1),oil:+S.oil.toFixed(1),
-  vanBusy:vans.filter(v=>v.busy).length,powF:powerFactor(),fuelF:fuelFactor()});
+  vanBusy:vans.filter(v=>v.busy).length,powF:powerFactor(),fuelF:fuelFactor(),
+  streak:S.streak,ev:EV.active,jam:EV.jamIdx,stormClosed:EV.stormClosed,
+  storage:S.storage,factory:S.factory,refinery:S.refinery,powerPlant:S.powerPlant,
+  onTime:S.onTime,late:S.late,lostS:S.lost,rank:rank()});
 window.__buy=k=>buyUtil(k);
+window.__ev=k=>{if(k==='storm'){EV.active='stormWarn';EV.until=frame.t+3;}
+  else if(k==='rush'){spawnShip(false,true);EV.active='rush';EV.until=frame.t+18;}
+  else if(k==='jam'){EV.jamIdx=0;EV.active='jam';EV.until=frame.t+45;}};
 window.__act={prem:i=>unlockPremium(i),hire:()=>{S.workers++;syncWorkers();},dock:()=>{const sh=ships.find(s=>s.state==='anchored');if(sh)dockShip(sh);},
-  cash:v=>{S.money+=v;},buyBerth2:()=>{S.money+=15000;S.berth2=true;setCraneVisible(cranes[1],true);
+  cash:v=>{S.money+=v;},buyBerth2:()=>{S.money+=12000;S.berth2=true;setCraneVisible(cranes[1],true);
     if(placard){scene.remove(placard);placard=null;}},
   expand:k=>{S.money+=EXPAND_COST[k];tryBuy(k);},goods:v=>{S.goods=Math.min(GOODS_CAP,v);},
   util:(e,o)=>{S.elec=e;S.oil=o;},van:()=>{S.vans++;buildVan();}};
@@ -1696,14 +1802,24 @@ function tick(now){
   stepTweens(dt);stepWaiters();
   waveOcean(frame.t);stepDay(dt);stepUtil(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);
   for(const sh of ships)shipBob(sh,frame.t);
-  stepShipPatience();updateCables();
-  $('shipAlert').classList.toggle('on',ships.some(s=>s.state==='anchored'));
+  stepShipPatience();updateCables();stepEvents(frame.t,dt);
+  /* Ship chip: live countdown of the most urgent waiting ship. */
+  {const anchored=ships.filter(s=>s.state==='anchored');
+   const chip=$('shipAlert');
+   chip.classList.toggle('on',anchored.length>0);
+   if(anchored.length){
+     const sh=anchored.reduce((a,b)=>a.deadlineAt<b.deadlineAt?a:b);
+     const left=sh.deadlineAt-frame.t;
+     chip.textContent=(sh.rush?'🔥 ':'⚓ ')+sh.name+' — '+mmss(left)+
+       (anchored.length>1?' (+'+(anchored.length-1)+' more)':'');
+     chip.classList.toggle('hot',left<45);}}
   shownMoney+=(S.money-shownMoney)*Math.min(1,dt*4);
   if(Math.abs(S.money-shownMoney)<1)shownMoney=S.money;
   $('money').querySelector('.val').textContent='KD '+fmt(shownMoney);
   $('money').querySelector('.sub').innerHTML=
     'Rep '+S.rep+' · <b>'+rank()+'</b> · value KD '+fmt(portValue())+
-    (S.factory?' · goods '+S.goods:'');
+    (S.factory?' · goods '+S.goods:'')+
+    (S.streak>=2?' · 🔥×'+S.streak:'');
   saveTimer+=dt;if(saveTimer>10){saveTimer=0;save();}
   stepCam(dt,frame.t);
   renderer.render(scene,camera);}

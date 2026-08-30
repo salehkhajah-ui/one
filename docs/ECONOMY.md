@@ -9,9 +9,9 @@ always points at the next expansion — import → process → export.
 | Source | Pays | Notes |
 |---|---|---|
 | Container delivered to warehouse | KD 300–1,600 / box | By cargo tier (see trade routes) |
-| On-time bonus | +25% of the manifest | Beat the ship's deadline |
+| On-time bonus | +30% of the manifest, ×(1+0.1·streak) up to +50% more | Beat the ship's deadline |
 | Late penalty | −20% of the manifest, −3 rep | Miss it |
-| Delivery van run | KD 100 / box | Vans carry stored boxes to the City Depot |
+| Delivery van run | KD 150 / box | Vans carry stored boxes to the City Depot |
 | **Export unit (Factory)** | **KD 400 / unit** | Loaded back onto departing ships |
 | **Export unit (Refinery)** | **KD 800 / unit** | And ships take 6 units instead of 4 |
 | Rank/port value | — | Cash + investments + throughput + exports + reputation |
@@ -21,8 +21,8 @@ always points at the next expansion — import → process → export.
 | Item | Cost | Task |
 |---|---|---|
 | Worker wages | KD 60 / worker / day | Paid at dawn; missing payroll costs 2 reputation |
-| Electricity +100 | KD 800 | Substation. Powers the cranes; at 0% they run at 45% speed. Burn scales with berths and vans. Ends when the Power Plant is built |
-| Oil +100 | KD 600 | Substation. Fuels tractors and vans; at 0% they crawl. Burn scales with the vehicle fleet. Ends when the Refinery is built |
+| Electricity +100 | KD 800 | Substation. Powers the cranes; at 0% they run at 45% speed. Burn ~18–30/day scaling with berths and vans. Ends when the Power Plant is built |
+| Oil +100 | KD 600 | Substation. Fuels tractors and vans; at 0% they crawl. Burn ~12–30/day scaling with the vehicle fleet. Ends when the Refinery is built |
 
 ## Equipment & operations
 
@@ -51,7 +51,7 @@ always points at the next expansion — import → process → export.
 
 | Stage | Price (KD) | Requires | Task / effect |
 |---|---|---|---|
-| Berth 2 + Crane 2 | 15,000 | — | Work two ships in parallel |
+| Berth 2 + Crane 2 | 12,000 | — | Work two ships in parallel |
 | **Land reclamation + Storage Yard** | 20,000 | Berth 2 | New land strip appears; +9 cargo slots (9 → 18) |
 | **Factory** | 45,000 | Storage Yard | Every delivered box → 1 export unit (stock cap 40) |
 | **Power Plant** | 60,000 | Storage Yard | Generates all electricity — power purchases end |
@@ -65,10 +65,29 @@ is tuned around: import pays the bills, exports build the empire.
 ### The intended speed-run
 
 Tractor #2 (6,000) → crane Lv1 (2,500) → tier 2 routes (3,500) →
-Berth 2 (15,000) → Storage (20,000) → tier 3 (8,000) → Factory (45,000)
-→ Refinery (90,000). With Fast mode on (a ship every 30s) and both
+Berth 2 (12,000) → Storage (20,000) → tier 3 (8,000) → Factory (45,000)
+→ Power Plant (60,000) → Refinery (90,000). With Fast mode on (a ship every 30s) and both
 berths working, each ship is worth roughly KD 5–14k in deliveries and
 bonuses plus KD 1.6–4.8k in exports.
+
+## Live events & pressure (keeping the captain on their toes)
+
+- **Deadline countdown chip**: the red ship chip shows the most urgent
+  waiting ship and its remaining time live (`⚓ Northern Star — 2:14`),
+  turning dark red under 45 seconds. Waiting is now visible tension.
+- **On-time streak**: consecutive on-time ships build 🔥×N (shown in the
+  HUD); each streak level adds +10% to the on-time bonus, up to +50%.
+  A late ship or a ship that gives up breaks it.
+- **Random events** every ~2–3 minutes, one at a time:
+  - **⛈ Storm** — 20-second warning, then the anchorage closes for 30
+    seconds (no docking; deadlines keep running). Dock before it hits.
+  - **🔥 Rush contract** — a gold ship at double rates with a 45%-shorter
+    deadline.
+  - **🔧 Crane jam** — a crane drops to 25% speed for 45 seconds unless
+    the player taps it and pays KD 300 for an emergency repair.
+- **Scaling pressure**: ship patience shrinks 5% per rank earned
+  (down to 60%) — a Harbor Tycoon's ships expect Tycoon service.
+- **Day summary** at dawn: earnings, ships served, current streak.
 
 ## Performance report (free, in-game)
 

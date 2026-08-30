@@ -1,6 +1,7 @@
-const C='port-v9';
+const C='port-v10';
 const ASSETS=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png',
- 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.147.0/three.min.js'];
+ 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.147.0/three.min.js',
+ 'https://port-harbor-game-assets.vercel.app/game.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;
