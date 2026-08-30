@@ -11,7 +11,7 @@ always points at the next expansion — import → process → export.
 | Container delivered to warehouse | KD 300–1,600 / box | By cargo tier (see trade routes) |
 | On-time bonus | +25% of the manifest | Beat the ship's deadline |
 | Late penalty | −20% of the manifest, −3 rep | Miss it |
-| Dispatch truck | KD 100 / box | Automatic, clears storage |
+| Delivery van run | KD 100 / box | Vans carry stored boxes to the City Depot |
 | **Export unit (Factory)** | **KD 400 / unit** | Loaded back onto departing ships |
 | **Export unit (Refinery)** | **KD 800 / unit** | And ships take 6 units instead of 4 |
 | Rank/port value | — | Cash + investments + throughput + exports + reputation |
@@ -21,6 +21,8 @@ always points at the next expansion — import → process → export.
 | Item | Cost | Task |
 |---|---|---|
 | Worker wages | KD 60 / worker / day | Paid at dawn; missing payroll costs 2 reputation |
+| Electricity +100 | KD 800 | Substation. Powers the cranes; at 0% they run at 45% speed. Burn scales with berths and vans. Ends when the Power Plant is built |
+| Oil +100 | KD 600 | Substation. Fuels tractors and vans; at 0% they crawl. Burn scales with the vehicle fleet. Ends when the Refinery is built |
 
 ## Equipment & operations
 
@@ -29,7 +31,8 @@ always points at the next expansion — import → process → export.
 | Crane speed Lv 1 / 2 / 3 | 2,500 / 5,000 / 10,000 | +25% crane speed per level, per crane | Click a crane |
 | Tractor #2 | 6,000 | Second truck on the ring road — biggest early throughput jump | Trade Office |
 | Tractor #3 | 12,000 | Third truck | Trade Office |
-| Faster dispatch Lv 1 / 2 / 3 | 2,000 / 4,000 / 8,000 | Trucks clear storage faster | Click the warehouse |
+| Faster deliveries Lv 1 / 2 / 3 | 2,000 / 4,000 / 8,000 | Vans drive faster | Click the warehouse |
+| Delivery van #2–#5 | 4,000 / 6,000 / 9,000 / 12,000 | Each van runs boxes to the City Depot in parallel | City Depot |
 | Express dispatch | 150 | Instantly clear 3 storage slots | Click the warehouse |
 | Charter a ship | 1,200 | A ship arrives immediately | Trade Office |
 | Trade routes tier 2 | 3,500 | Electronics & fresh cargo (KD 780–950/box) | Trade Office |
@@ -50,8 +53,9 @@ always points at the next expansion — import → process → export.
 |---|---|---|---|
 | Berth 2 + Crane 2 | 15,000 | — | Work two ships in parallel |
 | **Land reclamation + Storage Yard** | 20,000 | Berth 2 | New land strip appears; +9 cargo slots (9 → 18) |
-| **Factory** | 45,000 | Storage Yard | Every dispatched box → 1 export unit (stock cap 40) |
-| **Refinery** | 90,000 | Factory | Exports pay KD 800/unit and ships load 6/call |
+| **Factory** | 45,000 | Storage Yard | Every delivered box → 1 export unit (stock cap 40) |
+| **Power Plant** | 60,000 | Storage Yard | Generates all electricity — power purchases end |
+| **Refinery** | 90,000 | Factory | Exports pay KD 800/unit, ships load 6/call — and fuels the port, oil purchases end |
 
 With the Factory built, **ships stop leaving empty**: after unloading,
 your crane loads export units aboard and the ship pays export rates on
@@ -65,6 +69,13 @@ Berth 2 (15,000) → Storage (20,000) → tier 3 (8,000) → Factory (45,000)
 → Refinery (90,000). With Fast mode on (a ship every 30s) and both
 berths working, each ship is worth roughly KD 5–14k in deliveries and
 bonuses plus KD 1.6–4.8k in exports.
+
+## Performance report (free, in-game)
+
+The **Report** button scores six sectors live — Berthing & docking,
+Cargo flow, Trade income, Energy & fuel, Crew, Reputation — each with a
+status pill (On track / Watch / Fix this) and a comment: concrete advice
+when a sector underperforms, and how to keep it up when it's healthy.
 
 ## Premium (real money — store tier)
 

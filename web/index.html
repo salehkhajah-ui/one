@@ -40,6 +40,13 @@
   #clock .val{font-family:var(--mono);font-weight:500;font-size:17px;font-variant-numeric:tabular-nums;}
   #clock .sub{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);margin-top:2px;}
 
+  /* Utilities meter — electricity & oil reserves */
+  #util{top:88px;right:20px;padding:7px 12px;text-align:right;font-family:var(--mono);
+    font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink-dim);}
+  #util b{color:var(--ink);font-weight:600;}
+  #util .low{color:var(--bad);font-weight:600;}
+  #util .self{color:var(--good);font-weight:600;}
+
   #banner{top:76px;left:50%;transform:translateX(-50%);padding:10px 26px;font-weight:600;
     font-size:16px;letter-spacing:.02em;opacity:0;transition:opacity .4s ease;white-space:nowrap;max-width:88vw;
     overflow:hidden;text-overflow:ellipsis;}
@@ -69,16 +76,27 @@
       50%{box-shadow:0 8px 34px rgba(224,50,44,.75);}}
   }
 
-  /* How to play + Price book */
-  #help,#prices{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
+  /* How to play + Price book + Performance report */
+  #help,#prices,#report{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
     background:rgba(244,242,237,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
-  #help.open,#prices.open{display:flex;}
-  #help .sheet,#prices .sheet{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:#fff;
+  #help.open,#prices.open,#report.open{display:flex;}
+  #help .sheet,#prices .sheet,#report .sheet{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:#fff;
     border:1px solid var(--panel-line);border-radius:16px;padding:34px 38px;
     box-shadow:0 18px 60px rgba(27,28,30,.16);}
-  #help h2,#prices h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
-  #help .tag,#prices .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+  #help h2,#prices h2,#report h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
+  #help .tag,#prices .tag,#report .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--ink-dim);margin-bottom:22px;}
+  #report .sec{border:1px solid var(--panel-line);border-radius:12px;padding:12px 14px 11px;margin-bottom:10px;}
+  #report .sec .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:3px;}
+  #report .sec .nm{font-weight:700;font-size:13.5px;}
+  #report .sec .vl{font:600 11.5px var(--mono);color:var(--ink-dim);margin-bottom:6px;}
+  #report .pill{flex:none;font:700 10px var(--ui);letter-spacing:.1em;border-radius:999px;padding:4px 10px;text-transform:uppercase;}
+  #report .pill.g{background:rgba(47,139,93,.12);color:var(--good);}
+  #report .pill.o{background:rgba(169,123,37,.13);color:var(--gold);}
+  #report .pill.p{background:rgba(224,50,44,.12);color:var(--accent);}
+  #report .nt{font-size:12.5px;line-height:1.6;color:var(--ink-dim);}
+  #report .nt b{color:var(--ink);}
+  #report .row{display:flex;justify-content:center;margin-top:18px;}
   #help .step{display:flex;gap:14px;margin-bottom:16px;}
   #help .step .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
     display:flex;align-items:center;justify-content:center;font:700 15px var(--ui);}
@@ -207,13 +225,14 @@
     #cornerR .btn{padding:12px 2px;font-size:11px;letter-spacing:.03em;text-align:center;
       white-space:nowrap;min-height:44px;}
     #rotL,#rotR{grid-column:span 1;}
-    #camBtn,#fastBtn,#pricesBtn,#shopBtn,#helpBtn{grid-column:span 2;}
+    #fastBtn,#pricesBtn,#reportBtn,#shopBtn,#helpBtn{grid-column:span 2;}
     #installBtn{grid-column:1/-1;}
     #helpBtn .wide{display:none;} #helpBtn .narrow{display:inline;}
     /* Keep alerts and cards clear of the HUD (top) and the dock (bottom). */
     #shipAlert{top:124px;font-size:12px;padding:10px 16px;max-width:92vw;}
-    #help .sheet,#prices .sheet{padding:24px 18px;max-height:82vh;}
-    #help h2,#prices h2{font-size:24px;}
+    #util{top:84px;font-size:11px;padding:6px 10px;}
+    #help .sheet,#prices .sheet,#report .sheet{padding:24px 18px;max-height:82vh;}
+    #help h2,#prices h2,#report h2{font-size:24px;}
     #prices table{font-size:11.5px;}
     #prices td.it{white-space:normal;padding-right:8px;}
     #prices td.pr{font-size:11px;}
@@ -229,6 +248,7 @@
 
 <div id="money" class="hud panel"><div class="label">Balance</div><div class="val">KD 9,000</div><div class="sub"></div></div>
 <div id="clock" class="hud panel"><div class="val">07:30</div><div class="sub">Day 1</div></div>
+<div id="util" class="hud panel"></div>
 <div id="banner" class="hud panel"></div>
 <div id="toast" class="hud panel"></div>
 <div id="hint" class="hud panel"><b>Click</b> ships &amp; buildings to act · <b>drag</b> to pan · <b>scroll</b> zoom · <b>Q/E</b> rotate</div>
@@ -236,9 +256,9 @@
 <div id="cornerR">
   <button class="btn" id="rotL" aria-label="Rotate left">⟲</button>
   <button class="btn" id="rotR" aria-label="Rotate right">⟳</button>
-  <button class="btn" id="camBtn" aria-pressed="true">Auto cam</button>
   <button class="btn" id="fastBtn" aria-pressed="false">⚡ Fast</button>
   <button class="btn" id="pricesBtn">Prices</button>
+  <button class="btn" id="reportBtn">Report</button>
   <button class="btn" id="shopBtn" style="color:var(--gold);border-color:rgba(217,164,63,.5)">Shop</button>
   <button class="btn" id="helpBtn"><span class="wide">How to play</span><span class="narrow">Help</span></button>
 </div>
@@ -257,11 +277,14 @@
     <div class="step"><div class="n">3</div><div><b>Spend to grow</b>
       <span>Click the crane, warehouse, Trade Office, signposts and crew cabin to buy upgrades:
       faster cranes, more tractors, Berth&nbsp;2 to work two ships at once, richer trade routes, more workers.
-      Mind the payroll — the crew is paid every dawn whether ships came or not.</span></div></div>
+      Delivery vans run your boxes to the <b>City Depot</b> for cash — buy more vans there.
+      Mind the payroll — the crew is paid every dawn whether ships came or not — and keep the
+      <b>Substation</b> stocked with electricity and oil: an empty port runs at half speed.</span></div></div>
     <div class="step"><div class="n">4</div><div><b>Expand and export</b>
       <span>After Berth&nbsp;2, reclaim land for the <b>Storage Yard</b>, then build the <b>Factory</b> —
-      every dispatched box becomes export goods your cranes load back onto ships for KD&nbsp;400 a unit.
-      Crown it with the <b>Refinery</b> and exports fetch KD&nbsp;800. Import, process, export, repeat.</span></div></div>
+      every delivered box becomes export goods your cranes load back onto ships for KD&nbsp;400 a unit.
+      The <b>Power Plant</b> ends your electricity bills; the <b>Refinery</b> doubles exports to
+      KD&nbsp;800 and fuels the port for free. Import, process, export, repeat.</span></div></div>
     <div class="step"><div class="n">5</div><div><b>Set the pace</b>
       <span>A new ship arrives about every 90 seconds. Press <b>⚡ Fast</b> for one every 30 seconds,
       or unlock Harbor Schedule Control in the Shop to set the timetable yourself.</span></div></div>
@@ -282,6 +305,15 @@
   </div>
 </div>
 
+<div id="report" role="dialog" aria-modal="true" aria-label="Performance report">
+  <div class="sheet">
+    <h2>PORT REPORT</h2>
+    <div class="tag">How every sector is performing</div>
+    <div id="reportBody"></div>
+    <div class="row"><button class="btn" id="reportClose">Close</button></div>
+  </div>
+</div>
+
 <div id="prices" role="dialog" aria-modal="true" aria-label="Price book">
   <div class="sheet">
     <h2>PRICE BOOK</h2>
@@ -296,6 +328,12 @@
       <tr><td class="it">Charter a ship</td><td class="ds">A ship arrives immediately — Trade Office</td><td class="pr">1,200</td></tr>
       <tr><td class="it">Trade routes tier 2</td><td class="ds">Electronics &amp; fresh cargo, KD 780–950 a box</td><td class="pr">3,500</td></tr>
       <tr><td class="it">Trade routes tier 3</td><td class="ds">Luxury cargo, KD 1,300–1,600 a box</td><td class="pr">8,000</td></tr>
+      <tr><td class="it">Delivery van #2–#5</td><td class="ds">Each van runs boxes to the City Depot — KD 100 a trip · buy at the depot</td><td class="pr">4,000–12,000</td></tr>
+    </table>
+    <h3>Utilities — Substation</h3>
+    <table>
+      <tr><td class="it">Electricity +100</td><td class="ds">Powers the cranes — at 0% they slow to half speed</td><td class="pr">800</td></tr>
+      <tr><td class="it">Oil +100</td><td class="ds">Fuels tractors and vans — at 0% they crawl</td><td class="pr">600</td></tr>
     </table>
     <h3>Manpower — Crew Cabin</h3>
     <table>
@@ -308,8 +346,9 @@
     <table>
       <tr><td class="it">Berth 2 + Crane 2</td><td class="ds">Work two ships at once</td><td class="pr">15,000</td></tr>
       <tr><td class="it">Land + Storage Yard</td><td class="ds">Reclaims new land · +9 cargo slots · needs Berth 2</td><td class="pr">20,000</td></tr>
-      <tr><td class="it">Factory</td><td class="ds">Every dispatched box → export unit worth KD 400 · needs Storage</td><td class="pr">45,000</td></tr>
-      <tr><td class="it">Refinery</td><td class="ds">Exports worth KD 800, ships load 6 · needs Factory</td><td class="pr">90,000</td></tr>
+      <tr><td class="it">Factory</td><td class="ds">Every delivered box → export unit worth KD 400 · needs Storage</td><td class="pr">45,000</td></tr>
+      <tr><td class="it">Power Plant</td><td class="ds">Generates all the port's electricity — power bills end · needs Storage</td><td class="pr">60,000</td></tr>
+      <tr><td class="it">Refinery</td><td class="ds">Exports worth KD 800, ships load 6 — and fuels the port, oil bills end · needs Factory</td><td class="pr">90,000</td></tr>
     </table>
     <h3>Premium — Harbor Shop</h3>
     <table>
@@ -423,6 +462,8 @@ const S={money:9000,rep:40,craneLv:[0,0],tractors:1,dispatchLv:0,berth2:false,
   tiers:1,invested:0,delivered:0,onTime:0,late:0,tutorial:0,helpSeen:0,
   fast:0,shipEvery:0,
   storage:0,factory:0,refinery:0,goods:0,exported:0,sug:{},
+  vans:1,elec:100,oil:100,powerPlant:0,
+  lost:0,payrollMiss:0,earnToday:0,earnPrev:0,
   workers:4,crewCrane:2,crewWh:1,crewDock:1,prem:{ship:0,mega:0,gold:0,sched:0}};
 try{const raw=localStorage.getItem('port-web-save');
   if(raw){const d=JSON.parse(raw);for(const k in S)if(k in d)S[k]=d[k];}}catch(e){}
@@ -434,7 +475,36 @@ function addRep(d,why){const before=S.rep;S.rep=Math.max(0,Math.min(100,S.rep+d)
   if(S.rep!==before)toast('Reputation '+(d>0?'+':'−')+Math.abs(d)+' — '+why,d<0);}
 function spend(cost,what){if(S.money<cost){toast('Not enough KD for '+what,true);return false;}
   S.money-=cost;S.invested+=cost;toast('−KD '+fmt(cost)+' — '+what,true);save();return true;}
-function earn(v,why){S.money+=v;toast('+KD '+fmt(v)+' — '+why);}
+function earn(v,why){S.money+=v;S.earnToday+=v;toast('+KD '+fmt(v)+' — '+why);}
+
+/* ---------- utilities: electricity & oil ----------
+   The port burns power (cranes) and oil (tractors, vans) every day. Both
+   must be bought at the Substation until the Power Plant (electricity)
+   and the Refinery (fuel) make the port self-sufficient. Running dry
+   doesn't stop the port — it slows every machine to half speed. */
+const ELEC_PRICE=800,OIL_PRICE=600,UTIL_CAP=100;
+function elecPerDay(){return 26+(S.berth2?10:0)+3*S.vans;}
+function oilPerDay(){return 16+5*S.tractors+4*S.vans;}
+function powerFactor(){return (S.powerPlant||S.elec>0)?1:0.45;}
+function fuelFactor(){return (S.refinery||S.oil>0)?1:0.45;}
+function stepUtil(dt){
+  const step=(key,perDay)=>{
+    const before=S[key];
+    S[key]=Math.max(0,before-perDay()*dt/DAY_LEN);
+    if(before>20&&S[key]<=20)toast((key==='elec'?'⚡ Electricity':'🛢 Oil')+' below 20% — top up at the Substation',true);
+    if(before>0&&S[key]<=0)banner((key==='elec'?'Power is out — cranes at half speed':'Fuel is out — tractors and vans crawling'),4);};
+  if(!S.powerPlant)step('elec',elecPerDay);
+  if(!S.refinery)step('oil',oilPerDay);
+  const e=$('util');if(!e)return;
+  const cell=(key,ic)=>{
+    if((key==='elec'&&S.powerPlant)||(key==='oil'&&S.refinery))return '<span class="self">'+ic+' self</span>';
+    const v=Math.round(S[key]);
+    return (v<=20?'<span class="low">':'<b>')+ic+' '+v+'%'+(v<=20?'</span>':'</b>');};
+  e.innerHTML=cell('elec','⚡')+' · '+cell('oil','🛢');}
+function buyUtil(key){
+  const price=key==='elec'?ELEC_PRICE:OIL_PRICE;
+  if(!spend(price,key==='elec'?'electricity':'oil'))return;
+  S[key]=Math.min(UTIL_CAP,S[key]+100);save();}
 
 /* ---------- renderer / scene ---------- */
 const canvas=document.getElementById('stage');
@@ -591,7 +661,7 @@ const cranes=[buildCrane(-27,0),buildCrane(27,1)];
 function setCraneVisible(cr,v){cr.g.visible=v;for(const c of cr.cables)c.line.visible=v;}
 setCraneVisible(cranes[1],S.berth2);
 function crewFactor(){return 1+0.08*(S.crewCrane-2);}
-function craneSpd(cr){return (1+0.25*S.craneLv[cr.idx])*crewFactor();}
+function craneSpd(cr){return (1+0.25*S.craneLv[cr.idx])*crewFactor()*powerFactor();}
 function applyGoldCranes(){mat(P.craneTeal,0.85,0).color.setHex(0xC9A227);}
 function updateCables(){for(const cr of cranes){if(!cr.g.visible)continue;
   const tp=new THREE.Vector3(),sp=new THREE.Vector3();
@@ -726,7 +796,7 @@ async function dockShip(sh){
 /* ships that wait too long give up */
 function stepShipPatience(){for(const sh of [...ships]){
   if(sh.state==='anchored'&&!sh.owned&&frame.t>sh.deadlineAt+150){
-    sh.state='departing';anchorFree[sh.slot]=true;
+    sh.state='departing';anchorFree[sh.slot]=true;S.lost++;
     addRep(-5,sh.name+' left unserved');banner(sh.name+' gave up waiting and left',4);
     (async()=>{await sail(sh.root,150,-120,6,1.3);scene.remove(sh.root);
       ships.splice(ships.indexOf(sh),1);})();}}}
@@ -781,7 +851,7 @@ async function driveTo(tr,tx,tz){
     let diff=((want-tr.g.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI;
     const mt=2.6*frame.dt;
     tr.g.rotation.y+=Math.abs(diff)<mt?diff:Math.sign(diff)*mt;
-    const spd=Math.min(10,Math.sqrt(2*5*d)*0.9+0.5);
+    const spd=Math.min(10,Math.sqrt(2*5*d)*0.9+0.5)*fuelFactor();
     tr.g.position.x+=Math.sin(tr.g.rotation.y)*spd*frame.dt;
     tr.g.position.z+=Math.cos(tr.g.rotation.y)*spd*frame.dt;
     await nextFrame();}}
@@ -823,21 +893,85 @@ async function deliver(tr){
   earn(c.val,c.cargo+' delivered');
   await slideDoor(WH,false);
   WH.busy=false;}
-/* One truck dispatch: pays cash, and once the Factory stands every
-   dispatched box is processed into an export unit. */
+/* Express dispatch: instantly clears un-claimed boxes (extra hired trucks). */
 function dispatchOne(){
   let si=-1;const v=validSlots();
-  for(let k=v.length-1;k>=0;k--)if(WH.slotOcc[v[k]]){si=v[k];break;}
+  for(let k=v.length-1;k>=0;k--){const m=WH.slotOcc[v[k]];
+    if(m&&!m.userData.claimed){si=v[k];break;}}
   if(si<0)return false;
   const m=WH.slotOcc[si];WH.slotOcc[si]=null;WH.stored--;
   ease(0.4,t=>{m.scale.setScalar(1-t*0.97);}).then(()=>{if(m.parent)m.parent.remove(m);});
-  S.money+=100;
+  S.money+=100;S.earnToday+=100;
   if(S.factory&&S.goods<GOODS_CAP)S.goods++;
   return true;}
-async function dispatchLoop(){while(true){
-  await wait(Math.max(4,(14-2.5*S.dispatchLv)/(1+0.12*Math.max(0,S.crewWh-1))));
-  dispatchOne();}}
 WH.g.userData.selId='wh';
+
+/* ---------- delivery fleet: vans run boxes to the City Depot ----------
+   The stored boxes leave the port for real: each van you own claims the
+   next box, drives it out along the quay road to the City Depot, and is
+   paid on handover. More vans = more boxes moving at once. */
+const VAN_PRICES=[0,4000,6000,9000,12000]; // price of van #(i+1)
+let depotG=null,utilG=null;
+{const g=group(scene,67,QUAY_Y,17);      // City Depot
+ box(g,P.whWall,0,3,0,11,6,8);box(g,P.whRoof,0,6.3,0,11.6,0.5,8.6);
+ box(g,P.steelDark,-1.5,2.1,-4.05,4,4.2,0.15);
+ box(g,P.hull,0,5.6,-4.05,11,0.5,0.12);
+ g.userData.selId='depot';depotG=g;}
+{const g=group(scene,47,QUAY_Y,15);      // Substation
+ box(g,P.concreteDark,0,0.25,0,6.5,0.5,4.2);
+ for(const tx of[-1.7,1.7]){cyl(g,P.steelDark,tx,1.5,-0.5,0.85,2.2);
+   cyl(g,P.steel,tx,2.8,-0.5,0.2,0.5);}
+ box(g,P.hull,0,1.1,1.4,4.5,1.1,0.9);   // oil drums rack (red)
+ cyl(g,P.lane,2.6,2.2,1.4,0.09,3.4);
+ g.userData.selId='util';utilG=g;}
+road(56,8,36,6); // quay road east to the depot
+const vans=[];
+function vanRate(){return (1+0.18*S.dispatchLv)*(1+0.1*Math.max(0,S.crewWh-1));}
+function claimStored(){const vs=validSlots();
+  for(let k=vs.length-1;k>=0;k--){const m=WH.slotOcc[vs[k]];
+    if(m&&!m.userData.claimed){m.userData.claimed=1;return {si:vs[k],m};}}
+  return null;}
+async function vanGo(v,tx,tz){
+  while(true){const dx=tx-v.g.position.x,dz=tz-v.g.position.z,d=Math.hypot(dx,dz);
+    if(d<0.9)break;
+    const want=Math.atan2(dx,dz);
+    let diff=((want-v.g.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI;
+    const mt=3*frame.dt;
+    v.g.rotation.y+=Math.abs(diff)<mt?diff:Math.sign(diff)*mt;
+    const spd=Math.min(11,Math.sqrt(2*6*d)*0.9+0.6)*vanRate()*fuelFactor();
+    v.g.position.x+=Math.sin(v.g.rotation.y)*spd*frame.dt;
+    v.g.position.z+=Math.cos(v.g.rotation.y)*spd*frame.dt;
+    await nextFrame();}}
+function buildVan(){
+  const idx=vans.length;
+  const park={x:56+idx*4.2,z:11.5};
+  const g=new THREE.Group();g.position.set(park.x,QUAY_Y,park.z);g.rotation.y=-Math.PI/2;scene.add(g);
+  box(g,P.shipWhite,0,1.45,1.7,2,1.5,1.5);   // cab
+  box(g,P.glass,0,1.75,2.5,1.6,0.65,0.1);
+  box(g,P.hull,0,1.7,-0.7,2,1.9,3.2);        // red cargo body
+  box(g,P.shipWhite,0,2.1,-0.7,2.04,0.4,3.24);
+  for(const wz of[1.6,-1.8])for(const wx of[-1.02,1.02]){
+    const w=cyl(g,P.steelDark,wx,0.42,wz,0.42,0.3);w.rotation.z=Math.PI/2;}
+  const bed=group(g,0,2.85,-0.7);
+  const v={g,bed,park,busy:false};vans.push(v);vanLoop(v);return v;}
+async function vanLoop(v){
+  while(true){
+    let cl=null;
+    await until(()=>(cl=claimStored())!==null);
+    v.busy=true;
+    await vanGo(v,34,9);await vanGo(v,30,21.5);
+    WH.slotOcc[cl.si]=null;WH.stored--;
+    const m=cl.m;m.userData.claimed=0;
+    reparentKeepWorld(m,v.bed);m.scale.setScalar(0.6);
+    await settleLocal(m,0,0.45,0);
+    await wait(0.7/(1+0.12*Math.max(0,S.crewWh-1)));
+    await vanGo(v,44,8);await vanGo(v,60,8.5);await vanGo(v,64,13);
+    await ease(0.5,t=>m.scale.setScalar(0.6*(1-t*0.97)));
+    if(m.parent)m.parent.remove(m);
+    S.money+=100;S.earnToday+=100;
+    if(S.factory&&S.goods<GOODS_CAP)S.goods++;
+    v.busy=false;
+    await vanGo(v,v.park.x,v.park.z);}}
 
 /* ---------- crew: cabin, figures, payroll ---------- */
 {const g=group(scene,-12,QUAY_Y,15.5);
@@ -882,7 +1016,7 @@ function wagesPerDay(){return S.workers*60;}
 function payroll(){
   const w=wagesPerDay();
   if(S.money>=w){S.money-=w;toast('−KD '+fmt(w)+' — daily payroll ('+S.workers+' workers)',true);}
-  else{addRep(-2,'missed payroll');banner('Payroll missed — the crew is not happy',3.5);}
+  else{S.payrollMiss++;addRep(-2,'missed payroll');banner('Payroll missed — the crew is not happy',3.5);}
   save();}
 
 /* ---------- expansion: reclaimed land, storage, factory, refinery ----
@@ -893,7 +1027,7 @@ function payroll(){
    empty — the crane loads your goods aboard and the port starts
    exporting, not just importing. */
 const SSLOTS=[];for(const z of[-2.6,0.2,3])for(const x of[-6,0,6])SSLOTS.push([x,1.33,z]);
-let storageG=null,factoryG=null,refineryG=null,landG=null;
+let storageG=null,factoryG=null,refineryG=null,powerG=null,landG=null;
 const sites={};
 function mkSite(x,z,id){
   const g=group(scene,x,QUAY_Y,z);
@@ -941,25 +1075,42 @@ function buildRefinery(animate){if(refineryG)return;
   refineryG.userData.selId='refinery';
   if(animate){scaleIn(refineryG);banner('Refinery lit — refined exports fetch double',4.5);}
   syncSites();}
+function buildPowerPlant(animate){if(powerG)return;
+  powerG=group(scene,56,QUAY_Y,53);
+  box(powerG,P.whWall,-2.5,2.75,0,9,5.5,8.5);
+  box(powerG,P.whRoof,-2.5,5.8,0,9.6,0.5,9.1);
+  box(powerG,P.hull,-2.5,4.9,-4.3,9,0.6,0.12);
+  cyl(powerG,P.steel,4.3,3.6,0.5,2.1,7.2);   // cooling tower
+  cyl(powerG,P.steelDark,4.3,7.4,0.5,1.3,0.5);
+  box(powerG,P.steelDark,-5.5,1.6,-4.35,3,3.2,0.18);
+  powerG.userData.selId='power';
+  if(animate){scaleIn(powerG);banner('Power Plant online — the port makes its own electricity',4.5);}
+  syncSites();}
 function syncSites(){
   if(!S.storage&&!sites.storageSite)sites.storageSite=mkSite(28,41,'storageSite');
   if(S.storage)dropSite('storageSite');
   if(S.storage&&!S.factory&&!sites.factorySite)sites.factorySite=mkSite(-6,52,'factorySite');
   if(S.factory)dropSite('factorySite');
+  if(S.storage&&!S.powerPlant&&!sites.powerSite)sites.powerSite=mkSite(56,52,'powerSite');
+  if(S.powerPlant)dropSite('powerSite');
   if(S.factory&&!S.refinery&&!sites.refinerySite)sites.refinerySite=mkSite(-38,52,'refinerySite');
   if(S.refinery)dropSite('refinerySite');}
-const EXPAND_COST={storage:20000,factory:45000,refinery:90000};
+const EXPAND_COST={storage:20000,factory:45000,powerPlant:60000,refinery:90000};
 function tryBuy(kind){
   const cost=EXPAND_COST[kind];
   if(!spend(cost,{storage:'Storage Yard + land reclamation',
-    factory:'Factory construction',refinery:'Refinery construction'}[kind]))return;
+    factory:'Factory construction',powerPlant:'Power Plant construction',
+    refinery:'Refinery construction'}[kind]))return;
   S[kind]=1;save();closeCard();
   if(kind==='storage')buildStorage(true);
   if(kind==='factory')buildFactory(true);
-  if(kind==='refinery')buildRefinery(true);}
+  if(kind==='powerPlant')buildPowerPlant(true);
+  if(kind==='refinery'){buildRefinery(true);
+    banner('Refinery lit — exports pay double and the oil bills end',4.5);}}
 function applyExpansion(){
   if(S.storage)buildStorage(false);
   if(S.factory)buildFactory(false);
+  if(S.powerPlant)buildPowerPlant(false);
   if(S.refinery)buildRefinery(false);
   syncSites();}
 
@@ -1032,7 +1183,8 @@ const DAY_LEN=110;let dayFrac=0.34,dayCount=1;
 const skyDay=new THREE.Color(0xF4F2ED),skyNight=new THREE.Color(0xE7DFD4);
 const sunLow=new THREE.Color(0xFFC896),sunHigh=new THREE.Color(0xFFF2E2);
 function stepDay(dt){
-  dayFrac+=dt/DAY_LEN;if(dayFrac>=1){dayFrac-=1;dayCount++;payroll();}
+  dayFrac+=dt/DAY_LEN;if(dayFrac>=1){dayFrac-=1;dayCount++;payroll();
+    S.earnPrev=S.earnToday;S.earnToday=0;}
   const dl=Math.max(0,Math.sin((dayFrac-0.25)*Math.PI*2));
   const ang=dayFrac*Math.PI*2-Math.PI/2;
   sun.position.set(Math.cos(0.7)*Math.cos(ang)*160,Math.max(60,Math.abs(Math.sin(ang))*160),Math.sin(0.7)*Math.cos(ang)*160);
@@ -1066,22 +1218,23 @@ function aspect(){return innerWidth/Math.max(1,innerHeight);}
 function homeView(){const a=aspect();return a<1?Math.min(110,44/a):38;}
 function maxView(){const a=aspect();return a<1?Math.min(150,80/a):72;}
 const cam={pivot:HOME.clone(),tPivot:HOME.clone(),
-  yaw:HOME_YAW,tYaw:HOME_YAW,view:homeView(),tView:homeView(),auto:true,lastInput:-99};
+  yaw:HOME_YAW,tYaw:HOME_YAW,view:homeView(),tView:homeView()};
+/* The camera is fully manual: it only moves on the player's drag, pinch,
+   wheel, rotate buttons, or a tap on something. Released drags keep
+   their momentum and glide to a stop, map-style. */
+let camTouched=false;
+const panVel={x:0,z:0};let panPrevT=0;
 /* Rotating the phone re-frames only while the player hasn't taken over. */
-addEventListener('resize',()=>{if(cam.auto&&cam.lastInput<0)cam.tView=homeView();});
+addEventListener('resize',()=>{if(!camTouched)cam.tView=homeView();});
 function clampPivot(v){v.x=Math.max(-80,Math.min(80,v.x));
   v.z=Math.max(-75,Math.min(S.storage?66:48,v.z));v.y=QUAY_Y;}
 function stepCam(dt,t){
-  /* Zoom only ever changes on a user action: a click on something (the
-     dolly below), the wheel, or a pinch. Auto mode drifts the pan gently
-     but never touches the zoom. */
   if(focusTarget){ // glide (pan only, zoom untouched) toward what the player tapped
     cam.tPivot.lerp(new THREE.Vector3(focusTarget.position.x,QUAY_Y+1,focusTarget.position.z),Math.min(1,dt*2.2));}
-  else if(cam.auto){ // slow drone drift over the port (pan only)
-    const dx=HOME.x+Math.sin(t*0.05)*24,dz=HOME.z+Math.cos(t*0.037)*8;
-    cam.tPivot.lerp(new THREE.Vector3(dx,QUAY_Y,dz),Math.min(1,dt*0.25));}
-  /* Once the player takes over, the camera is theirs: auto never re-arms
-     itself — only the Auto cam button hands control back. */
+  else if(!dragging&&(Math.abs(panVel.x)>0.4||Math.abs(panVel.z)>0.4)){
+    // released-drag momentum: keep gliding, bleed off smoothly
+    cam.tPivot.x+=panVel.x*dt;cam.tPivot.z+=panVel.z*dt;
+    const f=Math.exp(-3.4*dt);panVel.x*=f;panVel.z*=f;}
   cam.tView=Math.max(15,Math.min(maxView(),cam.tView));
   clampPivot(cam.tPivot);
   cam.pivot.lerp(cam.tPivot,Math.min(1,dt*3.2));
@@ -1094,16 +1247,19 @@ function stepCam(dt,t){
   camera.lookAt(cam.pivot);}
 resize();
 let dragging=false,lx=0,ly=0,moved=0,pinch=0;
-function manual(){cam.auto=false;cam.lastInput=frame.t;focusTarget=null;
-  $('camBtn').setAttribute('aria-pressed','false');}
+function manual(){camTouched=true;focusTarget=null;}
 function panBy(dx,dy){ // map-style: the world follows the pointer
   const wpp=2*cam.view/Math.max(1,innerHeight);
   const sy=Math.sin(cam.tYaw),cy=Math.cos(cam.tYaw);
-  cam.tPivot.x+=-cy*dx*wpp-sy*dy*wpp;
-  cam.tPivot.z+= sy*dx*wpp-cy*dy*wpp;
-  clampPivot(cam.tPivot);}
-function rotateStep(dir){cam.lastInput=frame.t;cam.tYaw+=dir*Math.PI/4;}
-canvas.addEventListener('pointerdown',e=>{dragging=true;moved=0;lx=e.clientX;ly=e.clientY;});
+  const wx=-cy*dx*wpp-sy*dy*wpp, wz=sy*dx*wpp-cy*dy*wpp;
+  cam.tPivot.x+=wx;cam.tPivot.z+=wz;
+  clampPivot(cam.tPivot);
+  const now=performance.now(),edt=Math.max(0.008,(now-panPrevT)/1000);panPrevT=now;
+  panVel.x=panVel.x*0.65+(wx/edt)*0.35;   // low-pass: momentum for the release glide
+  panVel.z=panVel.z*0.65+(wz/edt)*0.35;}
+function rotateStep(dir){camTouched=true;cam.tYaw+=dir*Math.PI/4;}
+canvas.addEventListener('pointerdown',e=>{dragging=true;moved=0;lx=e.clientX;ly=e.clientY;
+  panVel.x=0;panVel.z=0;panPrevT=performance.now();});
 addEventListener('pointerup',e=>{if(dragging&&moved<8)pick(e.clientX,e.clientY);dragging=false;});
 addEventListener('pointermove',e=>{if(!dragging||pinch)return;
   moved+=Math.abs(e.clientX-lx)+Math.abs(e.clientY-ly);
@@ -1119,8 +1275,6 @@ addEventListener('keydown',e=>{if(e.key==='q'||e.key==='Q')rotateStep(1);
   if(e.key==='e'||e.key==='E')rotateStep(-1);});
 $('rotL').addEventListener('click',()=>rotateStep(1));
 $('rotR').addEventListener('click',()=>rotateStep(-1));
-$('camBtn').addEventListener('click',()=>{cam.auto=!cam.auto;focusTarget=null;
-  $('camBtn').setAttribute('aria-pressed',String(cam.auto));cam.lastInput=cam.auto?-99:frame.t;});
 
 /* ---------- selection & cards ---------- */
 const raycaster=new THREE.Raycaster();let selected=null;
@@ -1166,14 +1320,42 @@ function cardData(){
       (cranes[i].busy?'Working a ship':'Standing by'),acts};}
   if(s.id==='wh'){const lv=S.dispatchLv,cost=[2000,4000,8000][lv];
     const acts=[];
-    if(lv<3)acts.push({label:'Faster dispatch (Lv '+lv+'→'+(lv+1)+')',cost,
-      enabled:S.money>=cost,run:()=>{if(spend(cost,'dispatch upgrade'))S.dispatchLv++;}});
+    if(lv<3)acts.push({label:'Faster deliveries (Lv '+lv+'→'+(lv+1)+')',cost,
+      enabled:S.money>=cost,run:()=>{if(spend(cost,'delivery speed upgrade'))S.dispatchLv++;}});
     acts.push({label:'Express dispatch — clear 3 slots now',cost:150,
       enabled:S.money>=150&&WH.stored>0,run:()=>{if(!spend(150,'express dispatch'))return;
         for(let n=0;n<3;n++)if(!dispatchOne())break;}});
     return {title:'Warehouse',lines:'Storage '+WH.stored+' of '+whCap()+
       (WH.stored>=whCap()?'  ·  FULL — tractors will wait!':'')+
-      '\nDispatch truck every '+Math.max(4,(14-2.5*lv)/(1+0.12*Math.max(0,S.crewWh-1))).toFixed(1)+'s\nWarehouse crew: '+S.crewWh,acts};}
+      '\nDelivery fleet: '+S.vans+' van'+(S.vans>1?'s':'')+' (buy more at the City Depot)'+
+      '\nVan speed ×'+vanRate().toFixed(2)+' · Warehouse crew: '+S.crewWh,acts};}
+  if(s.id==='depot'){
+    const acts=[];
+    if(S.vans<5){const cost=VAN_PRICES[S.vans];
+      acts.push({label:'Buy delivery van #'+(S.vans+1),cost,primary:true,
+        enabled:S.money>=cost,run:()=>{if(spend(cost,'delivery van #'+(S.vans+1))){
+          S.vans++;buildVan();save();}}});}
+    const idle=vans.filter(v=>!v.busy).length;
+    return {title:'City Depot',lines:'Every box your vans hand over here\npays KD 100 (and feeds the Factory).'+
+      '\nFleet: '+S.vans+' van'+(S.vans>1?'s':'')+' · idle now: '+idle+
+      (WH.stored>=whCap()?'\nWarehouse FULL — the fleet is behind!':''),acts};}
+  if(s.id==='util'){
+    const eLine=S.powerPlant?'⚡ Electricity: self-generated ✓':'⚡ Electricity: '+Math.round(S.elec)+'% · burns '+Math.round(elecPerDay())+'/day';
+    const oLine=S.refinery?'🛢 Oil: self-refined ✓':'🛢 Oil: '+Math.round(S.oil)+'% · burns '+Math.round(oilPerDay())+'/day';
+    const acts=[];
+    if(!S.powerPlant)acts.push({label:'Buy electricity +100',cost:ELEC_PRICE,
+      enabled:S.money>=ELEC_PRICE&&S.elec<UTIL_CAP,run:()=>buyUtil('elec')});
+    if(!S.refinery)acts.push({label:'Buy oil +100',cost:OIL_PRICE,
+      enabled:S.money>=OIL_PRICE&&S.oil<UTIL_CAP,run:()=>buyUtil('oil')});
+    return {title:'Substation',lines:eLine+'\n'+oLine+
+      '\nAt 0% the whole port runs at half speed.'+
+      '\nThe Power Plant and Refinery end these bills.',acts};}
+  if(s.id==='powerSite'){
+    return {title:'Power Plant Site',lines:'Zoned for generation.\nMakes all the port\'s electricity —\nno more power purchases, ever.',
+      acts:[{label:'BUILD POWER PLANT',cost:EXPAND_COST.powerPlant,primary:true,
+        enabled:S.money>=EXPAND_COST.powerPlant,run:()=>tryBuy('powerPlant')}]};}
+  if(s.id==='power'){
+    return {title:'Power Plant',lines:'Generating '+Math.round(elecPerDay())+' units/day —\nexactly what the port needs.\nElectricity bills: KD 0.',acts:[]};}
   if(s.id==='berth2'){
     return {title:'Expansion Site',lines:'Zoned for a second berth.\nA second berth and crane\nlets you work two ships at once.',
       acts:[{label:'OPEN BERTH 2 + CRANE',cost:15000,primary:true,enabled:S.money>=15000,
@@ -1223,7 +1405,8 @@ function cardData(){
       '\nExport value KD '+(S.refinery?800:400)+' per unit'+
       '\nUnits exported: '+S.exported,acts:[]};}
   if(s.id==='refinery'){
-    return {title:'Refinery',lines:'Refined exports: KD 800 per unit\nShips load 6 units per call\nUnits exported: '+S.exported,acts:[]};}
+    return {title:'Refinery',lines:'Refined exports: KD 800 per unit\nShips load 6 units per call\nUnits exported: '+S.exported+
+      '\nFuels the whole port — oil bills: KD 0.',acts:[]};}
   if(s.id==='trade'){
     const acts=[];
     if(S.tiers<2)acts.push({label:'Import contracts: Electronics & Fresh',cost:3500,
@@ -1344,6 +1527,81 @@ $('pricesBtn').addEventListener('click',()=>$('prices').classList.add('open'));
 $('pricesClose').addEventListener('click',()=>$('prices').classList.remove('open'));
 $('prices').addEventListener('click',e=>{if(e.target.id==='prices')$('prices').classList.remove('open');});
 
+/* ---------- performance report ----------
+   Every sector gets a live KPI, a status, and a comment: what to fix
+   when it underperforms, how to keep it up when it's running well. */
+function sectorRows(){
+  const rows=[];
+  const add=(nm,vl,st,nt)=>rows.push({nm,vl,st,nt});
+  // Berthing
+  const tot=S.onTime+S.late,rate=tot?Math.round(100*S.onTime/tot):null;
+  if(tot===0)add('Berthing & docking','No ships served yet','o',
+    'Dock your first ship the moment the red chip appears — the on-time bonus is 25% of the whole manifest.');
+  else if(rate<60||S.lost>=3)add('Berthing & docking',rate+'% on time · '+S.lost+' ships lost','p',
+    'Ships are running late or leaving unserved. Dock the moment the red chip appears, open Berth 2 to work two ships at once, and assign dock crew to cut docking time.');
+  else if(rate<85||S.lost>0)add('Berthing & docking',rate+'% on time · '+S.lost+' lost','o',
+    'Decent, but every late ship costs 20% of the manifest plus reputation. Keep one berth free before deadlines stack up.');
+  else add('Berthing & docking',rate+'% on time','g',
+    'Excellent berthing discipline — on-time bonuses are your best margin. Keep answering the chip immediately.');
+  // Cargo flow
+  const fill=Math.round(100*WH.stored/whCap());
+  if(WH.stored>=whCap())add('Cargo flow','Warehouse '+WH.stored+'/'+whCap()+' — FULL','p',
+    'Tractors are queuing at a full floor and shipments will slip late. Buy another delivery van at the City Depot, or upgrade delivery speed at the warehouse.');
+  else if(fill>60)add('Cargo flow','Warehouse '+fill+'% full · '+S.vans+' van'+(S.vans>1?'s':''),'o',
+    'Storage is filling faster than the fleet clears it. One more van — or the Storage Yard\'s +9 slots — keeps boxes moving.');
+  else add('Cargo flow','Warehouse '+fill+'% full · '+S.vans+' van'+(S.vans>1?'s':''),'g',
+    'Boxes flow straight through and the vans keep the floor clear. Grow the fleet as trade routes get richer.');
+  // Trade income
+  const burn=wagesPerDay()
+    +(S.powerPlant?0:Math.round(ELEC_PRICE*elecPerDay()/100))
+    +(S.refinery?0:Math.round(OIL_PRICE*oilPerDay()/100));
+  const inc=dayCount>1?S.earnPrev:S.earnToday;
+  const incLbl='KD '+fmt(inc)+(dayCount>1?' yesterday':' so far today')+' vs ~KD '+fmt(burn)+'/day costs';
+  if(tot>0&&inc<burn*1.5)add('Trade income',incLbl,'p',
+    'Income barely covers wages and utilities. Unlock richer trade routes at the Trade Office and chase the on-time bonuses — they dwarf everything else.');
+  else if(inc<burn*4)add('Trade income',incLbl,'o',
+    'Profitable, but thin. Tier 2 and 3 cargo pays up to KD 1,600 a box — the routes pay for themselves within a few ships.');
+  else add('Trade income',incLbl,'g',
+    'Healthy margins — costs are a rounding error next to your manifests. Bank toward the next expansion.');
+  // Energy & fuel
+  if(S.powerPlant&&S.refinery)add('Energy & fuel','Fully self-sufficient','g',
+    'The port makes its own power and fuel — zero utility bills. That margin is pure profit; enjoy it.');
+  else{
+    const low=(!S.powerPlant&&S.elec<=20)||(!S.refinery&&S.oil<=20);
+    const out=(!S.powerPlant&&S.elec<=0)||(!S.refinery&&S.oil<=0);
+    const vl=(S.powerPlant?'⚡ self':'⚡ '+Math.round(S.elec)+'%')+' · '+(S.refinery?'🛢 self':'🛢 '+Math.round(S.oil)+'%');
+    if(out)add('Energy & fuel',vl,'p',
+      'You are OUT — every crane and vehicle is at half speed right now. Top up at the Substation immediately.');
+    else if(low)add('Energy & fuel',vl,'p',
+      'Reserves are low. Top up at the Substation before the port slows to half speed — and plan the Power Plant and Refinery to end these bills for good.');
+    else add('Energy & fuel',vl,'g',
+      'Reserves are healthy. Keep topping up ahead of need — or build the Power Plant and Refinery and never pay again.');}
+  // Crew
+  const idle=idleWorkers();
+  if(S.payrollMiss>0)add('Crew',''+S.workers+' workers · '+S.payrollMiss+' missed payroll'+(S.payrollMiss>1?'s':''),'p',
+    'Missing payroll costs reputation every dawn it happens. Keep a cash buffer of at least KD '+fmt(wagesPerDay())+' before spending on upgrades.');
+  else if(idle>1)add('Crew',S.workers+' workers · '+idle+' idle','o',
+    'Idle workers still draw wages. Assign them to crane, warehouse or dock crews at the Crew Cabin — assignments are free.');
+  else add('Crew',S.workers+' workers · '+idle+' idle','g',
+    'The crew is fully deployed and paid on time. Hire ahead of your next expansion so the speed bonus is ready.');
+  // Reputation
+  if(S.rep<30)add('Reputation',S.rep+' / 100','p',
+    'A low reputation means every mistake stings more. On-time deliveries (+2) and export shipments (+1) rebuild it steadily.');
+  else if(S.rep<60)add('Reputation',S.rep+' / 100','o',
+    'Respectable. Consistent on-time work and exports push this up — avoid letting anchored ships give up and leave.');
+  else add('Reputation',S.rep+' / 100','g',
+    'The port has a strong name. Protect it: never leave a ship waiting past its deadline.');
+  return rows;}
+function renderReport(){
+  $('reportBody').innerHTML=sectorRows().map(r=>
+    '<div class="sec"><div class="hd"><span class="nm">'+r.nm+'</span>'+
+    '<span class="pill '+r.st+'">'+({g:'On track',o:'Watch',p:'Fix this'})[r.st]+'</span></div>'+
+    '<div class="vl">'+r.vl+'</div><div class="nt">'+r.nt+'</div></div>').join('');}
+$('reportBtn').addEventListener('click',()=>{renderReport();$('report').classList.add('open');});
+$('reportClose').addEventListener('click',()=>$('report').classList.remove('open'));
+$('report').addEventListener('click',e=>{if(e.target.id==='report')$('report').classList.remove('open');});
+setInterval(()=>{if($('report').classList.contains('open'))renderReport();},3000);
+
 /* ---------- buy suggestions (non-blocking) ----------
    When the balance first crosses the price of the recommended next
    purchase, a small card slides in beside the balance panel. The game
@@ -1360,9 +1618,13 @@ const SUGGESTIONS=[
     when:()=>S.berth2&&!S.storage,target:()=>sites.storageSite},
   {key:'tier3',title:'Tier 3 trade routes — luxury cargo',cost:8000,
     when:()=>S.tiers===2,target:()=>adminGroup},
+  {key:'van2',title:'Delivery van #2 — clear the floor twice as fast',cost:4000,
+    when:()=>S.vans<2,target:()=>depotG},
   {key:'factory',title:'Factory — start exporting',cost:45000,
     when:()=>S.storage&&!S.factory,target:()=>sites.factorySite},
-  {key:'refinery',title:'Refinery — exports pay double',cost:90000,
+  {key:'powerPlant',title:'Power Plant — never buy electricity again',cost:60000,
+    when:()=>S.storage&&!S.powerPlant,target:()=>sites.powerSite},
+  {key:'refinery',title:'Refinery — exports pay double, fuel goes free',cost:90000,
     when:()=>S.factory&&!S.refinery,target:()=>sites.refinerySite},
 ];
 let sugTimer=null,sugTarget=null;
@@ -1377,9 +1639,16 @@ function showSuggest(s){
 $('suggest').querySelector('.go').addEventListener('click',()=>{
   const t=sugTarget?sugTarget():null;hideSuggest();if(t)select(t);});
 $('suggest').querySelector('.later').addEventListener('click',hideSuggest);
+let utilWarnAt=-999;
 setInterval(()=>{
   if($('suggest').classList.contains('on'))return;
-  if(document.querySelector('#help.open,#prices.open,#shop.open,#credits.open,#card.open'))return;
+  if(document.querySelector('#help.open,#prices.open,#report.open,#shop.open,#credits.open,#card.open'))return;
+  /* Recurring utility warnings come first — running dry is urgent. */
+  if(frame.t-utilWarnAt>75){
+    if(!S.powerPlant&&S.elec<=20&&S.money>=ELEC_PRICE){utilWarnAt=frame.t;
+      showSuggest({title:'⚡ Electricity low — top up at the Substation',cost:ELEC_PRICE,target:()=>utilG});return;}
+    if(!S.refinery&&S.oil<=20&&S.money>=OIL_PRICE){utilWarnAt=frame.t;
+      showSuggest({title:'🛢 Oil low — top up at the Substation',cost:OIL_PRICE,target:()=>utilG});return;}}
   for(const s of SUGGESTIONS){
     if(S.sug[s.key])continue;
     if(s.when()&&S.money>=s.cost){
@@ -1394,7 +1663,7 @@ $('creditsClose').addEventListener('click',()=>$('credits').classList.remove('op
 $('credits').addEventListener('click',e=>{if(e.target.id==='credits')$('credits').classList.remove('open');});
 addEventListener('keydown',e=>{if(e.key==='Escape'){$('credits').classList.remove('open');
   $('shop').classList.remove('open');$('help').classList.remove('open');
-  $('prices').classList.remove('open');closeCard();}});
+  $('prices').classList.remove('open');$('report').classList.remove('open');closeCard();}});
 $('resetSave').addEventListener('click',()=>{try{localStorage.removeItem('port-web-save');}catch(e){}
   location.reload();});
 
@@ -1404,15 +1673,18 @@ window.__proj=(x,y,z)=>{const p=new THREE.Vector3(x,y,z).project(camera);
 window.__cam=(v,x,z)=>{if(v!==undefined){cam.tView=v;cam.view=v;}
   if(x!==undefined){cam.tPivot.x=x;cam.pivot.x=x;}
   if(z!==undefined){cam.tPivot.z=z;cam.pivot.z=z;}
-  return{view:+cam.view.toFixed(1),tView:+cam.tView.toFixed(1),auto:cam.auto,
+  return{view:+cam.view.toFixed(1),tView:+cam.tView.toFixed(1),
     px:+cam.pivot.x.toFixed(1),pz:+cam.pivot.z.toFixed(1),yaw:+cam.yaw.toFixed(2)};};
 window.__port=()=>({t:+frame.t.toFixed(1),money:Math.round(S.money),rep:S.rep,
   ships:ships.map(s=>s.name+':'+s.state+':'+s.left),wh:WH.stored,tractors:tractors.length,
-  berth2:S.berth2,tiers:S.tiers});
+  berth2:S.berth2,tiers:S.tiers,vans:S.vans,elec:+S.elec.toFixed(1),oil:+S.oil.toFixed(1),
+  vanBusy:vans.filter(v=>v.busy).length,powF:powerFactor(),fuelF:fuelFactor()});
+window.__buy=k=>buyUtil(k);
 window.__act={prem:i=>unlockPremium(i),hire:()=>{S.workers++;syncWorkers();},dock:()=>{const sh=ships.find(s=>s.state==='anchored');if(sh)dockShip(sh);},
   cash:v=>{S.money+=v;},buyBerth2:()=>{S.money+=15000;S.berth2=true;setCraneVisible(cranes[1],true);
     if(placard){scene.remove(placard);placard=null;}},
-  expand:k=>{S.money+=EXPAND_COST[k];tryBuy(k);},goods:v=>{S.goods=Math.min(GOODS_CAP,v);}};
+  expand:k=>{S.money+=EXPAND_COST[k];tryBuy(k);},goods:v=>{S.goods=Math.min(GOODS_CAP,v);},
+  util:(e,o)=>{S.elec=e;S.oil=o;},van:()=>{S.vans++;buildVan();}};
 
 /* ---------- main loop ---------- */
 let last=performance.now();
@@ -1422,7 +1694,7 @@ function tick(now){
   frame.dt=dt;frame.t+=dt;
   const res=frameResolvers;frameResolvers=[];for(const r of res)r();
   stepTweens(dt);stepWaiters();
-  waveOcean(frame.t);stepDay(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);
+  waveOcean(frame.t);stepDay(dt);stepUtil(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);
   for(const sh of ships)shipBob(sh,frame.t);
   stepShipPatience();updateCables();
   $('shipAlert').classList.toggle('on',ships.some(s=>s.state==='anchored'));
@@ -1438,9 +1710,10 @@ function tick(now){
 requestAnimationFrame(tick);
 
 /* ---------- start ---------- */
-supplyLoop();dispatchLoop();traderLoop();
+supplyLoop();traderLoop();
 syncWorkers();applyPremium();applyExpansion();
 for(let i=0;i<S.tractors;i++)buildTractor((i*5)%RING.length);
+for(let i=0;i<S.vans;i++)buildVan();
 setTimeout(()=>{const t=$('title');t.style.opacity=0;setTimeout(()=>t.remove(),1400);
   banner('Ships pay by the box — dock them before their deadlines',4.5);},reduced?600:3000);
 /* First launch: open the captain's guide once the title clears. */
