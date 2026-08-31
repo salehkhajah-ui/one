@@ -730,13 +730,13 @@ function applyFrustum(){const a=innerWidth/Math.max(1,innerHeight);
   camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
 /* Bright soft studio light: high ambient, gentle warm sun, light shadows. */
-const hemi=new THREE.HemisphereLight(0xEAF2FF,0xC9B79F,0.5);scene.add(hemi);
+const hemi=new THREE.HemisphereLight(0xEAF2FF,0xD4B48E,0.5);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2e2,0.85);
 sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 Object.assign(sun.shadow.camera,{left:-110,right:110,top:110,bottom:-110,near:10,far:500});
 sun.shadow.bias=-0.0004;
 scene.add(sun);scene.add(sun.target);
-scene.fog=new THREE.FogExp2(0xD8C9B2,0.001); // warm golden-hour haze
+scene.fog=new THREE.FogExp2(0xE0C6A0,0.0012); // warm golden-hour haze
 
 /* ---------- builders ---------- */
 const mats=new Map();
@@ -937,14 +937,14 @@ let stepCity=()=>{};
  const cloudM=new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:1,
    transparent:true,opacity:0.92,flatShading:true});
  const clouds=[];
- for(let i=0;i<6;i++){const g=new THREE.Group();
+ for(let i=0;i<8;i++){const g=new THREE.Group();
    const n=2+Math.floor(crnd()*2);
    for(let b=0;b<n;b++){const r=7+crnd()*9;
      const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),cloudM);
      m.scale.y=0.45;
      m.position.set((b-(n-1)/2)*9+(crnd()-0.5)*4,(crnd()-0.5)*2,(crnd()-0.5)*5);
      g.add(m);}
-   g.position.set(-180+crnd()*360,58+crnd()*16,-70+crnd()*140);
+   g.position.set(-180+crnd()*360,70+crnd()*18,-70+crnd()*140);
    cg.add(g);clouds.push({g,sp:1+crnd()*1.2});}
  // commuter traffic on the corniche — the city breathes
  const cars=[];const carCols=[0xD62E27,0xEDEBE5,0x9EA3A5,0x777E81,0x3A3E42];
@@ -1616,9 +1616,10 @@ let stepLife=()=>{};
      p.g.position.y=p.cy+Math.abs(Math.sin(t*6+p.ph))*0.04;}};}
 
 const DAY_LEN=110;let dayFrac=0.34,dayCount=1;
-/* Golden-hour Manhattan mood: blue sky, warm hazy dusk, amber sun. */
-const skyDay=new THREE.Color(0xA9C6DF),skyNight=new THREE.Color(0xC9B69C);
-const sunLow=new THREE.Color(0xFFAE6B),sunHigh=new THREE.Color(0xFFE6C0);
+/* Golden-hour Manhattan mood, dialed up: the sun never fully whitens
+   and the sky keeps an amber cast even at noon — permanent golden hour. */
+const skyDay=new THREE.Color(0x9FC0E0),skyNight=new THREE.Color(0xD9A878);
+const sunLow=new THREE.Color(0xFF9C4F),sunHigh=new THREE.Color(0xFFD9A6);
 function stepDay(dt){
   dayFrac+=dt/DAY_LEN;if(dayFrac>=1){dayFrac-=1;dayCount++;payroll();
     if(dayShips>0){const msg='Day '+(dayCount-1)+' closed — KD '+fmt(S.earnToday)+
@@ -1629,10 +1630,10 @@ function stepDay(dt){
   const dl=Math.max(0,Math.sin((dayFrac-0.25)*Math.PI*2));
   const ang=dayFrac*Math.PI*2-Math.PI/2;
   sun.position.set(Math.cos(0.7)*Math.cos(ang)*160,Math.max(60,Math.abs(Math.sin(ang))*160),Math.sin(0.7)*Math.cos(ang)*160);
-  sun.intensity=0.6+0.35*dl;
-  sun.color.copy(sunLow).lerp(sunHigh,Math.min(1,0.3+dl));
+  sun.intensity=0.65+0.3*dl;
+  sun.color.copy(sunLow).lerp(sunHigh,Math.min(0.85,0.15+dl*0.7));
   hemi.intensity=0.35+0.1*dl;
-  const sky=skyNight.clone().lerp(skyDay,dl);
+  const sky=skyNight.clone().lerp(skyDay,Math.min(0.8,dl));
   renderer.setClearColor(sky);scene.fog.color.copy(sky);
   const night=dl<0.12,k=Math.min(1,dt*2);
   for(const m of lampMats)m.emissiveIntensity+=((night?1.6:0)-m.emissiveIntensity)*k;
