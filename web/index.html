@@ -86,15 +86,15 @@
     overflow:hidden;text-overflow:ellipsis;}
   #eventChip.on{display:flex;}
 
-  /* How to play + Price book + Performance report */
-  #help,#prices,#report{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
+  /* How to play + Price book + Performance report + World */
+  #help,#prices,#report,#world{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
     background:rgba(244,242,237,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;}
-  #help.open,#prices.open,#report.open{display:flex;}
-  #help .sheet,#prices .sheet,#report .sheet{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:#fff;
+  #help.open,#prices.open,#report.open,#world.open{display:flex;}
+  #help .sheet,#prices .sheet,#report .sheet,#world .sheet{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:#fff;
     border:1px solid var(--panel-line);border-radius:16px;padding:34px 38px;
     box-shadow:0 18px 60px rgba(27,28,30,.16);}
-  #help h2,#prices h2,#report h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
-  #help .tag,#prices .tag,#report .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+  #help h2,#prices h2,#report h2,#world h2{margin:0 0 4px;font-size:30px;letter-spacing:.24em;text-indent:.24em;text-align:center;font-weight:700;}
+  #help .tag,#prices .tag,#report .tag,#world .tag{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
     text-transform:uppercase;color:var(--ink-dim);margin-bottom:22px;}
   #report .sec{border:1px solid var(--panel-line);border-radius:12px;padding:12px 14px 11px;margin-bottom:10px;}
   #report .sec .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:3px;}
@@ -107,6 +107,41 @@
   #report .nt{font-size:12.5px;line-height:1.6;color:var(--ink-dim);}
   #report .nt b{color:var(--ink);}
   #report .row{display:flex;justify-content:center;margin-top:18px;}
+
+  /* World — leaderboard & live trade market */
+  #world .wstat{text-align:center;font:600 12px var(--mono);color:var(--ink-dim);margin-bottom:14px;}
+  #world .wstat b{color:var(--ink);}
+  #world h3{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:18px 0 8px;}
+  #world .lb{border:1px solid var(--panel-line);border-radius:12px;overflow:hidden;}
+  #world .lbr{display:flex;align-items:center;gap:10px;padding:8px 12px;
+    border-bottom:1px solid rgba(27,28,30,.07);font-size:13px;}
+  #world .lbr:last-child{border-bottom:none;}
+  #world .lbr.me{background:rgba(224,50,44,.07);}
+  #world .lbr .pos{flex:none;width:26px;font:700 12px var(--mono);color:var(--ink-dim);}
+  #world .lbr .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #world .lbr .rk{flex:none;font:600 10px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);}
+  #world .lbr .vl{flex:none;font:600 12px var(--mono);color:var(--gold);}
+  #world .off{display:flex;align-items:center;gap:10px;border:1px solid var(--panel-line);
+    border-radius:10px;padding:9px 12px;margin-bottom:8px;font-size:13px;}
+  #world .off .what{flex:1;font-weight:600;min-width:0;}
+  #world .off .what small{display:block;font:500 11px var(--mono);color:var(--ink-dim);}
+  #world .off .pr{flex:none;font:600 12.5px var(--mono);color:var(--gold);white-space:nowrap;}
+  #world .off button{flex:none;background:var(--accent);color:#fff;border:none;border-radius:8px;
+    font:600 11.5px var(--ui);letter-spacing:.05em;text-transform:uppercase;padding:7px 12px;cursor:pointer;}
+  #world .off button:disabled{opacity:.4;cursor:default;}
+  #world .off button.ghost{background:none;border:1px solid var(--panel-line);color:var(--ink-dim);}
+  #world .joinRow{display:flex;gap:8px;margin:14px 0 6px;}
+  #world input[type=text]{flex:1;min-width:0;border:1px solid var(--panel-line);border-radius:9px;
+    padding:10px 12px;font:600 14px var(--ui);color:var(--ink);background:#fff;outline:none;}
+  #world input[type=text]:focus{border-color:var(--accent);}
+  #world .postRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+  #world select,#world input[type=number]{border:1px solid var(--panel-line);border-radius:9px;
+    padding:9px 10px;font:600 12.5px var(--ui);color:var(--ink);background:#fff;}
+  #world input[type=number]{width:88px;}
+  #world .wnote{font-size:12px;line-height:1.6;color:var(--ink-dim);margin-top:6px;}
+  #world .wnote b{color:var(--ink);}
+  #world .err{color:var(--bad);font:600 12px var(--ui);margin-top:6px;display:none;}
   #help .step{display:flex;gap:14px;margin-bottom:16px;}
   #help .step .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
     display:flex;align-items:center;justify-content:center;font:700 15px var(--ui);}
@@ -231,19 +266,20 @@
   @media (max-width:700px){ #money .val{font-size:20px;} #hint{display:none;}
     /* One tidy two-row dock instead of a ragged button cluster. */
     #cornerR{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:none;
-      display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+      display:grid;grid-template-columns:repeat(12,1fr);gap:8px;}
     #cornerR .btn{padding:12px 2px;font-size:11px;letter-spacing:.03em;text-align:center;
       white-space:nowrap;min-height:44px;}
-    #rotL,#rotR{grid-column:span 1;}
-    #fastBtn,#pricesBtn,#reportBtn,#shopBtn,#helpBtn{grid-column:span 2;}
+    #rotL,#rotR{grid-column:span 2;}
+    #fastBtn,#worldBtn{grid-column:span 4;}
+    #pricesBtn,#reportBtn,#shopBtn,#helpBtn{grid-column:span 3;}
     #installBtn{grid-column:1/-1;}
     #helpBtn .wide{display:none;} #helpBtn .narrow{display:inline;}
     /* Keep alerts and cards clear of the HUD (top) and the dock (bottom). */
     #shipAlert{top:124px;font-size:12px;padding:10px 16px;max-width:92vw;}
     #eventChip{top:172px;font-size:11px;padding:9px 14px;}
     #util{top:84px;font-size:11px;padding:6px 10px;}
-    #help .sheet,#prices .sheet,#report .sheet{padding:24px 18px;max-height:82vh;}
-    #help h2,#prices h2,#report h2{font-size:24px;}
+    #help .sheet,#prices .sheet,#report .sheet,#world .sheet{padding:24px 18px;max-height:82vh;}
+    #help h2,#prices h2,#report h2,#world h2{font-size:24px;}
     #prices table{font-size:11.5px;}
     #prices td.it{white-space:normal;padding-right:8px;}
     #prices td.pr{font-size:11px;}
@@ -269,6 +305,7 @@
   <button class="btn" id="rotL" aria-label="Rotate left">⟲</button>
   <button class="btn" id="rotR" aria-label="Rotate right">⟳</button>
   <button class="btn" id="fastBtn" aria-pressed="false">⚡ Fast</button>
+  <button class="btn" id="worldBtn">🌍 World</button>
   <button class="btn" id="pricesBtn">Prices</button>
   <button class="btn" id="reportBtn">Report</button>
   <button class="btn" id="shopBtn" style="color:var(--gold);border-color:rgba(217,164,63,.5)">Shop</button>
@@ -326,6 +363,15 @@
   </div>
 </div>
 
+<div id="world" role="dialog" aria-modal="true" aria-label="World trade">
+  <div class="sheet">
+    <h2>WORLD</h2>
+    <div class="tag">Compete &amp; trade with real ports</div>
+    <div id="worldBody"></div>
+    <div class="row"><button class="btn" id="worldClose">Close</button></div>
+  </div>
+</div>
+
 <div id="prices" role="dialog" aria-modal="true" aria-label="Price book">
   <div class="sheet">
     <h2>PRICE BOOK</h2>
@@ -346,6 +392,11 @@
     <table>
       <tr><td class="it">Electricity +100</td><td class="ds">Powers the cranes — at 0% they slow to half speed</td><td class="pr">800</td></tr>
       <tr><td class="it">Oil +100</td><td class="ds">Fuels tractors and vans — at 0% they crawl</td><td class="pr">600</td></tr>
+    </table>
+    <h3>World — the open market</h3>
+    <table>
+      <tr><td class="it">🌍 Join the world</td><td class="ds">Name your port, enter the global leaderboard</td><td class="pr">free</td></tr>
+      <tr><td class="it">Trade with real ports</td><td class="ds">Buy &amp; sell electricity, oil and export goods at player prices</td><td class="pr">market</td></tr>
     </table>
     <h3>Manpower — Crew Cabin</h3>
     <table>
@@ -451,6 +502,7 @@ const P={concrete:0xE4E1DA,asphalt:0xAFABA4,concreteDark:0xA6A39D,lane:0xFFFFFF,
   yellow:0x3A3E42,steel:0xB9BCBE,steelDark:0x3A3E42,whWall:0xF0EEE8,
   whRoof:0x33363A,tractor:0xD62E27,warm:0xFFD9A0,gull:0xFFFFFF,cold:0xE9EDEC,glass:0x2A3034,
   tree:0x2D7E65,trunk:0x4E3A2D,
+  sand:0xE9DFC8,grass:0x8FAE8B,ground:0xDAD6CC,cityA:0xE1DDD4,cityB:0xCFCAC1,cityC:0xBDB8AE,cityGlass:0x9FB4B2,
   containers:[0xD62E27,0xEDEBE5,0x9EA3A5,0xE2E0DA,0x777E81,0xD62E27]};
 const SHIP_NAMES=["Northern Star","Atlas Voyager","Mediterranean Pearl","Pacific Horizon","Arabian Falcon","Baltic Trader"];
 const TIERS=[
@@ -664,6 +716,82 @@ for(const [lx,lz] of [[-50,-6],[-25,-6],[25,-6],[50,-6],[45,20],[-52,24]]){
      leaf.position.set((trnd()-0.5)*0.8,h+r*0.75+b*1.1,(trnd()-0.5)*0.8);
      leaf.rotation.set(trnd()*3,trnd()*3,trnd()*3);
      leaf.castShadow=true;g.add(leaf);}}}
+
+/* ---------- the city ----------
+   The port is a working notch in a living city's waterfront, not a
+   remote outpost: a palm corniche and high-rise skyline rise behind
+   the yard, mid-rise districts wrap both flanks, parks in between.
+   Pure backdrop — nothing here is clickable, nothing casts shadows,
+   and every mesh shares one unit-box geometry. */
+let stepCity=()=>{};
+{const cg=new THREE.Group();scene.add(cg);
+ const cwMat=new THREE.MeshStandardMaterial({color:P.cityGlass,roughness:0.55,
+   emissive:0xFFD9A0,emissiveIntensity:0});
+ windowMats.push(cwMat); // the whole skyline glows warm at night
+ const unit=new THREE.BoxGeometry(1,1,1);
+ function cb(c,x,y,z,sx,sy,sz,m){const b=new THREE.Mesh(unit,m||mat(c,0.92,0));
+   b.scale.set(sx,sy,sz);b.position.set(x,y,z);b.receiveShadow=true;cg.add(b);return b;}
+ let cs=41;const crnd=()=>((cs=cs*16807%2147483647)/2147483647);
+ const GY=QUAY_Y-0.12; // city ground sits a hair below the quay
+ // ground: mainland behind the port + two coastal arms hugging the flanks,
+ // so the harbor reads as a bay carved out of the city's shoreline
+ cb(P.ground,0,GY-1.1,100,340,2.2,74);
+ for(const sx of[1,-1]){
+   cb(P.ground,sx*113,GY-1.1,29,78,2.2,70);
+   cb(P.sand,sx*113,0.8,-8.2,78,1.1,6);} // beach where each arm meets the sea
+ // corniche boulevard along the waterfront + an avenue down each arm
+ cb(P.asphalt,0,GY+0.02,71,324,0.1,7);
+ for(let x=-150;x<=150;x+=12)cb(P.lane,x,GY+0.09,71,3,0.03,0.35);
+ for(const sx of[1,-1])cb(P.asphalt,sx*86,GY+0.02,29,6,0.1,64);
+ // towers: back skyline, mid band, and the flank districts
+ const shades=[P.cityA,P.cityB,P.cityC,P.whWall];
+ function tower(x,z,w,d,h){
+   cb(shades[Math.floor(crnd()*shades.length)],x,GY+h/2,z,w,h,d);
+   if(crnd()<0.8)cb(0,x,GY+h*0.52,z-d/2-0.07,w*0.55,h*0.8,0.14,cwMat);
+   if(crnd()<0.35)cb(P.steelDark,x,GY+h+0.55,z,w*0.34,1.1,d*0.34);}
+ for(let x=-152;x<=152;x+=17)
+   tower(x+(crnd()-0.5)*6,98+crnd()*16,7+crnd()*4,7+crnd()*4,26+crnd()*26);
+ for(let x=-146;x<=146;x+=21)
+   if(crnd()<0.85)tower(x+(crnd()-0.5)*8,80+crnd()*7,6+crnd()*5,6+crnd()*3,10+crnd()*13);
+ for(const sx of[1,-1])for(let gx=95;gx<=145;gx+=14)for(let gz=10;gz<=54;gz+=15)
+   if(crnd()<0.7)tower(sx*(gx+(crnd()-0.5)*5),gz+(crnd()-0.5)*5,5.5+crnd()*4,5.5+crnd()*4,7+crnd()*14);
+ // greenery: pocket parks, street trees, palms along every waterfront
+ const leafM=new THREE.MeshStandardMaterial({color:P.tree,roughness:0.9,flatShading:true});
+ const trunkM=new THREE.MeshStandardMaterial({color:P.trunk,roughness:0.9});
+ function ctree(x,z,s){const h=(1.1+crnd()*0.9)*s;
+   const t=new THREE.Mesh(new THREE.CylinderGeometry(0.13*s,0.17*s,h,5),trunkM);
+   t.position.set(x,GY+h/2,z);cg.add(t);
+   const r=(1+crnd()*0.9)*s;
+   const l=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),leafM);
+   l.position.set(x,GY+h+r*0.7,z);l.rotation.set(crnd()*3,crnd()*3,crnd()*3);cg.add(l);}
+ function palm(x,z){const h=2.6+crnd()*1.2;
+   const t=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.14,h,5),trunkM);
+   t.position.set(x,GY+h/2,z);t.rotation.z=(crnd()-0.5)*0.16;cg.add(t);
+   for(let f=0;f<5;f++){const fr=new THREE.Mesh(unit,leafM);
+     fr.scale.set(1.5+crnd()*0.5,0.07,0.3);
+     fr.position.set(x,GY+h,z);fr.rotation.set(0,f*Math.PI*2/5+crnd(),-0.3);
+     fr.translateX(0.72);cg.add(fr);}}
+ for(let x=-150;x<=150;x+=27)palm(x+(crnd()-0.5)*4,66.2);
+ for(const sx of[1,-1])for(let x=82;x<=146;x+=19)palm(sx*x,-3.4);
+ for(const [px,pz,pw,pd] of [[-52,90,24,9],[58,89,20,9],[2,91,16,8],[118,7,18,9],[-118,7,18,9]]){
+   cb(P.grass,px,GY+0.03,pz,pw,0.1,pd);
+   for(let i=0;i<4;i++)ctree(px+(crnd()-0.5)*pw*0.8,pz+(crnd()-0.5)*pd*0.7,0.9+crnd()*0.5);}
+ // a Kuwait Towers-style landmark on the west arm's waterfront point
+ {const lx=-82,lz=-1;const wm=mat(P.shipWhite,0.6,0);
+  const gm=new THREE.MeshStandardMaterial({color:P.cityGlass,roughness:0.4,metalness:0.2});
+  const spire=(x,h,r)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(0.16,r,h,8),wm);
+    m.position.set(x,GY+h/2,lz);cg.add(m);};
+  const ball=(x,y,r)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,12,10),gm);
+    m.position.set(x,GY+y,lz);cg.add(m);};
+  spire(lx,17,0.85);ball(lx,9.5,2.3);ball(lx,14.2,1.5);
+  spire(lx+5.5,12,0.7);ball(lx+5.5,8.6,1.9);}
+ // commuter traffic on the corniche — the city breathes
+ const cars=[];const carCols=[0xD62E27,0xEDEBE5,0x9EA3A5,0x777E81,0x3A3E42];
+ for(let i=0;i<9;i++){const dir=i%2?1:-1;
+   const c=cb(carCols[i%carCols.length],-150+crnd()*300,GY+0.45,dir>0?69.4:72.6,1.9,0.75,1);
+   cars.push({m:c,dir,sp:8+crnd()*7});}
+ stepCity=dt=>{for(const c of cars){c.m.position.x+=c.dir*c.sp*dt;
+   if(c.m.position.x>158)c.m.position.x=-158;else if(c.m.position.x<-158)c.m.position.x=158;}};}
 
 /* ---------- cranes (B hidden until bought) ---------- */
 function buildCrane(homeX,idx){
@@ -1272,8 +1400,8 @@ let camTouched=false;
 const panVel={x:0,z:0};let panPrevT=0;
 /* Rotating the phone re-frames only while the player hasn't taken over. */
 addEventListener('resize',()=>{if(!camTouched)cam.tView=homeView();});
-function clampPivot(v){v.x=Math.max(-80,Math.min(80,v.x));
-  v.z=Math.max(-75,Math.min(S.storage?66:48,v.z));v.y=QUAY_Y;}
+function clampPivot(v){v.x=Math.max(-105,Math.min(105,v.x));
+  v.z=Math.max(-75,Math.min(80,v.z));v.y=QUAY_Y;}
 function stepCam(dt,t){
   if(focusTarget){ // glide (pan only, zoom untouched) toward what the player tapped
     cam.tPivot.lerp(new THREE.Vector3(focusTarget.position.x,QUAY_Y+1,focusTarget.position.z),Math.min(1,dt*2.2));}
@@ -1763,9 +1891,172 @@ $('creditsClose').addEventListener('click',()=>$('credits').classList.remove('op
 $('credits').addEventListener('click',e=>{if(e.target.id==='credits')$('credits').classList.remove('open');});
 addEventListener('keydown',e=>{if(e.key==='Escape'){$('credits').classList.remove('open');
   $('shop').classList.remove('open');$('help').classList.remove('open');
-  $('prices').classList.remove('open');$('report').classList.remove('open');closeCard();}});
+  $('prices').classList.remove('open');$('report').classList.remove('open');
+  $('world').classList.remove('open');closeCard();}});
 $('resetSave').addEventListener('click',()=>{try{localStorage.removeItem('port-web-save');}catch(e){}
   location.reload();});
+
+/* ---------- world: compete & trade ----------
+   One shared world for every captain: a live leaderboard of real
+   players and an open market where ports trade electricity, oil and
+   export goods with each other. Backed by Supabase through a handful
+   of RPCs (the key below is the public client key — safe to ship).
+   The game plays fine offline; the world just shows as unreachable. */
+const SB_URL='https://dbluyqukjmirhurvtpkx.supabase.co/rest/v1/rpc/';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRibHV5cXVram1pcmh1cnZ0cGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNTA1ODAsImV4cCI6MjEwMzcyNjU4MH0.Eu2SXZ3FYmi_mKATWDLEYCul6Kx1DSQhVW8X4gZf33w';
+const OFFER_DEFS={elec:{qty:50,icon:'⚡',what:'electricity'},
+  oil:{qty:50,icon:'🛢',what:'oil'},goods:{qty:5,icon:'📦',what:'export goods'}};
+const W={o:null,board:[],offers:[],online:true};
+try{const r=localStorage.getItem('port-world');if(r)W.o=JSON.parse(r);}catch(e){}
+async function rpc(fn,args){const ctl=new AbortController();
+  const to=setTimeout(()=>ctl.abort(),7000);
+  try{const r=await fetch(SB_URL+fn,{method:'POST',signal:ctl.signal,
+      headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},
+      body:JSON.stringify(args||{})});
+    clearTimeout(to);
+    if(!r.ok)throw new Error('rpc '+r.status);
+    W.online=true;return await r.json();}
+  catch(e){clearTimeout(to);W.online=false;throw e;}}
+function offerLabel(k,q){const d=OFFER_DEFS[k]||{icon:'',what:k};return d.icon+' '+q+' '+d.what;}
+/* Publish stats every minute; the same call settles any offers of ours
+   that were bought since last time (each sale pays out exactly once). */
+function pubStats(){if(!W.o)return;
+  rpc('port_publish',{p_id:W.o.id,p_secret:W.o.secret,p_value:portValue(),
+    p_money:Math.round(S.money),p_rank:rank(),p_day:dayCount,p_on_time:S.onTime,
+    p_late:S.late,p_streak:S.bestStreak})
+  .then(res=>{for(const s of (res&&res.sold)||[])
+      earn(s.price,'sold '+offerLabel(s.kind,s.qty)+' on the world market');})
+  .catch(()=>{});}
+setInterval(pubStats,60000);setTimeout(pubStats,8000);
+
+const wb=$('worldBody');
+function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;
+  if(text!=null)n.textContent=text;return n;}
+function renderWorld(){
+  // don't wipe what the player is typing (or a join attempt's error message)
+  // when a background refresh lands
+  if(wb.contains(document.activeElement)&&/INPUT|SELECT/.test(document.activeElement.tagName))return;
+  if(!W.o){const ji=wb.querySelector('input[type=text]');
+    if(ji&&(ji.value.trim()||wb.querySelector('.err[style*="block"]')))return;}
+  wb.textContent='';
+  if(!W.o){
+    const p=el('div','wnote');
+    p.innerHTML='One shared world for every captain. Pick a <b>port name</b>, join the board, and trade electricity, oil and export goods with real players.';
+    wb.appendChild(p);
+    const row=el('div','joinRow');
+    const inp=el('input');inp.type='text';inp.maxLength=24;inp.placeholder='Name your port (3–24 letters)';
+    const go=el('button','btn','Join the world');
+    go.style.color='var(--accent)';go.style.borderColor='var(--accent)';go.style.flex='none';
+    row.appendChild(inp);row.appendChild(go);wb.appendChild(row);
+    const err=el('div','err');wb.appendChild(err);
+    go.addEventListener('click',async()=>{const nm=inp.value.trim();err.style.display='none';
+      if(nm.length<3){err.textContent='Give your port a name — at least 3 characters.';err.style.display='block';return;}
+      go.disabled=true;go.textContent='Joining…';
+      try{const res=await rpc('port_register',{p_name:nm});
+        if(res&&res.id){W.o={id:res.id,secret:res.secret,name:res.name};
+          try{localStorage.setItem('port-world',JSON.stringify(W.o));}catch(e){}
+          toast('Welcome to the world, '+W.o.name);pubStats();refreshWorld();return;}
+        err.textContent=(res&&res.error)||'Could not join — try another name.';err.style.display='block';}
+      catch(e){err.textContent='World unreachable — check your connection and try again.';err.style.display='block';}
+      go.disabled=false;go.textContent='Join the world';});
+    return;}
+  const st=el('div','wstat');
+  const idx=W.board.findIndex(b=>b.id===W.o.id);
+  st.appendChild(el('b',null,W.o.name));
+  st.appendChild(document.createTextNode(' · value KD '+fmt(portValue())+
+    (idx>=0?' · #'+(idx+1)+' in the world':'')+
+    (W.online?'':' · offline — showing the last known board')));
+  wb.appendChild(st);
+  wb.appendChild(el('h3',null,'World leaderboard'));
+  const lb=el('div','lb');
+  if(!W.board.length)lb.appendChild(el('div','lbr','No ports on the board yet — you are early.'));
+  W.board.forEach((b,i)=>{const r=el('div','lbr'+(b.id===W.o.id?' me':''));
+    r.appendChild(el('span','pos','#'+(i+1)));
+    r.appendChild(el('span','nm',b.name));
+    r.appendChild(el('span','rk',b.rank));
+    r.appendChild(el('span','vl','KD '+fmt(b.value)));
+    lb.appendChild(r);});
+  wb.appendChild(lb);
+  wb.appendChild(el('h3',null,'Open market'));
+  const post=el('div','postRow');
+  const sel=el('select');
+  for(const k in OFFER_DEFS){const o=el('option',null,'Sell '+offerLabel(k,OFFER_DEFS[k].qty));
+    o.value=k;sel.appendChild(o);}
+  const pr=el('input');pr.type='number';pr.min=50;pr.max=20000;pr.value=300;
+  const pb=el('button','btn','Post offer');
+  post.appendChild(sel);post.appendChild(pr);
+  post.appendChild(el('span','wnote','KD'));post.appendChild(pb);
+  wb.appendChild(post);
+  const perr=el('div','err');wb.appendChild(perr);
+  pb.addEventListener('click',()=>postOffer(sel.value,Math.round(+pr.value)||0,perr,pb));
+  const list=el('div');wb.appendChild(list);renderOffers(list);
+  const note=el('div','wnote');
+  note.textContent='Selling draws on your reserves — unless the Power Plant or Refinery generates it for free. Sales pay out within a minute. Every offer here is live between real ports.';
+  wb.appendChild(note);}
+function renderOffers(list){list.textContent='';
+  const mine=W.offers.filter(o=>o.port_id===W.o.id),
+        others=W.offers.filter(o=>o.port_id!==W.o.id);
+  if(!W.offers.length)list.appendChild(el('div','wnote','No open offers right now — post the first one.'));
+  for(const o of mine){const r=el('div','off');
+    const w=el('span','what',offerLabel(o.kind,o.qty));
+    w.appendChild(el('small',null,'your offer'));r.appendChild(w);
+    r.appendChild(el('span','pr','KD '+fmt(o.price)));
+    const c=el('button','ghost','Cancel');
+    c.addEventListener('click',()=>cancelOffer(o));r.appendChild(c);list.appendChild(r);}
+  for(const o of others){const r=el('div','off');
+    const w=el('span','what',offerLabel(o.kind,o.qty));
+    w.appendChild(el('small',null,'from '+o.name));r.appendChild(w);
+    r.appendChild(el('span','pr','KD '+fmt(o.price)));
+    const b=el('button',null,'Buy');b.disabled=S.money<o.price;
+    b.addEventListener('click',()=>takeOffer(o,b));r.appendChild(b);list.appendChild(r);}}
+function postOffer(kind,price,err,btn){err.style.display='none';
+  const q=OFFER_DEFS[kind].qty;
+  if(!(price>=50&&price<=20000)){err.textContent='Price must be KD 50–20,000.';err.style.display='block';return;}
+  if(kind==='elec'&&!S.powerPlant&&S.elec<q+5){err.textContent='Not enough electricity in reserve to sell — keep some for the cranes.';err.style.display='block';return;}
+  if(kind==='oil'&&!S.refinery&&S.oil<q+5){err.textContent='Not enough oil in reserve to sell — keep some for the tractors.';err.style.display='block';return;}
+  if(kind==='goods'&&S.goods<q){err.textContent='You need '+q+' export goods — the Factory makes them.';err.style.display='block';return;}
+  btn.disabled=true;
+  rpc('offer_post',{p_id:W.o.id,p_secret:W.o.secret,p_kind:kind,p_price:price})
+  .then(res=>{btn.disabled=false;
+    if(res&&res.id){ // escrow leaves now, pays out when another port buys
+      if(kind==='elec'&&!S.powerPlant)S.elec-=q;
+      if(kind==='oil'&&!S.refinery)S.oil-=q;
+      if(kind==='goods')S.goods-=q;
+      save();toast('Offer posted — '+offerLabel(kind,q)+' for KD '+fmt(price));refreshWorld();}
+    else{err.textContent=(res&&res.error)||'Could not post the offer.';err.style.display='block';}})
+  .catch(()=>{btn.disabled=false;
+    err.textContent='World unreachable — try again in a moment.';err.style.display='block';});}
+function takeOffer(o,btn){if(S.money<o.price)return;btn.disabled=true;
+  rpc('offer_take',{p_id:W.o.id,p_secret:W.o.secret,p_offer:o.id})
+  .then(res=>{if(res&&res.ok){S.money-=o.price;
+      if(res.kind==='elec')S.elec=Math.min(100,S.elec+res.qty);
+      if(res.kind==='oil')S.oil=Math.min(100,S.oil+res.qty);
+      if(res.kind==='goods')S.goods=Math.min(GOODS_CAP,S.goods+res.qty);
+      save();toast('Bought '+offerLabel(res.kind,res.qty)+' from '+o.name+' — KD '+fmt(o.price));}
+    else toast('Too late — that offer was already taken',true);
+    refreshWorld();})
+  .catch(()=>{btn.disabled=false;toast('World unreachable',true);});}
+function cancelOffer(o){rpc('offer_cancel',{p_id:W.o.id,p_secret:W.o.secret,p_offer:o.id})
+  .then(res=>{if(res&&res.ok){ // hand the escrow back
+      if(o.kind==='elec'&&!S.powerPlant)S.elec=Math.min(100,S.elec+o.qty);
+      if(o.kind==='oil'&&!S.refinery)S.oil=Math.min(100,S.oil+o.qty);
+      if(o.kind==='goods')S.goods=Math.min(GOODS_CAP,S.goods+o.qty);
+      save();toast('Offer cancelled');}
+    refreshWorld();})
+  .catch(()=>toast('World unreachable',true));}
+async function refreshWorld(){
+  try{const jobs=[rpc('port_board')];if(W.o)jobs.push(rpc('offer_list'));
+    const res=await Promise.all(jobs);
+    W.board=res[0]||[];if(W.o)W.offers=res[1]||[];}
+  catch(e){}
+  renderWorld();}
+let wTimer=null;
+$('worldBtn').addEventListener('click',()=>{$('world').classList.add('open');
+  renderWorld();refreshWorld();
+  clearInterval(wTimer);
+  wTimer=setInterval(()=>{if($('world').classList.contains('open'))refreshWorld();},15000);});
+$('worldClose').addEventListener('click',()=>{$('world').classList.remove('open');clearInterval(wTimer);});
+$('world').addEventListener('click',e=>{if(e.target.id==='world'){$('world').classList.remove('open');clearInterval(wTimer);}});
 
 /* ---------- debug (console only) ---------- */
 window.__proj=(x,y,z)=>{const p=new THREE.Vector3(x,y,z).project(camera);
@@ -1781,7 +2072,9 @@ window.__port=()=>({t:+frame.t.toFixed(1),money:Math.round(S.money),rep:S.rep,
   vanBusy:vans.filter(v=>v.busy).length,powF:powerFactor(),fuelF:fuelFactor(),
   streak:S.streak,ev:EV.active,jam:EV.jamIdx,stormClosed:EV.stormClosed,
   storage:S.storage,factory:S.factory,refinery:S.refinery,powerPlant:S.powerPlant,
-  onTime:S.onTime,late:S.late,lostS:S.lost,rank:rank()});
+  onTime:S.onTime,late:S.late,lostS:S.lost,rank:rank(),
+  world:W.o?W.o.name:null,wOnline:W.online});
+window.__world=()=>({me:W.o,board:W.board,offers:W.offers,online:W.online});
 window.__buy=k=>buyUtil(k);
 window.__ev=k=>{if(k==='storm'){EV.active='stormWarn';EV.until=frame.t+3;}
   else if(k==='rush'){spawnShip(false,true);EV.active='rush';EV.until=frame.t+18;}
@@ -1800,7 +2093,7 @@ function tick(now){
   frame.dt=dt;frame.t+=dt;
   const res=frameResolvers;frameResolvers=[];for(const r of res)r();
   stepTweens(dt);stepWaiters();
-  waveOcean(frame.t);stepDay(dt);stepUtil(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);
+  waveOcean(frame.t);stepDay(dt);stepUtil(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);stepCity(dt);
   for(const sh of ships)shipBob(sh,frame.t);
   stepShipPatience();updateCables();stepEvents(frame.t,dt);
   /* Ship chip: live countdown of the most urgent waiting ship. */
