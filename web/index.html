@@ -532,11 +532,11 @@
 /* Toy-diorama palette: near-white world, one bold red accent,
    charcoal details, faceted teal-green trees. */
 const P={concrete:0xE4E1DA,asphalt:0xAFABA4,concreteDark:0xA6A39D,lane:0xFFFFFF,
-  water:0x568184,hull:0xD62E27,shipWhite:0xF2F0EA,craneTeal:0xD62E27,
+  water:0x53718C,hull:0xD62E27,shipWhite:0xF2F0EA,craneTeal:0xD62E27,
   yellow:0x3A3E42,steel:0xB9BCBE,steelDark:0x3A3E42,whWall:0xF0EEE8,
   whRoof:0x33363A,tractor:0xD62E27,warm:0xFFD9A0,gull:0xFFFFFF,cold:0xE9EDEC,glass:0x2A3034,
   tree:0x2D7E65,trunk:0x4E3A2D,
-  sand:0xE9DFC8,grass:0x8FAE8B,ground:0xDAD6CC,cityA:0xE1DDD4,cityB:0xCFCAC1,cityC:0xBDB8AE,cityGlass:0x9FB4B2,
+  sand:0xE9DFC8,grass:0x8FAE8B,ground:0xC9BEAE,cityA:0xA8967E,cityB:0x8F8071,cityC:0xBFAF97,cityGlass:0xBFCEDC,
   containers:[0xD62E27,0xEDEBE5,0x9EA3A5,0xE2E0DA,0x777E81,0xD62E27]};
 const SHIP_NAMES=["Northern Star","Atlas Voyager","Mediterranean Pearl","Pacific Horizon","Arabian Falcon","Baltic Trader"];
 const TIERS=[
@@ -730,13 +730,13 @@ function applyFrustum(){const a=innerWidth/Math.max(1,innerHeight);
   camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
 /* Bright soft studio light: high ambient, gentle warm sun, light shadows. */
-const hemi=new THREE.HemisphereLight(0xffffff,0xcfcabf,0.45);scene.add(hemi);
+const hemi=new THREE.HemisphereLight(0xEAF2FF,0xC9B79F,0.5);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2e2,0.85);
 sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 Object.assign(sun.shadow.camera,{left:-110,right:110,top:110,bottom:-110,near:10,far:500});
 sun.shadow.bias=-0.0004;
 scene.add(sun);scene.add(sun.target);
-scene.fog=new THREE.FogExp2(0xf4f2ed,0.0007);
+scene.fog=new THREE.FogExp2(0xD8C9B2,0.001); // warm golden-hour haze
 
 /* ---------- builders ---------- */
 const mats=new Map();
@@ -878,13 +878,13 @@ let stepCity=()=>{};
  for(let x=-150;x<=150;x+=12)cb(P.lane,x,GY+0.09,71,3,0.03,0.35);
  for(const sx of[1,-1])cb(P.asphalt,sx*86,GY+0.02,29,6,0.1,64);
  // towers: back skyline, mid band, and the flank districts
- const shades=[P.cityA,P.cityB,P.cityC,P.whWall];
+ const shades=[P.cityA,P.cityB,P.cityC,0x77695B,0xC4B49E];
  function tower(x,z,w,d,h){
    cb(shades[Math.floor(crnd()*shades.length)],x,GY+h/2,z,w,h,d);
    if(crnd()<0.8)cb(0,x,GY+h*0.52,z-d/2-0.07,w*0.55,h*0.8,0.14,cwMat);
    if(crnd()<0.35)cb(P.steelDark,x,GY+h+0.55,z,w*0.34,1.1,d*0.34);}
- for(let x=-152;x<=152;x+=17)
-   tower(x+(crnd()-0.5)*6,98+crnd()*16,7+crnd()*4,7+crnd()*4,26+crnd()*26);
+ for(let x=-152;x<=152;x+=13)
+   tower(x+(crnd()-0.5)*5,98+crnd()*18,7+crnd()*4,7+crnd()*4,30+crnd()*38);
  for(let x=-146;x<=146;x+=21)
    if(crnd()<0.85)tower(x+(crnd()-0.5)*8,80+crnd()*7,6+crnd()*5,6+crnd()*3,10+crnd()*13);
  for(const sx of[1,-1])for(let gx=95;gx<=145;gx+=14)for(let gz=10;gz<=54;gz+=15)
@@ -919,13 +919,42 @@ let stepCity=()=>{};
     m.position.set(x,GY+y,lz);cg.add(m);};
   spire(lx,17,0.85);ball(lx,9.5,2.3);ball(lx,14.2,1.5);
   spire(lx+5.5,12,0.7);ball(lx+5.5,8.6,1.9);}
+ // Manhattan-style landmarks: a stepped setback tower and a crown tower
+ {const bx=24,bz=106;
+  cb(0xA8967E,bx,GY+16,bz,16,32,14);
+  cb(0xA8967E,bx,GY+40,bz,11,16,10);
+  cb(0xA8967E,bx,GY+54,bz,7,12,7);
+  cb(0,bx,GY+26,bz-7.2,8,40,0.16,cwMat);
+  const sp=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.9,14,8),mat(0xC4B49E,0.7,0.2));
+  sp.position.set(bx,GY+67,bz);cg.add(sp);}
+ {const bx=-54,bz=102;
+  cb(0x8F8071,bx,GY+20,bz,12,40,11);
+  cb(0,bx,GY+21,bz-5.7,6.5,34,0.16,cwMat);
+  for(let i=0;i<4;i++)cb(0,bx,GY+41.5+i*2.6,bz,10-i*2,2.2,9-i*2,cwMat);
+  const sp=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.7,10,8),mat(0xC4B49E,0.7,0.2));
+  sp.position.set(bx,GY+56,bz);cg.add(sp);}
+ // golden-hour cumulus drifting across the bay
+ const cloudM=new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:1,
+   transparent:true,opacity:0.92,flatShading:true});
+ const clouds=[];
+ for(let i=0;i<6;i++){const g=new THREE.Group();
+   const n=2+Math.floor(crnd()*2);
+   for(let b=0;b<n;b++){const r=7+crnd()*9;
+     const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),cloudM);
+     m.scale.y=0.45;
+     m.position.set((b-(n-1)/2)*9+(crnd()-0.5)*4,(crnd()-0.5)*2,(crnd()-0.5)*5);
+     g.add(m);}
+   g.position.set(-180+crnd()*360,58+crnd()*16,-70+crnd()*140);
+   cg.add(g);clouds.push({g,sp:1+crnd()*1.2});}
  // commuter traffic on the corniche — the city breathes
  const cars=[];const carCols=[0xD62E27,0xEDEBE5,0x9EA3A5,0x777E81,0x3A3E42];
  for(let i=0;i<9;i++){const dir=i%2?1:-1;
    const c=cb(carCols[i%carCols.length],-150+crnd()*300,GY+0.45,dir>0?69.4:72.6,1.9,0.75,1);
    cars.push({m:c,dir,sp:8+crnd()*7});}
  stepCity=dt=>{for(const c of cars){c.m.position.x+=c.dir*c.sp*dt;
-   if(c.m.position.x>158)c.m.position.x=-158;else if(c.m.position.x<-158)c.m.position.x=158;}};}
+   if(c.m.position.x>158)c.m.position.x=-158;else if(c.m.position.x<-158)c.m.position.x=158;}
+  for(const cl of clouds){cl.g.position.x+=cl.sp*dt;
+   if(cl.g.position.x>215)cl.g.position.x=-215;}};}
 
 /* ---------- cranes (B hidden until bought) ---------- */
 function buildCrane(homeX,idx){
@@ -1587,8 +1616,9 @@ let stepLife=()=>{};
      p.g.position.y=p.cy+Math.abs(Math.sin(t*6+p.ph))*0.04;}};}
 
 const DAY_LEN=110;let dayFrac=0.34,dayCount=1;
-const skyDay=new THREE.Color(0xF4F2ED),skyNight=new THREE.Color(0xE7DFD4);
-const sunLow=new THREE.Color(0xFFC896),sunHigh=new THREE.Color(0xFFF2E2);
+/* Golden-hour Manhattan mood: blue sky, warm hazy dusk, amber sun. */
+const skyDay=new THREE.Color(0xA9C6DF),skyNight=new THREE.Color(0xC9B69C);
+const sunLow=new THREE.Color(0xFFAE6B),sunHigh=new THREE.Color(0xFFE6C0);
 function stepDay(dt){
   dayFrac+=dt/DAY_LEN;if(dayFrac>=1){dayFrac-=1;dayCount++;payroll();
     if(dayShips>0){const msg='Day '+(dayCount-1)+' closed — KD '+fmt(S.earnToday)+
@@ -1599,7 +1629,7 @@ function stepDay(dt){
   const dl=Math.max(0,Math.sin((dayFrac-0.25)*Math.PI*2));
   const ang=dayFrac*Math.PI*2-Math.PI/2;
   sun.position.set(Math.cos(0.7)*Math.cos(ang)*160,Math.max(60,Math.abs(Math.sin(ang))*160),Math.sin(0.7)*Math.cos(ang)*160);
-  sun.intensity=0.55+0.3*dl;
+  sun.intensity=0.6+0.35*dl;
   sun.color.copy(sunLow).lerp(sunHigh,Math.min(1,0.3+dl));
   hemi.intensity=0.35+0.1*dl;
   const sky=skyNight.clone().lerp(skyDay,dl);
