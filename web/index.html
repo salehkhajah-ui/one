@@ -1349,6 +1349,109 @@ function stepGulls(t){for(const gu of gulls){
 /* The clock still runs the port day (payroll at dawn), but the light stays
    in showroom territory: bright paper daylight easing into a warm evening —
    never a black night. */
+/* ---------- ambient life ----------
+   NPCs everywhere, so the world never sits still: working boats on the
+   coast, a freighter and ferry on the horizon, an airliner and a patrol
+   helicopter overhead, avenue traffic and buses in the city, and people
+   strolling the corniche, the parks and the beach. All decorative, all
+   shadowless, all driven by one stepper. */
+let stepLife=()=>{};
+{const lg=new THREE.Group();scene.add(lg);
+ const LGY=QUAY_Y-0.12;
+ const unitL=new THREE.BoxGeometry(1,1,1);
+ let ls=97;const lrnd=()=>((ls=ls*16807%2147483647)/2147483647);
+ function lb(c,x,y,z,sx,sy,sz,parent){const m=new THREE.Mesh(unitL,mat(c,0.9,0));
+   m.scale.set(sx,sy,sz);m.position.set(x,y,z);(parent||lg).add(m);return m;}
+ function mkG(x,y,z){const g=new THREE.Group();g.position.set(x,y,z);lg.add(g);return g;}
+ const wraps=[],orbits=[];
+ // -- boats: hulls run long in z; a yaw of ±90° points them down their lane
+ function boatDhow(){const g=mkG(0,0.15,0);
+   lb(0x8A6B4F,0,0.5,0,1.6,0.8,4.6,g);
+   lb(P.shipWhite,0,2.5,0.3,0.12,3.2,1.9,g);return g;}
+ function boatSpeed(){const g=mkG(0,0.15,0);
+   lb(P.shipWhite,0,0.45,0,1.3,0.7,3.4,g);lb(P.hull,0,0.95,-0.8,1.1,0.5,1.2,g);return g;}
+ function boatFerry(){const g=mkG(0,0.15,0);
+   lb(0x4E7A9B,0,0.7,0,2.6,1.2,9,g);lb(P.shipWhite,0,1.9,-0.5,2.2,1.1,5.5,g);
+   lb(P.steelDark,0,3,1.8,0.5,1,0.5,g);return g;}
+ function boatFreight(){const g=mkG(0,0.15,0);
+   lb(0x5A6670,0,1.1,0,5,2.2,26,g);lb(P.shipWhite,0,3.4,-9.5,4,2.6,3.5,g);
+   for(let i=0;i<5;i++)lb(P.containers[i%6],0,2.9,-4+i*3.4,3.6,1.3,2.8,g);return g;}
+ // horizon lanes, far beyond the anchorage — wrap around off-screen
+ wraps.push({g:boatFreight(),z:-132,x:-190+lrnd()*100,dir:1,sp:4,bob:0.06,ph:lrnd()*6});
+ wraps.push({g:boatFerry(),z:-112,x:120,dir:-1,sp:6.5,bob:0.1,ph:lrnd()*6});
+ wraps.push({g:boatDhow(),z:-122,x:-40,dir:1,sp:3,bob:0.12,ph:lrnd()*6});
+ // pleasure craft looping close to the city beaches on both flanks
+ for(const sx of[1,-1]){
+   orbits.push({g:boatSpeed(),cx:sx*112,cz:-22,rx:30,rz:7,y:0.15,a:lrnd()*6,sp:sx*0.24,bob:0.12,ph:lrnd()*6});
+   if(sx<0)orbits.push({g:boatDhow(),cx:sx*112,cz:-26,rx:24,rz:6,y:0.15,a:lrnd()*6,sp:0.12,bob:0.12,ph:lrnd()*6});}
+ // -- aircraft
+ const jet=mkG(-230,78,-30);
+ lb(P.shipWhite,0,0,0,1.7,1.7,15,jet);lb(P.shipWhite,0,0.5,-7.2,1.2,1.2,2,jet);
+ lb(0xB9BCBE,0,-0.25,1,12,0.16,2.8,jet);
+ lb(P.hull,0,1.3,-6.6,0.16,2.4,2,jet);lb(0xB9BCBE,0,0.3,-6.5,4.8,0.14,1.5,jet);
+ const jetV={g:jet,vx:15,vz:2.5};
+ const heli=mkG(0,60,92);
+ lb(P.hull,0,0,0,1.4,1.2,3.2,heli);lb(P.glass,0,0.1,1.6,1.2,0.8,0.7,heli);
+ lb(P.steelDark,0,0.3,-2.6,0.4,0.4,2.6,heli);
+ lb(P.steelDark,0,-0.75,0,1.5,0.12,2.2,heli);
+ const rotor=lb(P.steelDark,0,0.85,0,6,0.08,0.32,heli);
+ const tailRot=lb(P.steelDark,0.34,0.45,-3.7,0.06,1.5,0.18,heli);
+ orbits.push({g:heli,cx:0,cz:92,rx:125,rz:22,y:60,a:1,sp:0.11,bob:0,ph:0});
+ // -- city traffic: cars looping the flank districts, buses on the corniche
+ const carCols2=[0xD62E27,0xEDEBE5,0x9EA3A5,0x777E81,0x3A3E42];
+ function npcCar(){const g=mkG(0,LGY+0.45,0);
+   lb(carCols2[Math.floor(lrnd()*5)],0,0,0,1.7,0.65,1,g);
+   lb(P.glass,0,0.5,0.1,1.3,0.4,0.8,g);return g;}
+ for(const sx of[1,-1])for(let i=0;i<3;i++)
+   orbits.push({g:npcCar(),cx:sx*100,cz:29,rx:13,rz:27,y:LGY+0.45,a:lrnd()*6,sp:sx*(0.3+lrnd()*0.12),bob:0,ph:0});
+ function bus(){const g=mkG(0,LGY+0.6,0);
+   lb(0xE8E6E0,0,0,0,1.9,1.1,5,g);lb(P.hull,0,0.2,0,1.94,0.22,5,g);return g;}
+ wraps.push({g:bus(),z:69.4,x:-60,dir:1,sp:6,bob:0,ph:0,y:LGY+0.6,flat:1});
+ wraps.push({g:bus(),z:72.6,x:90,dir:-1,sp:6,bob:0,ph:0,y:LGY+0.6,flat:1});
+ // -- people: strolling the corniche, the parks and the beach
+ const peds=[];const skinM=mat(0xC9A182,0.8);
+ const shirt=[0x777E81,0x9EA3A5,0x4E7A9B,0xA97B25,0x2D7E65,0xD62E27,0xF0EEE8];
+ function ped(hx,hz,hy){const g=mkG(hx,hy===undefined?LGY:hy,hz);
+   lb(shirt[Math.floor(lrnd()*shirt.length)],0,0.85,0,0.45,0.75,0.35,g);
+   lb(0x3A3E42,0,0.28,0,0.35,0.56,0.3,g);
+   const h=new THREE.Mesh(new THREE.SphereGeometry(0.16,7,7),skinM);h.position.y=1.42;g.add(h);
+   peds.push({g,cx:hx,cz:hz,cy:hy===undefined?LGY:hy,t:null,ph:lrnd()*7,sp:0.7+lrnd()*0.9,pause:0});}
+ for(let x=-140;x<=140;x+=20)ped(x+(lrnd()-0.5)*8,64.8);
+ for(const [px,pz] of [[118,7],[-118,7],[-52,90],[58,89],[2,91]]){ped(px-3,pz);ped(px+3,pz+2);}
+ for(const sx of[1,-1])ped(sx*(100+lrnd()*20),-7,1.35); // down on the sand
+ // -- a few gulls working the corniche too
+ for(let i=0;i<3;i++){const g=new THREE.Group();scene.add(g);
+   box(g,P.gull,0,0,0,0.5,0.16,0.9,0.9,0,false);
+   const wl=box(g,P.gull,-0.75,0,0,1.3,0.06,0.42,0.9,0,false);
+   const wr=box(g,P.gull,0.75,0,0,1.3,0.06,0.42,0.9,0,false);
+   gulls.push({g,wl,wr,cx:-90+i*90,cy:14+lrnd()*8,cz:55+lrnd()*20,
+     r:9+lrnd()*10,s:(i%2?-1:1)*(0.25+lrnd()*0.2),ph:lrnd()*6.3});}
+ stepLife=(dt,t)=>{
+   for(const w of wraps){w.g.position.x+=w.dir*w.sp*dt;
+     if(w.g.position.x>200)w.g.position.x=-200;else if(w.g.position.x<-200)w.g.position.x=200;
+     w.g.rotation.y=w.dir>0?Math.PI/2:-Math.PI/2;
+     if(!w.flat){w.g.position.y=0.15+Math.sin(t*1.1+w.ph)*w.bob;
+       w.g.rotation.z=Math.sin(t*0.9+w.ph)*0.03;}}
+   for(const o of orbits){o.a+=o.sp*dt;
+     const x=o.cx+Math.cos(o.a)*o.rx,z=o.cz+Math.sin(o.a)*o.rz;
+     const dx=-Math.sin(o.a)*o.rx*o.sp,dz=Math.cos(o.a)*o.rz*o.sp;
+     o.g.position.set(x,(o.bob?o.y+Math.sin(t*1.2+o.ph)*o.bob:o.y),z);
+     o.g.rotation.y=Math.atan2(dx,dz);
+     if(o.bob)o.g.rotation.z=Math.sin(t+o.ph)*0.04;}
+   // airliner: crosses the whole sky, then comes around again on a new line
+   jetV.g.position.x+=jetV.vx*dt;jetV.g.position.z+=jetV.vz*dt;
+   if(jetV.g.position.x>240){jetV.g.position.x=-240;jetV.g.position.z=-60+lrnd()*70;}
+   jetV.g.rotation.y=Math.atan2(jetV.vx,jetV.vz);
+   rotor.rotation.y+=26*dt;tailRot.rotation.x+=34*dt;
+   for(const p of peds){
+     if(!p.t||Math.hypot(p.t[0]-p.g.position.x,p.t[1]-p.g.position.z)<0.3){
+       p.t=[p.cx+(lrnd()-0.5)*9,p.cz+(lrnd()-0.5)*3];p.pause=t+1+lrnd()*4;}
+     if(t<p.pause){p.g.position.y=p.cy;continue;}
+     const dx=p.t[0]-p.g.position.x,dz=p.t[1]-p.g.position.z,d=Math.hypot(dx,dz);
+     if(d>0.05){p.g.rotation.y=Math.atan2(dx,dz);
+       p.g.position.x+=dx/d*p.sp*dt;p.g.position.z+=dz/d*p.sp*dt;}
+     p.g.position.y=p.cy+Math.abs(Math.sin(t*6+p.ph))*0.04;}};}
+
 const DAY_LEN=110;let dayFrac=0.34,dayCount=1;
 const skyDay=new THREE.Color(0xF4F2ED),skyNight=new THREE.Color(0xE7DFD4);
 const sunLow=new THREE.Color(0xFFC896),sunHigh=new THREE.Color(0xFFF2E2);
@@ -2093,7 +2196,7 @@ function tick(now){
   frame.dt=dt;frame.t+=dt;
   const res=frameResolvers;frameResolvers=[];for(const r of res)r();
   stepTweens(dt);stepWaiters();
-  waveOcean(frame.t);stepDay(dt);stepUtil(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);stepCity(dt);
+  waveOcean(frame.t);stepDay(dt);stepUtil(dt);stepGulls(frame.t);stepTugs(dt,frame.t);stepWorkers(dt,frame.t);stepCity(dt);stepLife(dt,frame.t);
   for(const sh of ships)shipBob(sh,frame.t);
   stepShipPatience();updateCables();stepEvents(frame.t,dt);
   /* Ship chip: live countdown of the most urgent waiting ship. */
